@@ -200,8 +200,8 @@ struct Player {
     DWORD dwUnitId;
     DWORD dwMode;
     PlayerData* pPlayerData;
-    DWORD _1;
     DWORD dwAct;
+    DWORD _1;
     Act* pAct;
     DWORD dwSeed[2];
     DWORD _2;

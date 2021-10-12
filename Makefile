@@ -20,7 +20,7 @@
 PROJECT = seed
 
 # file-names of the sources
-SRC_NAME = main.c  pidof.c
+SRC_NAME = main.c  proc.c  d2structs.c
 
 # folder-names of the sources
 SRC_PATH = src
@@ -47,7 +47,7 @@ CPPFLAGS =
 
 # compilation/linking flags for the differents public rules
 WFLAGS = -Wextra -Wall  # warnings
-RCFLAGS = $(WFLAGS) -Werror -O2  # release
+RCFLAGS = $(WFLAGS) -O2  # release
 DCFLAGS = $(WFLAGS) -g -DDEBUG_MODE  # debug
 SCFLAGS = $(DCFLAGS) -fsanitize=address,undefined  # sanitize
 WWFLAGS = $(WFLAGS) -Wpedantic -Wshadow -Wconversion -Wcast-align \
