@@ -1,4 +1,4 @@
-vmread
+seed
 *.san
 *.dev
 *.o

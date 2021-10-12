@@ -17,7 +17,7 @@
 ##
 
 # name of the binary to make
-PROJECT = vmread
+PROJECT = seed
 
 # file-names of the sources
 SRC_NAME = main.c
