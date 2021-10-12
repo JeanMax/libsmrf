@@ -322,36 +322,20 @@ DWORD find_seed(FILE* pMemFile, PTR start_address, size_t length,
 
 
 
-int main(int argc, char **argv)
+int main(void)
 {
-    /* PTR z = 3; */
-    /* z=__bswap_64(z); */
-    /* if (memsearch("\x42\x42\x42\x42\x42\x42\x42\x42\x42\x04\x00\x00\x00\x00\x00\x00\x00\x03\x42\x42\x42\x42\x42\x42\x42\x42", &z, 25, 8)) { */
-    /*      LOG_DEBUG("zboub!!!"); /\* DEBUG *\/ */
-    /* } */
-    /* LOG_DEBUG("zgegy: %08lx", z); */
-
-
-
-    if (argc != 2) {
-        LOG_ERROR("%s <pid>", argv[0]);
-        return 1;
+    pid_t pid = pidof("D2R.exe");
+    if (!pid) {
+        LOG_ERROR("Can't find D2R.exe");
+        return EXIT_FAILURE;
     }
-    /* int pid = atoi(argv[1]); */
-
-    /* long ptraceResult = ptrace(PTRACE_ATTACH, pid, NULL, NULL); */
-    /* if (ptraceResult < 0) { */
-    /*     LOG_DEBUG("Unable to attach to the pid specified"); */
-    /*     return 2; */
-    /* } */
-    /* wait(NULL); */
 
     char mapsFilename[1024];
-    sprintf(mapsFilename, "/proc/%s/maps", argv[1]);
+    sprintf(mapsFilename, "/proc/%d/maps", pid);
     FILE* pMapsFile = fopen(mapsFilename, "r");
 
     char memFilename[1024];
-    sprintf(memFilename, "/proc/%s/mem", argv[1]);
+    sprintf(memFilename, "/proc/%d/mem", pid);
     FILE* pMemFile = fopen(memFilename, "r");
 
     char line[256];
@@ -400,10 +384,7 @@ int main(int argc, char **argv)
 
     fclose(pMemFile);
 
-    /* ptrace(PTRACE_CONT, pid, NULL, NULL); */
-    /* ptrace(PTRACE_DETACH, pid, NULL, NULL); */
-
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 

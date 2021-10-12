@@ -9,10 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
-#include <sys/ptrace.h>
-#include <sys/wait.h>
-
 
 #ifdef NO_COLORS
 # define CLR_BLACK ""
@@ -61,5 +57,10 @@
 /*                  | ((x << 8)  & 0x00ff0000)     \ */
 /*                  | ((x >> 8)  & 0x0000ff00)     \ */
 /*                  | ((x << 24) & 0xff000000)) */
+
+
+
+
+pid_t pidof(const char*pname);
 
 #endif

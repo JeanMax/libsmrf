@@ -20,7 +20,7 @@
 PROJECT = seed
 
 # file-names of the sources
-SRC_NAME = main.c
+SRC_NAME = main.c  pidof.c
 
 # folder-names of the sources
 SRC_PATH = src
