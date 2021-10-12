@@ -4,8 +4,9 @@
 unsigned char g_read_buf[PAGE_LENGTH];
 Player g_player;
 
-#define is_valid_ptr(ptr, start_address, length) \
-       ((unsigned long)ptr >= start_address      \
+    /* (!((unsigned long)ptr % sizeof(WORD))                      \ */
+#define is_valid_ptr(ptr, start_address, length)                \
+    ((unsigned long)ptr >= start_address                        \
      && (unsigned long)ptr < start_address + length)
 
 
@@ -17,8 +18,11 @@ char *memsearch(const void *mem, const void *search, size_t mem_len, size_t sear
         if (!memcmp(ptr, search, search_len)) {
             return ptr;
         }
-        ptr++;
-        mem_len--;
+        /* ptr++; */
+        /* mem_len--; */
+        /* TODO: use aligned version once you know everything's ok */
+        ptr += sizeof(QWORD);
+        mem_len -= sizeof(QWORD);
     }
     return NULL;
 }
@@ -45,7 +49,7 @@ int is_bullshit_memory(const char *memory_info_str)
 
     for (char **kw = forbidden_kw; *kw; kw++) {
         if (strstr(memory_info_str, *kw)) {
-            /* fprintf(stderr, "bullshit %s in: %s\n", *kw, memory_info_str); /\* DEBUG *\/ */
+            /* LOG_DEBUG("bullshit %s in: %s", *kw, memory_info_str); /\* DEBUG *\/ */
             return 1;
         }
     }
@@ -57,12 +61,20 @@ int is_bullshit_memory(const char *memory_info_str)
 int is_valid_player_data(void *ptr, unsigned long start_address, size_t length)
 {
     if ((unsigned long)ptr + sizeof(PlayerData) > start_address + length) {
-        fprintf(stderr, "nop %lu %lu %lu %lu\n",
-                (unsigned long)ptr, sizeof(PlayerData), start_address, length);
+        LOG_ERROR("nop %lu %lu %lu %lu",
+                  (unsigned long)ptr, sizeof(PlayerData), start_address, length);
         return 0;
     }
 
     PlayerData *player_data = (PlayerData *)ptr;
+
+    if ((unsigned long)ptr % sizeof(QWORD)) {
+        LOG_ERROR("unaligned player_data: %lu bytes left to align (%08lx)",
+                  (unsigned long)ptr % sizeof(QWORD),
+                  (unsigned long)ptr);
+        return 0;
+    }
+
     return is_valid_ptr(player_data->pNormalQuest, start_address, length)
         && is_valid_ptr(player_data->pNightmareQuest, start_address, length)
         && is_valid_ptr(player_data->pHellQuest, start_address, length)
@@ -74,7 +86,7 @@ int is_valid_player_data(void *ptr, unsigned long start_address, size_t length)
 int is_valid_player(void *ptr, unsigned long start_address, size_t length)
 {
     if ((unsigned long)ptr + sizeof(Player) > start_address + length) {
-        fprintf(stderr, "nop %lu %lu %lu %lu\n",
+        LOG_ERROR("nop %lu %lu %lu %lu",
                 (unsigned long)ptr, sizeof(Player), start_address, length);
         return 0;
     }
@@ -82,7 +94,7 @@ int is_valid_player(void *ptr, unsigned long start_address, size_t length)
     Player *player = (Player *)ptr;
 
     if (!is_valid_ptr(player->pPath, start_address, length)) {
-        fprintf(stderr, "LKAJFLKAZJFL\n");
+        LOG_WARNING("LKAJFLKAZJFL"); /* DEBUG */
     }
 
     return is_valid_ptr(player->pAct, start_address, length)
@@ -93,20 +105,20 @@ int is_valid_player(void *ptr, unsigned long start_address, size_t length)
 int is_valid_act(void *ptr, unsigned long start_address, size_t length)
 {
     if ((unsigned long)ptr + sizeof(Act) > start_address + length) {
-        fprintf(stderr, "nop %lu %lu %lu %lu\n",
+        LOG_ERROR("nop %lu %lu %lu %lu",
                 (unsigned long)ptr, sizeof(Act), start_address, length);
         return 0;
     }
 
     Act *act = (Act *)ptr;
     if (!is_valid_ptr(act->pRoom1, start_address, length)) {
-        fprintf(stderr, "zgeg room %08lx \n", (unsigned long)act->pRoom1);
+        LOG_DEBUG("zgeg room %08lx ", (unsigned long)act->pRoom1);
     }
     if (!is_valid_ptr(act->pMisc, start_address, length)) {
-        fprintf(stderr, "zgeg misc %08lx \n", (unsigned long)act->pMisc);
+        LOG_DEBUG("zgeg misc %08lx ", (unsigned long)act->pMisc);
     }
     if (act->dwAct > 4) {
-        fprintf(stderr, "zgeg act %08lx \n", (unsigned long)act->dwAct);
+        LOG_DEBUG("zgeg act %08lx ", (unsigned long)act->dwAct);
     }
 
     return is_valid_ptr(act->pRoom1, start_address, length)
@@ -131,19 +143,20 @@ unsigned long find_player_data_ptr(FILE* pMemFile, unsigned long start_address, 
 
         match = memsearch((char *)g_read_buf, "TrapSmurf", read_len, strlen("TrapSmurf"));
         if (match) {
-            fprintf(stderr, "\nSmurf match: %08lx\n", address); /* DEBUG */
+            fprintf(stderr, "\n");   /* DEBUG */
+            LOG_DEBUG("Smurf match: %08lx", address); /* DEBUG */
             if (is_valid_player_data(match, start_address, length)) {
                 /* PlayerData *player_data = (PlayerData *)match; */
-                fprintf(stderr, "Valid player_data! %08lx\n", start_address + ((unsigned long)match - (unsigned long)g_read_buf));
-                /* if (address != 0x7fffd4530000 && address != 0x7fffd4540000) */
-                return start_address + ((unsigned long)match - (unsigned long)g_read_buf);
+                LOG_DEBUG("Valid player_data! %08lx",
+                        address + ((unsigned long)match - (unsigned long)g_read_buf));
+                return address + ((unsigned long)match - (unsigned long)g_read_buf);
             }
             /* fwrite(&g_read_buf, 1, read_len, stdout); */
         }
 
         if (read_len < page_len) {
-            fprintf(stderr, "WARNING: something went wrong with fread (read_len: %lu)\n",
-                   read_len);
+            LOG_WARNING("something went wrong with fread (read_len: %lu)",
+                        read_len);
             break;
         }
     }
@@ -155,12 +168,13 @@ unsigned long find_player_data_ptr(FILE* pMemFile, unsigned long start_address, 
 Player *find_player_ptr(FILE* pMemFile, unsigned long start_address, size_t length,
                         unsigned long player_data_addr)
 {
+    (void)player_data_addr;
     char *match;
     size_t read_len = 0;
     size_t page_len = MIN(PAGE_LENGTH, length);
     Player *player = 0;
 
-    fprintf(stderr, "add %08lx\n", player_data_addr);
+    LOG_DEBUG("add %08lx", player_data_addr);
 
     /* player_data_addr = __bswap_64(player_data_addr); */
     fseeko(pMemFile, start_address, SEEK_SET);
@@ -175,18 +189,18 @@ Player *find_player_ptr(FILE* pMemFile, unsigned long start_address, size_t leng
         match = memsearch(g_read_buf, "\x99\x4a\xd3\xff\x7f", read_len, 5);
         if (match) {
             player = (Player *)(match - 4 * sizeof(DWORD));
-            fprintf(stderr, "\nplayer_data match: %08lx \n", *(unsigned long *)(match + 2)); /* DEBUG */
-            fprintf(stderr, "\nplayer_data path: %08lx \n", (unsigned long)player->pPath); /* DEBUG */
+            LOG_DEBUG("player_data match: %08lx ", *(unsigned long *)(match + 2)); /* DEBUG */
+            LOG_DEBUG("player_data path: %08lx ", (unsigned long)player->pPath); /* DEBUG */
             if (is_valid_player(player, start_address, length)) {
-                fprintf(stderr, "YAY act %08lx\n", (unsigned long)player->pAct); /* DEBUG */
+                LOG_DEBUG("YAY act %08lx", (unsigned long)player->pAct); /* DEBUG */
                 memcpy(&g_player, player, sizeof(Player));
                 /* return &g_player; */
             }
         }
 
         if (read_len < page_len) {
-            fprintf(stderr, "WARNING: something went wrong with fread (read_len: %lu)\n",
-                   read_len);
+            LOG_WARNING("something went wrong with fread (read_len: %lu)",
+                        read_len);
             break;
         }
     }
@@ -197,13 +211,14 @@ Player *find_player_ptr(FILE* pMemFile, unsigned long start_address, size_t leng
 DWORD find_seed(FILE* pMemFile, unsigned long start_address, size_t length,
                 unsigned long act_addr)
 {
+    (void)act_addr;
     char *match;
     size_t read_len = 0;
     size_t page_len = MIN(PAGE_LENGTH, length);
-    char fuck[] = "\x8d\xa8\xd2\x43\x00";
+    char fuck[] = "\x53\xf7\xdf\x57\x00";
 
     /* memcpy(fuck, player_data, sizeof(fuck) - 1); */
-    fprintf(stderr, "\nseed theoric addr: %08lx\n", act_addr + sizeof(DWORD) * 3); /* DEBUG */
+    LOG_DEBUG("seed theoric addr: %08lx", act_addr + sizeof(DWORD) * 3); /* DEBUG */
 
     fseeko(pMemFile, start_address, SEEK_SET);
     for (unsigned long address = start_address;
@@ -214,14 +229,14 @@ DWORD find_seed(FILE* pMemFile, unsigned long start_address, size_t length,
 
         match = memsearch(g_read_buf, fuck, read_len, strlen(fuck));
         if (match) {
-            fprintf(stderr, "\nseed match: %08lx\n", address + ((unsigned long)match - (unsigned long)g_read_buf)); /* DEBUG */
+            LOG_DEBUG("seed match: %08lx", address + ((unsigned long)match - (unsigned long)g_read_buf)); /* DEBUG */
             is_valid_act(match - sizeof(DWORD) * 3, start_address, length);
-            fprintf(stderr, "\nseed diff: %lu\n", (act_addr + sizeof(DWORD) * 3) - (address + ((unsigned long)match - (unsigned long)g_read_buf)));
+            LOG_DEBUG("seed diff: %lu", (address + ((unsigned long)match - (unsigned long)g_read_buf)) - (act_addr + sizeof(DWORD) * 3));
         }
 
         if (read_len < page_len) {
-            fprintf(stderr, "WARNING: something went wrong with fread (read_len: %lu)\n",
-                   read_len);
+            LOG_WARNING("something went wrong with fread (read_len: %lu)",
+                        read_len);
             break;
         }
     }
@@ -237,7 +252,7 @@ DWORD find_seed(FILE* pMemFile, unsigned long start_address, size_t length,
     /* fseeko(pMemFile, act_addr + 256, SEEK_SET); */
     /* read_len = fread(&g_read_buf, 1, page_len, pMemFile); */
 
-    /* fprintf(stderr, "zob %08lx %08lx %08lx %08lx \n", *g_read_buf, *(g_read_buf + 8), *(g_read_buf + 16), *(g_read_buf + 24)); */
+    /* LOG_DEBUG("zob %08lx %08lx %08lx %08lx ", *g_read_buf, *(g_read_buf + 8), *(g_read_buf + 16), *(g_read_buf + 24)); */
 
     /* if (is_valid_act(g_read_buf, act_addr, page_len)) { */
     /*     return ((Act *)g_read_buf)->dwMapSeed; */
@@ -252,21 +267,21 @@ int main(int argc, char **argv)
     /* unsigned long z = 3; */
     /* z=__bswap_64(z); */
     /* if (memsearch("\x42\x42\x42\x42\x42\x42\x42\x42\x42\x04\x00\x00\x00\x00\x00\x00\x00\x03\x42\x42\x42\x42\x42\x42\x42\x42", &z, 25, 8)) { */
-    /*      fprintf(stderr, "zboub!!!\n"); /\* DEBUG *\/ */
+    /*      LOG_DEBUG("zboub!!!"); /\* DEBUG *\/ */
     /* } */
-    /* fprintf(stderr, "zgegy: %08lx\n", z); */
+    /* LOG_DEBUG("zgegy: %08lx", z); */
 
 
 
     if (argc != 2) {
-        printf("%s <pid>\n", argv[0]);
+        LOG_ERROR("%s <pid>", argv[0]);
         return 1;
     }
     /* int pid = atoi(argv[1]); */
 
     /* long ptraceResult = ptrace(PTRACE_ATTACH, pid, NULL, NULL); */
     /* if (ptraceResult < 0) { */
-    /*     fprintf(stderr, "Unable to attach to the pid specified\n"); */
+    /*     LOG_DEBUG("Unable to attach to the pid specified"); */
     /*     return 2; */
     /* } */
     /* wait(NULL); */
@@ -290,12 +305,12 @@ int main(int argc, char **argv)
         if (start_address >= 0x7fff00000000 && end_address <= 0x7fffffffffff
             && end_address - start_address > 0x1000000
             && is_rw_memory(line) && !is_bullshit_memory(line)) {
-            /* fprintf(stderr, "%s\n", line); /\* DEBUG *\/ */
+            /* LOG_DEBUG("%s", line); /\* DEBUG *\/ */
             player_data_addr = find_player_data_ptr(pMemFile,
                                                     start_address,
                                                     end_address - start_address);
             if (player_data_addr){
-                fprintf(stderr, "%s\n", line); /* DEBUG */
+                LOG_DEBUG("%s", line); /* DEBUG */
                 break;
             }
         }
@@ -321,7 +336,7 @@ int main(int argc, char **argv)
     /* } */
 
     if (seed) {
-        fprintf(stderr, "SEED: %d\n", seed);
+        LOG_DEBUG("SEED: %d", seed);
     }
 
     fclose(pMemFile);
@@ -329,6 +344,5 @@ int main(int argc, char **argv)
     /* ptrace(PTRACE_CONT, pid, NULL, NULL); */
     /* ptrace(PTRACE_DETACH, pid, NULL, NULL); */
 
-    fprintf(stderr, "\n");
     return 0;
 }
