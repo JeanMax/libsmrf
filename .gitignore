@@ -1,0 +1,5 @@
+vmread
+*.san
+*.dev
+*.o
+*.d
