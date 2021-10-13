@@ -197,11 +197,11 @@ typedef  struct Player  Player;
 struct Player {
     DWORD dwType;
     DWORD dwTxtFileNo;
+    DWORD _1;
     DWORD dwUnitId;
     DWORD dwMode;
     PlayerData* pPlayerData;
     DWORD dwAct;
-    DWORD _1;
     Act* pAct;
     DWORD dwSeed[2];
     DWORD _2;

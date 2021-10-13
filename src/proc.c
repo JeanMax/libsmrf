@@ -25,11 +25,10 @@ BYTE *memsearch(const void *mem, const void *search, size_t mem_len, size_t sear
         if (!memcmp(ptr, search, search_len)) {
             return ptr;
         }
-        /* ptr++; */
-        /* mem_len--; */
-        /* TODO: use aligned version once you know everything's ok */
-        ptr += sizeof(DWORD);
-        mem_len -= sizeof(DWORD);
+        ptr += sizeof(PTR);
+        mem_len -= sizeof(PTR);
+        /* ptr += sizeof(1); */
+        /* mem_len -= sizeof(1); */
     }
     return NULL;
 }
@@ -45,11 +44,13 @@ int memread(pid_t pid, PTR start_address, size_t length,
     sprintf(path, "/proc/%d/mem", pid);
     FILE *mem_file = fopen(path, "r"); //TODO: keep it open?
     if (!mem_file) {
-        return 0;
+        LOG_ERROR("Can't read mem");
+        exit(EXIT_FAILURE);
     }
 
     size_t read_len = 0;
     size_t page_len = MIN(PAGE_LENGTH, length);
+    int callback_ret, ret = 0;
 
     fseeko(mem_file, start_address, SEEK_SET);
     for (PTR address = start_address;
@@ -57,9 +58,12 @@ int memread(pid_t pid, PTR start_address, size_t length,
          address += page_len) {
 
         read_len = fread(&read_buf, 1, page_len, mem_file);
-        if (!on_page_read(read_buf, read_len, address, data)) {
+        if (!(callback_ret = on_page_read(read_buf, read_len, address, data))) {
             fclose(mem_file);
             return 2;
+        }
+        if (callback_ret > 1) {
+            ret = 2;
         }
         if (read_len < page_len) {
             LOG_WARNING("something went wrong with fread (read_len: %lu)",
@@ -69,22 +73,36 @@ int memread(pid_t pid, PTR start_address, size_t length,
     }
 
     fclose(mem_file);
-    return 1;
+    return ret;
 }
 
-BOOL memreadall(pid_t pid, t_read_callback *on_page_read, void *data)
+BOOL memreadall(pid_t pid, BOOL rev, t_read_callback *on_page_read, void *data)
 {
-    for (int i = 0; i < MAX_MAPS && g_maps_range[i][0]; i++) {
-        if (memread(pid,
-                    g_maps_range[i][0],
-                    g_maps_range[i][1] - g_maps_range[i][0],
-                    on_page_read,
-                    data) == 2) {
+    int i;
+
+    if (rev) {
+        for (i = 0; i < MAX_MAPS && g_maps_range[i][0]; i++) {}
+        for (i--; i >= 0; i--) {
+            PTR start = g_maps_range[i][0];
+            size_t length = g_maps_range[i][1] - g_maps_range[i][0];
+            if (memread(pid, start, length, on_page_read, data) == 2) {
+                fprintf(stderr, "\n");   /* DEBUG */
+                return TRUE;
+            }
+            fprintf(stderr, ".");   /* DEBUG */
+        }
+        return FALSE;
+    }
+
+    for (i = 0; i < MAX_MAPS && g_maps_range[i][0]; i++) {
+        PTR start = g_maps_range[i][0];
+        size_t length = g_maps_range[i][1] - g_maps_range[i][0];
+        if (memread(pid, start, length, on_page_read, data) == 2) {
             fprintf(stderr, "\n");   /* DEBUG */
             return TRUE;
         }
+        fprintf(stderr, ".");   /* DEBUG */
     }
-    fprintf(stderr, ".");   /* DEBUG */
     return FALSE;
 }
 

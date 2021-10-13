@@ -40,17 +40,17 @@ void log_Path(Path *ptr)
             "    WORD xTarget: %04x\n"
             "    WORD yTarget: %04x\n"
             "    DWORD _2[2]: %08x %08x\n"
-            "    Room1* pRoom1: %08lx\n"
-            "    Room1* pRoomUnk: %08lx\n"
+            "    Room1* pRoom1: %16lx\n"
+            "    Room1* pRoomUnk: %16lx\n"
             "    DWORD _3[3]: %08x %08x %08x\n"
-            "    UnitAny* pUnit: %08lx\n"
+            "    UnitAny* pUnit: %16lx\n"
             "    DWORD dwFlags: %08x\n"
             "    DWORD _4: %08x\n"
             "    DWORD dwPathType: %08x\n"
             "    DWORD dwPrevPathType: %08x\n"
             "    DWORD dwUnitSize: %08x\n"
             "    DWORD _5[4]: %08x %08x %08x %08x\n"
-            "    UnitAny* pTargetUnit: %08lx\n"
+            "    UnitAny* pTargetUnit: %16lx\n"
             "    DWORD dwTargetType: %08x\n"
             "    DWORD dwTargetId: %08x\n"
             "    BYTE bDirection: %02x\n"
@@ -85,10 +85,10 @@ void log_Act(Act *ptr)
             "struct " CLR_GREEN "Act" CLR_RESET " {\n"
             "    DWORD _1[3]: %08x %08x %08x\n"
             "    DWORD dwMapSeed: %08x\n"
-            "    Room1* pRoom1: %08lx\n"
+            "    Room1* pRoom1: %16lx\n"
             "    DWORD dwAct: %08x\n"
             "    DWORD _2[12]: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
-            "    ActMisc* pMisc: %08lx\n"
+            "    ActMisc* pMisc: %16lx\n"
             "}\n",
             ptr->_1[0], ptr->_1[1], ptr->_1[2],
             ptr->dwMapSeed,
@@ -103,12 +103,12 @@ void log_PlayerData(PlayerData *ptr)
     fprintf(stderr,
             "struct " CLR_GREEN "PlayerData" CLR_RESET " {\n"
             "    char szName[0x10]: %s\n"
-            "    QuestInfo* pNormalQuest: %08lx\n"
-            "    QuestInfo* pNightmareQuest: %08lx\n"
-            "    QuestInfo* pHellQuest: %08lx\n"
-            "    Waypoint* pNormalWaypoint: %08lx\n"
-            "    Waypoint* pNightmareWaypoint: %08lx\n"
-            "    Waypoint* pHellWaypoint: %08lx\n"
+            "    QuestInfo* pNormalQuest: %16lx\n"
+            "    QuestInfo* pNightmareQuest: %16lx\n"
+            "    QuestInfo* pHellQuest: %16lx\n"
+            "    Waypoint* pNormalWaypoint: %16lx\n"
+            "    Waypoint* pNightmareWaypoint: %16lx\n"
+            "    Waypoint* pHellWaypoint: %16lx\n"
             "}\n",
             ptr->szName,
             (PTR)ptr->pNormalQuest,
@@ -127,13 +127,13 @@ void log_Player(Player *ptr)
             "    DWORD dwTxtFileNo: %08x\n"
             "    DWORD dwUnitId: %08x\n"
             "    DWORD dwMode: %08x\n"
-            "    PlayerData* pPlayerData: %08lx\n"
+            "    PlayerData* pPlayerData: %16lx\n"
             "    DWORD _1: %08x\n"
             "    DWORD dwAct: %08x\n"
-            "    Act* pAct: %08lx\n"
+            "    Act* pAct: %16lx\n"
             "    DWORD dwSeed[2]: %08x, %08x\n"
             "    DWORD _2: %08x\n"
-            "    Path* pPath: %08lx\n"
+            "    Path* pPath: %16lx\n"
             "}\n",
             ptr->dwType,
             ptr->dwTxtFileNo,
@@ -162,8 +162,8 @@ inline BOOL is_valid_Act(Act *ptr)
 {
     return IS_ALIGNED(ptr)
         && is_valid_ptr((PTR)ptr->pRoom1)
-        && is_valid_ptr((PTR)ptr->pMisc);/* || !ptr->pMisc)
-                                            && ptr->dwAct < 5;*/
+        && (is_valid_ptr((PTR)ptr->pMisc) || !ptr->pMisc)
+        && ptr->dwAct < 5;
 }
 
 inline BOOL is_valid_PlayerData(PlayerData *ptr)
@@ -182,5 +182,6 @@ inline BOOL is_valid_Player(Player *ptr)
     return IS_ALIGNED(ptr)
         && is_valid_ptr((PTR)ptr->pPlayerData)
         && is_valid_ptr((PTR)ptr->pAct)
-        && is_valid_ptr((PTR)ptr->pPath);
+        && is_valid_ptr((PTR)ptr->pPath)
+        && ptr->dwAct < 5;
 }
