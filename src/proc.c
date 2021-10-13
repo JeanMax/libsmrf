@@ -76,27 +76,15 @@ int memread(pid_t pid, PTR start_address, size_t length,
     return ret;
 }
 
-BOOL memreadall(pid_t pid, BOOL rev, t_read_callback *on_page_read, void *data)
+BOOL memreadall(pid_t pid, BOOL only_valid, t_read_callback *on_page_read, void *data)
 {
-    int i;
-
-    if (rev) {
-        for (i = 0; i < MAX_MAPS && g_maps_range[i][0]; i++) {}
-        for (i--; i >= 0; i--) {
-            PTR start = g_maps_range[i][0];
-            size_t length = g_maps_range[i][1] - g_maps_range[i][0];
-            if (memread(pid, start, length, on_page_read, data) == 2) {
-                fprintf(stderr, "\n");   /* DEBUG */
-                return TRUE;
-            }
-            fprintf(stderr, ".");   /* DEBUG */
-        }
-        return FALSE;
-    }
-
-    for (i = 0; i < MAX_MAPS && g_maps_range[i][0]; i++) {
+    for (int i = 0; i < MAX_MAPS && g_maps_range[i][0]; i++) {
         PTR start = g_maps_range[i][0];
         size_t length = g_maps_range[i][1] - g_maps_range[i][0];
+        /* LOG_WARNING("map at %16lx, size: %16lx", start, length); /\* DEBUG *\/ */
+        if (only_valid && !fast_is_valid_ptr(start)) {
+            continue;
+        }
         if (memread(pid, start, length, on_page_read, data) == 2) {
             fprintf(stderr, "\n");   /* DEBUG */
             return TRUE;
@@ -168,7 +156,8 @@ BOOL readmaps(pid_t pid)
     int i = 0;
     while (fgets(read_buf, PAGE_LENGTH, maps_file)) {
         sscanf(read_buf, "%16lx-%16lx\n", &start_address, &end_address);
-        if (start_address >= MIN_MAP_LEN && end_address <= MAX_MAP_ADDR
+        if (
+            start_address > MIN_MAP_ADDR
             && end_address - start_address > MIN_MAP_LEN
             && is_rw_memory(read_buf)
             && !is_bullshit_memory(read_buf)) {

@@ -1,51 +1,54 @@
 #include "seed.h"
 
-#define PLAYER_NAME "TrapSmurf"
-/* #define PLAYER_NAME "Smurfette" */
-/* #define PLAYER_NAME "Jeanette" */
-/* #define PLAYER_NAME "_online" */
+#define MAX_PLAYER_DATA 256
+
 
 static BOOL find_player_data_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
 {
-    BYTE *match;
-
-    match = memsearch((char *)buf, PLAYER_NAME, buf_len, strlen(PLAYER_NAME));
-    if (match) {
-        PTR here = address + (PTR)(match - buf);
-        LOG_DEBUG("");
-        LOG_DEBUG("Smurf match: %16lx", here); /* DEBUG */
-        log_data(match - 16, 256);
-        if (is_valid_PlayerData((PlayerData *)match)) {
-            LOG_DEBUG("Valid player_data! %08lx", here);
-            log_PlayerData((PlayerData *)match);
+    BYTE *b = buf;
+    PlayerData *player_data;
+    while (buf_len >= sizeof(PlayerData)) {
+        player_data = (PlayerData *)b;
+        if (is_valid_PlayerData(player_data)) {
+            PTR here = address + (PTR)(b - buf);
+#ifdef DEBUG_MODE
+            LOG_DEBUG("Valid player_data! %16lx", here);
+            log_PlayerData(player_data);
+#endif
             PTR *addr_list = (PTR *)data;
             while (*addr_list) {
                 addr_list++;
             }
             *addr_list = here;
             return 2;
+            /* return FALSE; */
         }
+        b += sizeof(PTR);
+        buf_len -= sizeof(PTR);
     }
 
-    (void)address;
     return TRUE; // keep reading
 }
 
 static BOOL find_player_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
 {
+
     BYTE *b = buf;
-    PTR player_data_addr = *(PTR *)data;
+    PTR *player_data_addr = (PTR *)data;
+    PTR *p;
     Player *player;
 
     while (buf_len >= sizeof(Player)) {
         player = (Player *)b;
-        if ((PTR)player->pPlayerData == player_data_addr && is_valid_Player(player)) {
-            PTR here = address + (PTR)(b - buf);
-            LOG_DEBUG("Valid player! %08lx", here);
-            log_Player(player);
-            *(PTR *)data = here;;
-            memcpy(((PTR *)data) + 1, b, sizeof(Player));
-            return FALSE;
+        for (p = player_data_addr; *p; p++) {
+            if ((PTR)player->pPlayerData == *p && is_valid_Player(player)) {
+                PTR here = address + (PTR)(b - buf);
+                LOG_DEBUG("Valid player! %08lx", here);
+                log_Player(player);
+                *(PTR *)data = here;
+                memcpy(((PTR *)data) + 1, b, sizeof(Player));
+                return FALSE;
+            }
         }
         b += sizeof(PTR);
         buf_len -= sizeof(PTR);
@@ -61,30 +64,6 @@ static BOOL find_seed_callback(BYTE *buf, size_t buf_len, PTR address, void *dat
     return FALSE;
 }
 
-/*
-static BOOL hack_seed_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
-{
-    BYTE *match;
-
-    match = memsearch((char *)buf, data, buf_len, 4);
-    if (match) {
-        LOG_DEBUG("Seed match: %08lx", address);
-        Act *act = (Act *)(match - sizeof(DWORD) * 3);
-        if (is_valid_Act(act)) {
-            PTR addr = address + (PTR)((match - sizeof(DWORD) * 3) - buf);
-            LOG_DEBUG("Valid hact at %16lx - diff  %16lx",
-                      addr);
-            log_Act(act);
-        }
-            //return FALSE;
-    }
-
-    (void)address;
-    return TRUE; // keep reading
-}
-*/
-
-
 int main(void)
 {
     pid_t pid = pidof("D2R.exe");
@@ -98,31 +77,29 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    PTR player_data_addr[32] = {0};
-    if (!memreadall(pid, TRUE, find_player_data_callback, &player_data_addr)) {
+    PTR player_data_addr[MAX_PLAYER_DATA] = {0};
+    memreadall(pid, TRUE, find_player_data_callback, &player_data_addr);
+    if (!player_data_addr[0]) {
         LOG_ERROR("Can't find PlayerData ptr");
-        return EXIT_FAILURE;
+        /* return EXIT_FAILURE; */
     }
     /* LOG_INFO("pPlayerData: %08lx", player_data_addr[0]); */
 
-    BYTE zboub[sizeof(Player) + sizeof(PTR)];
-    for (int i = 31; i >= 0; i--) {
-        if (!player_data_addr[i]) {
-            continue;
-        }
-        *(PTR *)zboub = player_data_addr[i];
-        if (memreadall(pid, FALSE, find_player_callback, &zboub)) {
-            break;
-        } else if (!i) {
-            LOG_ERROR("Can't find Player ptr");
-            return EXIT_FAILURE;
-        }
+    /* DEBUG */
+    int i;
+    for (i = 0; i < MAX_PLAYER_DATA && player_data_addr[i]; i++) {}
+    LOG_WARNING("player_data found: %d", i);
+    /* DEBUG */
+
+    if (!memreadall(pid, FALSE, find_player_callback, &player_data_addr)) {
+        LOG_ERROR("Can't find Player ptr");
+        return EXIT_FAILURE;
     }
-    PTR player_addr = *(PTR *)zboub;
+    PTR player_addr = *(PTR *)player_data_addr;
     Player player;
-    memcpy(&player, ((PTR *)zboub + 1), sizeof(Player));
+    memcpy(&player, ((PTR *)player_data_addr + 1), sizeof(Player));
     LOG_INFO("pPlayer: %08lx", player_addr);
-    /* log_Player(&player);    /\* DEBUG *\/ */
+    /* log_Player(&player); */
 
 
     Act act;
@@ -132,23 +109,9 @@ int main(void)
                  find_seed_callback,
                  &act)) {
         LOG_ERROR("Can't find seed");
-        /* return EXIT_FAILURE; */
+        return EXIT_FAILURE;
     }
     log_Act(&act);
-
-
-    /* PTR seed = (PTR)player.pAct; */
-    /* if (!memreadall(pid, find_seed_callback, &seed)) { */
-    /*     LOG_ERROR("Can't find seed"); */
-    /*     return EXIT_FAILURE; */
-    /* } */
-
-    /* BYTE seed_str[] = "\x5d\x15\xa6\x47"; */
-    /* if (!memreadall(pid, hack_seed_callback, &seed_str)) { */
-    /*     LOG_ERROR("Can't hack seed"); */
-    /*     /\* return EXIT_FAILURE; *\/ */
-    /* } */
-
 
     return EXIT_SUCCESS;
 }

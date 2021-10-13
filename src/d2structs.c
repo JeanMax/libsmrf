@@ -162,25 +162,48 @@ inline BOOL is_valid_Act(Act *ptr)
 {
     return IS_ALIGNED(ptr)
         && is_valid_ptr((PTR)ptr->pRoom1)
-        && (is_valid_ptr((PTR)ptr->pMisc) || !ptr->pMisc)
+        && (fast_is_valid_ptr((PTR)ptr->pMisc) || !ptr->pMisc)
         && ptr->dwAct < 5;
+}
+
+static BOOL is_word_str(const char *b, size_t len)
+{
+    const char *start = b;
+    while ((size_t)(b - start) < len) {
+        if (*b && !isalpha(*b)) {
+            return FALSE;
+        }
+        // check if right side is 0 padded
+        if (!*b) {
+            while ((size_t)(b - start) < len) {
+                if (*b) {
+                    return FALSE;
+                }
+                b++;
+            }
+            return *start;
+        }
+        b++;
+    }
+    return *start; // forbid empty string
 }
 
 inline BOOL is_valid_PlayerData(PlayerData *ptr)
 {
     return IS_ALIGNED(ptr)
-        && is_valid_ptr((PTR)ptr->pNormalQuest)
-        && is_valid_ptr((PTR)ptr->pNightmareQuest)
-        && is_valid_ptr((PTR)ptr->pHellQuest)
-        && is_valid_ptr((PTR)ptr->pNormalWaypoint)
-        && is_valid_ptr((PTR)ptr->pNightmareWaypoint)
-        && is_valid_ptr((PTR)ptr->pHellWaypoint);
+        && fast_is_valid_ptr((PTR)ptr->pNormalQuest)
+        && fast_is_valid_ptr((PTR)ptr->pNightmareQuest)
+        && fast_is_valid_ptr((PTR)ptr->pHellQuest)
+        && fast_is_valid_ptr((PTR)ptr->pNormalWaypoint)
+        && fast_is_valid_ptr((PTR)ptr->pNightmareWaypoint)
+        && fast_is_valid_ptr((PTR)ptr->pHellWaypoint)
+        && is_word_str(ptr->szName, 0x10);
 }
 
 inline BOOL is_valid_Player(Player *ptr)
 {
     return IS_ALIGNED(ptr)
-        && is_valid_ptr((PTR)ptr->pPlayerData)
+        && fast_is_valid_ptr((PTR)ptr->pPlayerData)
         && is_valid_ptr((PTR)ptr->pAct)
         && is_valid_ptr((PTR)ptr->pPath)
         && ptr->dwAct < 5;
