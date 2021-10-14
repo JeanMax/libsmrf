@@ -85,11 +85,19 @@ pid_t pidof(const char*pname);
 // d2structs.c
 void log_data(void *ptr, size_t len);
 
+void log_BnetData(BnetData *ptr);
+void log_Level(Level *ptr);
+void log_Room1(Room1 *ptr);
+void log_Room2(Room2 *ptr);
 void log_Path(Path *ptr);
 void log_Act(Act *ptr);
 void log_PlayerData(PlayerData *ptr);
 void log_Player(Player *ptr);
 
+BOOL is_valid_BnetData(BnetData *ptr);
+BOOL is_valid_Level(Level *ptr);
+BOOL is_valid_Room1(Room1 *ptr);
+BOOL is_valid_Room2(Room2 *ptr);
 BOOL is_valid_Path(Path *ptr);
 BOOL is_valid_Act(Act *ptr);
 BOOL is_valid_PlayerData(PlayerData *ptr);

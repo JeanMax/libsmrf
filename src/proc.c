@@ -42,7 +42,7 @@ int memread(pid_t pid, PTR start_address, size_t length,
     static BYTE read_buf[PAGE_LENGTH];
 
     sprintf(path, "/proc/%d/mem", pid);
-    FILE *mem_file = fopen(path, "r"); //TODO: keep it open?
+    FILE *mem_file = fopen(path, "r");
     if (!mem_file) {
         LOG_ERROR("Can't read mem");
         exit(EXIT_FAILURE);
@@ -52,7 +52,7 @@ int memread(pid_t pid, PTR start_address, size_t length,
     size_t page_len = MIN(PAGE_LENGTH, length);
     int callback_ret, ret = 0;
 
-    fseeko(mem_file, start_address, SEEK_SET);
+    fseeko(mem_file, (long)start_address, SEEK_SET);
     for (PTR address = start_address;
          address < start_address + length;
          address += page_len) {
