@@ -54,7 +54,7 @@ WWFLAGS = $(WFLAGS) -Wpedantic -Wshadow -Wconversion -Wcast-align \
   -Wstrict-prototypes -Wmissing-prototypes -Wunreachable-code -Winit-self \
   -Wmissing-declarations -Wfloat-equal -Wbad-function-cast -Wundef \
   -Waggregate-return -Wstrict-overflow=5 -Wold-style-definition  \
-  -Wredundant-decls  # -Wpadded  # moar warnings
+  -Wredundant-decls -Wpadded   # moar warnings
 
 # folder used to store all compilations sub-products (.o and .d mostly)
 OBJ_DIR ?= obj

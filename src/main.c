@@ -44,7 +44,6 @@ static BOOL find_player_callback(BYTE *buf, size_t buf_len, PTR address, void *d
             if ((PTR)player->pPlayerData == *p && is_valid_Player(player)) {
                 PTR here = address + (PTR)(b - buf);
                 LOG_DEBUG("Valid player! %08lx", here);
-                log_Player(player);
                 *(PTR *)data = here;
                 memcpy(((PTR *)data) + 1, b, sizeof(Player));
                 return FALSE;
@@ -149,78 +148,81 @@ int main(void)
         return EXIT_FAILURE;
     }
     PTR player_addr = *(PTR *)player_data_addr;
+
     Player player;
     memcpy(&player, ((PTR *)player_data_addr + 1), sizeof(Player));
-    LOG_INFO("pPlayer: %08lx", player_addr);
-    /* log_Player(&player); */
+    LOG_DEBUG("pPlayer: %08lx", player_addr);
+    log_Player(&player);
 
     Path path;
-    if (!memread(pid,
-                 (PTR)player.pPath,
-                 sizeof(Path),
-                 find_path_callback,
-                 &path)) {
+    if (!memread(pid, (PTR)player.pPath, sizeof(Path),
+                 find_path_callback, &path)) {
         LOG_ERROR("Can't find path");
         return EXIT_FAILURE;
     }
     log_Path(&path);
 
     Act act;
-    if (!memread(pid,
-                 (PTR)player.pAct,
-                 sizeof(Act),
-                 find_act_callback,
-                 &act)) {
+    if (!memread(pid, (PTR)player.pAct, sizeof(Act),
+                 find_act_callback, &act)) {
         LOG_ERROR("Can't find act");
         return EXIT_FAILURE;
     }
     log_Act(&act);
 
     Room1 room1;
-    if (!memread(pid,
-                 (PTR)act.pRoom1,
-                 sizeof(Room1),
-                 find_room1_callback,
-                 &room1)) {
+    if (!memread(pid, (PTR)act.pRoom1, sizeof(Room1),
+                 find_room1_callback, &room1)) {
         LOG_ERROR("Can't find room1");
         return EXIT_FAILURE;
     }
     log_Room1(&room1);
 
     Room2 room2;
-    if (!memread(pid,
-                 (PTR)room1.pRoom2,
-                 sizeof(Room2),
-                 find_room2_callback,
-                 &room2)) {
+    if (!memread(pid, (PTR)room1.pRoom2, sizeof(Room2),
+                 find_room2_callback, &room2)) {
         LOG_ERROR("Can't find room2");
         return EXIT_FAILURE;
     }
     log_Room2(&room2);
 
-    BYTE *b = (BYTE *)&room2 + 72;
     Level level;
-    LOG_DEBUG("lvl ptr at %16lx", *(PTR *)b);
-    if (memread(pid,
-                *(PTR *)b,
-                sizeof(Level),
-                find_level_callback,
-                &level)) {
-        LOG_ERROR("WOOP WOOP");
-                /* return EXIT_FAILURE; */
+    if (!memread(pid, (PTR)room2.pLevel, sizeof(Level),
+                 find_level_callback, &level)) {
+        LOG_ERROR("Can't find level");
+        return EXIT_FAILURE;
     }
-
-    /* Level level; */
-    /* if (!memread(pid, */
-    /*              (PTR)room2.pLevel, */
-    /*              sizeof(Level), */
-    /*              find_level_callback, */
-    /*              &level)) { */
-    /*     LOG_ERROR("Can't find level"); */
-    /*     return EXIT_FAILURE; */
-    /* } */
     log_Level(&level);
 
+
+    DWORD area = level.dwLevelNo;
+
+    Level level_bis;
+    memcpy(&level_bis, &level, sizeof(Level));
+    while ((PTR)level_bis.pNextLevel) {
+        if (!memread(pid, (PTR)level_bis.pNextLevel, sizeof(Level),
+                     find_level_callback, &level_bis)) {
+            LOG_ERROR("Can't find level");
+            return EXIT_FAILURE;
+        }
+
+
+        if (room2.dwPosX + room2.dwSizeX >= level_bis.dwPosX
+            && room2.dwPosX <= level_bis.dwPosX + level_bis.dwSizeX
+
+            && room2.dwPosY + room2.dwSizeY >= level_bis.dwPosY
+            && room2.dwPosY <= level_bis.dwPosY + level_bis.dwSizeY) {
+
+            area = level_bis.dwLevelNo;
+            break;
+        }
+    }
+
+    log_Level(&level_bis);
+
+    LOG_INFO("SEED: %d", act.dwMapSeed);
+    LOG_INFO("COORD: %d %d", path.xPos, path.yPos);
+    LOG_INFO("AREA: %d", area);
 
     return EXIT_SUCCESS;
 }

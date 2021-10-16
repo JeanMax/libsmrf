@@ -86,10 +86,14 @@ BOOL memreadall(pid_t pid, BOOL only_valid, t_read_callback *on_page_read, void 
             continue;
         }
         if (memread(pid, start, length, on_page_read, data) == 2) {
+#ifdef DEBUG_MODE
             fprintf(stderr, "\n");   /* DEBUG */
+#endif
             return TRUE;
         }
+#ifdef DEBUG_MODE
         fprintf(stderr, ".");   /* DEBUG */
+#endif
     }
     return FALSE;
 }
@@ -144,6 +148,7 @@ static BOOL is_bullshit_memory(const char *memory_info_str)
 BOOL readmaps(pid_t pid)
 {
     char path[MAX_PATH], read_buf[PAGE_LENGTH];
+    bzero(&g_maps_range, sizeof(g_maps_range));
 
     sprintf(path, "/proc/%d/maps", pid);
     FILE *maps_file = fopen(path, "r");

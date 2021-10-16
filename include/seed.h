@@ -35,30 +35,21 @@
 
 #ifdef DEBUG_MODE
 # define LOG_DEBUG(str, ...) \
-    fprintf(stderr, CLR_MAGENTA "[DEBUG]: " CLR_RESET str CLR_RESET "\n", ##__VA_ARGS__)
+    fprintf(stderr, CLR_MAGENTA "[DEBUG]: " CLR_RESET str "\n", ##__VA_ARGS__)
+# define LOG_INFO(str, ...) \
+    printf(CLR_BLUE "[INFO]: " CLR_RESET str "\n", ##__VA_ARGS__)
 #else
 # define LOG_DEBUG(str, ...) do {} while (0)
+# define LOG_INFO(str, ...) printf(str "\n", ##__VA_ARGS__)
 #endif
-#define LOG_INFO(str, ...) \
-    fprintf(stdout, CLR_BLUE "[INFO]: " CLR_RESET str CLR_RESET "\n", ##__VA_ARGS__)
 #define LOG_WARNING(str, ...) \
-    fprintf(stderr, CLR_YELLOW "[WARNING]: " CLR_RESET str CLR_RESET "\n", ##__VA_ARGS__)
+    fprintf(stderr, CLR_YELLOW "[WARNING]: " CLR_RESET str "\n", ##__VA_ARGS__)
 #define LOG_ERROR(str, ...) \
-    fprintf(stderr, CLR_RED "[ERROR]: " CLR_RESET str CLR_RESET "\n", ##__VA_ARGS__)
+    fprintf(stderr, CLR_RED "[ERROR]: " CLR_RESET str "\n", ##__VA_ARGS__)
 
 
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define ABS(x)    ((x) < 0 ? -(x) : (x))
-
-#include <byteswap.h>
-/* #define SWAP16(x) ((x >> 8) | (x << 8)) */
-
-/* #define SWAP32(x) (((x >> 24) & 0x000000ff)     \ */
-/*                  | ((x << 8)  & 0x00ff0000)     \ */
-/*                  | ((x >> 8)  & 0x0000ff00)     \ */
-/*                  | ((x << 24) & 0xff000000)) */
-
 
 
 // proc.c

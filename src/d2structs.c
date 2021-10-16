@@ -33,8 +33,8 @@ void log_data(void *ptr, size_t len)  // stolen from motoko <3
 
 void log_BnetData(BnetData *ptr)
 {
-    fprintf(stderr,
-            "struct " CLR_GREEN "BnetData" CLR_RESET " {\n"
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "BnetData" CLR_RESET " {\n"
             "    DWORD dwId: %08x\n"
             "    DWORD dwId2: %08x\n"
             "    BYTE _1[0x10]: %.16s\n"
@@ -68,7 +68,7 @@ void log_BnetData(BnetData *ptr)
             "    BYTE ladderflag: %08x\n"
             "    DWORD passhash: %08x\n"
             "    BYTE passlength: %08x\n"
-            "}\n",
+            "}",
             ptr->dwId,
             ptr->dwId2,
             ptr->_1,
@@ -106,18 +106,19 @@ void log_BnetData(BnetData *ptr)
 
 void log_Level(Level *ptr)
 {
-    fprintf(stderr,
-            "struct " CLR_GREEN "Level" CLR_RESET " {\n"
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "Level" CLR_RESET " {\n"
             "    DWORD _1[4]: %08x %08x %08x %08x\n"
             "    Room2* pRoom2First: %16lx\n"
-            "    DWORD _2[2]: %08x %08x\n"
+            "    void* dunno: %16lx\n"
+            "    DWORD _2: %08x\n"
             "    DWORD dwPosX: %08x\n"
             "    DWORD dwPosY: %08x\n"
             "    DWORD dwSizeX: %08x\n"
             "    DWORD dwSizeY: %08x\n"
             "    DWORD _3[96]: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
             "    Level* pNextLevel: %16lx\n"
-            "    DWORD _4: %08x\n"
+            "    DWORD _4: %08x %08x %08x %08x\n"
             "    ActMisc* pMisc: %16lx\n"
             "    DWORD _5[6]: %08x %08x %08x %08x %08x %08x\n"
             "    DWORD dwLevelNo: %08x\n"
@@ -125,17 +126,18 @@ void log_Level(Level *ptr)
             "    DWORD RoomCenterX[9]: %08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
             "    DWORD RoomCenterY[9]: %08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
             "    DWORD dwRoomEntries: %08x\n"
-            "}\n",
+            "}",
             ptr->_1[0], ptr->_1[1], ptr->_1[2], ptr->_1[3],
             (PTR)ptr->pRoom2First,
-            ptr->_2[0], ptr->_2[1],
+            (PTR)ptr->dunno,
+            ptr->_2,
             ptr->dwPosX,
             ptr->dwPosY,
             ptr->dwSizeX,
             ptr->dwSizeY,
             ptr->_3[0], ptr->_3[1], ptr->_3[2], ptr->_3[3], ptr->_3[4], ptr->_3[5], ptr->_3[6], ptr->_3[7], ptr->_3[8], ptr->_3[9], ptr->_3[10], ptr->_3[11], ptr->_3[12], ptr->_3[13], ptr->_3[14], ptr->_3[15], ptr->_3[16], ptr->_3[17], ptr->_3[18], ptr->_3[19], ptr->_3[20], ptr->_3[21], ptr->_3[22], ptr->_3[23], ptr->_3[24], ptr->_3[25], ptr->_3[26], ptr->_3[27], ptr->_3[28], ptr->_3[29], ptr->_3[30], ptr->_3[31], ptr->_3[32], ptr->_3[33], ptr->_3[34], ptr->_3[35], ptr->_3[36], ptr->_3[37], ptr->_3[38], ptr->_3[39], ptr->_3[40], ptr->_3[41], ptr->_3[42], ptr->_3[43], ptr->_3[44], ptr->_3[45], ptr->_3[46], ptr->_3[47], ptr->_3[48], ptr->_3[49], ptr->_3[50], ptr->_3[51], ptr->_3[52], ptr->_3[53], ptr->_3[54], ptr->_3[55], ptr->_3[56], ptr->_3[57], ptr->_3[58], ptr->_3[59], ptr->_3[60], ptr->_3[61], ptr->_3[62], ptr->_3[63], ptr->_3[64], ptr->_3[65], ptr->_3[66], ptr->_3[67], ptr->_3[68], ptr->_3[69], ptr->_3[70], ptr->_3[71], ptr->_3[72], ptr->_3[73], ptr->_3[74], ptr->_3[75], ptr->_3[76], ptr->_3[77], ptr->_3[78], ptr->_3[79], ptr->_3[80], ptr->_3[81], ptr->_3[82], ptr->_3[83], ptr->_3[84], ptr->_3[85], ptr->_3[86], ptr->_3[87], ptr->_3[88], ptr->_3[89], ptr->_3[90], ptr->_3[91], ptr->_3[92], ptr->_3[93], ptr->_3[94], ptr->_3[95],
             (PTR)ptr->pNextLevel,
-            ptr->_4[0],
+            ptr->_4[0], ptr->_4[1], ptr->_4[2], ptr->_4[3],
             (PTR)ptr->pMisc,
             ptr->_5[0], ptr->_5[1], ptr->_5[2], ptr->_5[3], ptr->_5[4], ptr->_5[5],
             ptr->dwLevelNo,
@@ -147,12 +149,13 @@ void log_Level(Level *ptr)
 
 void log_Room1(Room1 *ptr)
 {
-    fprintf(stderr,
-            "struct " CLR_GREEN "Room1" CLR_RESET " {\n"
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "Room1" CLR_RESET " {\n"
             "    Room1** pRoomsNear: %16lx\n"
-            "    DWORD _1[3]: %08x %08x %08x\n"
+            "    void* dunno: %16lx\n"
+            "    DWORD _1[2]: %08x %08x\n"
             "    Room2* pRoom2: %16lx\n"
-            "    DWORD _2[3]: %08x %08x %08x\n"
+            "    DWORD _2[2]: %08x %08x\n"
             "    CollMap* Coll: %16lx\n"
             "    DWORD dwRoomsNear: %08x\n"
             "    DWORD _3[9]: %08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
@@ -164,11 +167,12 @@ void log_Room1(Room1 *ptr)
             "    UnitAny* pUnitFirst: %16lx\n"
             "    DWORD _5: %08x\n"
             "    Room1* pRoomNext: %16lx\n"
-            "}\n",
+            "}",
             (PTR)ptr->pRoomsNear,
-            ptr->_1[0], ptr->_1[1], ptr->_1[2],
+            (PTR)ptr->dunno,
+            ptr->_1[0], ptr->_1[1],
             (PTR)ptr->pRoom2,
-            ptr->_2[0], ptr->_2[1], ptr->_2[2],
+            ptr->_2[0], ptr->_2[1],
             (PTR)ptr->Coll,
             ptr->dwRoomsNear,
             ptr->_3[0], ptr->_3[1], ptr->_3[2], ptr->_3[3], ptr->_3[4], ptr->_3[5], ptr->_3[6], ptr->_3[7], ptr->_3[8],
@@ -184,8 +188,8 @@ void log_Room1(Room1 *ptr)
 
 void log_Room2(Room2 *ptr)
 {
-    fprintf(stderr,
-            "struct " CLR_GREEN "Room2" CLR_RESET " {\n"
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "Room2" CLR_RESET " {\n"
             "    DWORD _1[2]: %08x %08x\n"
             "    Room2** pRoom2Near: %16lx\n"
             "    DWORD _2[6]: %08x %08x %08x %08x %08x %08x\n"
@@ -193,8 +197,10 @@ void log_Room2(Room2 *ptr)
             "    DWORD dwRoomFlags: %08x\n"
             "    DWORD dwRoomsNear: %08x\n"
             "    Room1* pRoom1: %16lx\n"
+            "    Level* pNotLevel: %16lx\n"
+            "    void* _2bis: %16lx\n"
+            "    void* _2ter: %16lx\n"
             "    RoomTile* pRoomTiles: %16lx\n"
-            "    Level* pLevel: %16lx\n"
             "    DWORD dwPosX: %08x\n"
             "    DWORD dwPosY: %08x\n"
             "    DWORD dwSizeX: %08x\n"
@@ -203,7 +209,9 @@ void log_Room2(Room2 *ptr)
             "    DWORD dwPresetType: %08x\n"
             "    DWORD _4[2]: %08x %08x\n"
             "    PresetUnit* pPreset: %16lx\n"
-            "}\n",
+            "    DWORD _5[5]: %08x\n"
+            "    Level* pLevel: %16lx\n"
+            "}",
             ptr->_1[0], ptr->_1[1],
             (PTR)ptr->pRoom2Near,
             ptr->_2[0], ptr->_2[1], ptr->_2[2], ptr->_2[3], ptr->_2[4], ptr->_2[5],
@@ -212,7 +220,9 @@ void log_Room2(Room2 *ptr)
             ptr->dwRoomsNear,
             (PTR)ptr->pRoom1,
             (PTR)ptr->pRoomTiles,
-            (PTR)ptr->pLevel,
+            (PTR)ptr->pNotLevel,
+            (PTR)ptr->_2bis,
+            (PTR)ptr->_2ter,
             ptr->dwPosX,
             ptr->dwPosY,
             ptr->dwSizeX,
@@ -220,13 +230,15 @@ void log_Room2(Room2 *ptr)
             ptr->_3,
             ptr->dwPresetType,
             ptr->_4[0], ptr->_4[1],
-            (PTR)ptr->pPreset);
+            (PTR)ptr->pPreset,
+            ptr->_5,
+            (PTR)ptr->pLevel);
 }
 
 void log_Path(Path *ptr)
 {
-    fprintf(stderr,
-            "struct " CLR_GREEN "Path" CLR_RESET " {\n"
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "Path" CLR_RESET " {\n"
             "    WORD xOffset: %04x\n"
             "    WORD xPos: %04x\n"
             "    WORD yOffset: %04x\n"
@@ -249,7 +261,7 @@ void log_Path(Path *ptr)
             "    DWORD dwTargetType: %08x\n"
             "    DWORD dwTargetId: %08x\n"
             "    BYTE bDirection: %02x\n"
-            "}\n",
+            "}",
             ptr->xOffset,
             ptr->xPos,
             ptr->yOffset,
@@ -276,8 +288,8 @@ void log_Path(Path *ptr)
 
 void log_Act(Act *ptr)
 {
-    fprintf(stderr,
-            "struct " CLR_GREEN "Act" CLR_RESET " {\n"
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "Act" CLR_RESET " {\n"
             "    DWORD _1[2]: %08x %08x\n"
             "    void  *pDunno: %16lx\n"
             "    DWORD _3: %08x\n"
@@ -286,7 +298,7 @@ void log_Act(Act *ptr)
             "    DWORD dwAct: %08x\n"
             "    DWORD _2[9]: %08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
             "    ActMisc* pMisc: %16lx\n"
-            "}\n",
+            "}",
             ptr->_1[0], ptr->_1[1],
             (PTR)ptr->pDunno,
             ptr->_3,
@@ -299,8 +311,8 @@ void log_Act(Act *ptr)
 
 void log_PlayerData(PlayerData *ptr)
 {
-    fprintf(stderr,
-            "struct " CLR_GREEN "PlayerData" CLR_RESET " {\n"
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "PlayerData" CLR_RESET " {\n"
             "    char szName[0x10]: %.16s\n"
             "    QuestInfo* pNormalQuest: %16lx\n"
             "    QuestInfo* pNightmareQuest: %16lx\n"
@@ -308,7 +320,7 @@ void log_PlayerData(PlayerData *ptr)
             "    Waypoint* pNormalWaypoint: %16lx\n"
             "    Waypoint* pNightmareWaypoint: %16lx\n"
             "    Waypoint* pHellWaypoint: %16lx\n"
-            "}\n",
+            "}",
             ptr->szName,
             (PTR)ptr->pNormalQuest,
             (PTR)ptr->pNightmareQuest,
@@ -320,8 +332,8 @@ void log_PlayerData(PlayerData *ptr)
 
 void log_Player(Player *ptr)
 {
-    fprintf(stderr,
-            "struct " CLR_GREEN "Player" CLR_RESET " {\n"
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "Player" CLR_RESET " {\n"
             "    DWORD dwType: %08x\n"
             "    DWORD dwTxtFileNo: %08x\n"
             "    DWORD dwUnitId: %08x\n"
@@ -333,7 +345,7 @@ void log_Player(Player *ptr)
             "    DWORD dwSeed[2]: %08x, %08x\n"
             "    DWORD _2: %08x\n"
             "    Path* pPath: %16lx\n"
-            "}\n",
+            "}",
             ptr->dwType,
             ptr->dwTxtFileNo,
             ptr->dwUnitId,
@@ -388,20 +400,11 @@ inline BOOL is_valid_BnetData(BnetData *ptr)
 
 inline BOOL is_valid_Level(Level *ptr)
 {
-    if (!is_valid_ptr((PTR)ptr->pRoom2First)) {
-        LOG_WARNING("invalid pRoom2First");
-    }
-    if (!is_valid_ptr((PTR)ptr->pNextLevel)) {
-        LOG_WARNING("invalid pNextLevel");
-    }
-    if (!is_valid_ptr((PTR)ptr->pMisc)) {
-        LOG_WARNING("invalid pMisc");
-    }
-
     return IS_ALIGNED(ptr)
-        && is_valid_ptr((PTR)ptr->pRoom2First)
-        && is_valid_ptr((PTR)ptr->pNextLevel)
-        && is_valid_ptr((PTR)ptr->pMisc);
+        && (!ptr->pRoom2First || is_valid_ptr((PTR)ptr->pRoom2First))
+        && is_valid_ptr((PTR)ptr->dunno)
+        && (!ptr->pNextLevel || is_valid_ptr((PTR)ptr->pNextLevel))
+        && (!ptr->pMisc || is_valid_ptr((PTR)ptr->pMisc));
 }
 
 inline BOOL is_valid_Room1(Room1 *ptr)
@@ -409,6 +412,7 @@ inline BOOL is_valid_Room1(Room1 *ptr)
     return IS_ALIGNED(ptr)
         && is_valid_ptr((PTR)ptr->pRoomsNear)
         && is_valid_ptr((PTR)ptr->pRoom2)
+        && is_valid_ptr((PTR)ptr->dunno)
         && (!ptr->Coll || is_valid_ptr((PTR)ptr->Coll))
         /* && is_valid_ptr((PTR)ptr->pUnitFirst) */
         /* && is_valid_ptr((PTR)ptr->pRoomNext) */
