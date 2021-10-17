@@ -48,7 +48,7 @@ CPPFLAGS =
 # compilation/linking flags for the differents public rules
 WFLAGS = -Wextra -Wall  # warnings
 RCFLAGS = $(WFLAGS) -O2  # release
-DCFLAGS = $(WFLAGS) -g -DDEBUG_MODE  # debug
+DCFLAGS = $(WFLAGS) -g -DNDEBUG  # debug
 SCFLAGS = $(DCFLAGS) -fsanitize=address,undefined  # sanitize
 WWFLAGS = $(WFLAGS) -Wpedantic -Wshadow -Wconversion -Wcast-align \
   -Wstrict-prototypes -Wmissing-prototypes -Wunreachable-code -Winit-self \

@@ -1,4 +1,4 @@
-#include "seed.h"
+#include "d2structs.h"
 
 
 inline static char byte_to_char(BYTE b)
@@ -6,7 +6,7 @@ inline static char byte_to_char(BYTE b)
 	return (b >= 127 || b < 32) ? '.' : (char)b;
 }
 
-void log_data(void *ptr, size_t len)  // stolen from motoko <3
+void hex_dump(void *ptr, size_t len)  // stolen from motoko <3
 {
     size_t i, j, end;
 
@@ -400,9 +400,22 @@ inline BOOL is_valid_BnetData(BnetData *ptr)
 
 inline BOOL is_valid_Level(Level *ptr)
 {
+    if (ptr->pRoom2First && !is_valid_ptr((PTR)ptr->pRoom2First)) {
+        LOG_WARNING("invalid pRoom2First");
+    }
+    if (ptr->pNextLevel && !is_valid_ptr((PTR)ptr->pNextLevel)) {
+        LOG_WARNING("invalid pNextLevel");
+    }
+    if (ptr->dunno && !is_valid_ptr((PTR)ptr->dunno)) {
+        LOG_WARNING("invalid dunno");
+    }
+    if (ptr->pMisc && !is_valid_ptr((PTR)ptr->pMisc)) {
+        LOG_WARNING("invalid pMisc");
+    }
+
     return IS_ALIGNED(ptr)
         && (!ptr->pRoom2First || is_valid_ptr((PTR)ptr->pRoom2First))
-        && is_valid_ptr((PTR)ptr->dunno)
+        /* && is_valid_ptr((PTR)ptr->dunno) */
         && (!ptr->pNextLevel || is_valid_ptr((PTR)ptr->pNextLevel))
         && (!ptr->pMisc || is_valid_ptr((PTR)ptr->pMisc));
 }

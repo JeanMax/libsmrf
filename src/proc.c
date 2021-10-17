@@ -5,7 +5,7 @@
 #define MAX_PATH 128
 
 #define MAX_MAPS     0x1000
-PTR g_maps_range[MAX_MAPS][2] = {0};
+MapAddress g_maps_range[MAX_MAPS] = {0};  //TODO: this is ugly
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -13,7 +13,7 @@ PTR g_maps_range[MAX_MAPS][2] = {0};
 BYTE *memsearch(const void *mem, const void *search, size_t mem_len, size_t search_len)
 {
     BYTE *ptr = (BYTE *)mem;
-#ifdef DEBUG_MODE
+#ifdef NDEBUG
     if (!IS_ALIGNED(ptr)) {
         LOG_ERROR("unaligned memsearch: %lu bytes left to align (%08lx)",
                   (PTR)ptr % sizeof(PTR), (PTR)ptr);
@@ -44,7 +44,10 @@ int memread(pid_t pid, PTR start_address, size_t length,
     sprintf(path, "/proc/%d/mem", pid);
     FILE *mem_file = fopen(path, "r");
     if (!mem_file) {
-        LOG_ERROR("Can't read mem");
+        LOG_ERROR("Can't read proc memory");
+        if (geteuid()) {
+            LOG_ERROR("Try again as root!");
+        }
         exit(EXIT_FAILURE);
     }
 
@@ -78,20 +81,20 @@ int memread(pid_t pid, PTR start_address, size_t length,
 
 BOOL memreadall(pid_t pid, BOOL only_valid, t_read_callback *on_page_read, void *data)
 {
-    for (int i = 0; i < MAX_MAPS && g_maps_range[i][0]; i++) {
-        PTR start = g_maps_range[i][0];
-        size_t length = g_maps_range[i][1] - g_maps_range[i][0];
+    for (int i = 0; i < MAX_MAPS && g_maps_range[i].start; i++) {
+        PTR start = g_maps_range[i].start;
+        size_t length = g_maps_range[i].end - g_maps_range[i].start;
         /* LOG_WARNING("map at %16lx, size: %16lx", start, length); /\* DEBUG *\/ */
         if (only_valid && !fast_is_valid_ptr(start)) {
             continue;
         }
         if (memread(pid, start, length, on_page_read, data) == 2) {
-#ifdef DEBUG_MODE
+#ifdef NDEBUG
             fprintf(stderr, "\n");   /* DEBUG */
 #endif
             return TRUE;
         }
-#ifdef DEBUG_MODE
+#ifdef NDEBUG
         fprintf(stderr, ".");   /* DEBUG */
 #endif
     }
@@ -106,9 +109,9 @@ BOOL is_valid_ptr(PTR ptr)
         return FALSE;
     }
 
-    for (int i = 0; i < MAX_MAPS && g_maps_range[i][0]; i++) {
-        if (ptr >= g_maps_range[i][0]
-            && ptr <= g_maps_range[i][1]) {
+    for (int i = 0; i < MAX_MAPS && g_maps_range[i].start; i++) {
+        if (ptr >= g_maps_range[i].start
+            && ptr <= g_maps_range[i].end) {
             return TRUE;
         }
     }
@@ -161,19 +164,19 @@ BOOL readmaps(pid_t pid)
     int i = 0;
     while (fgets(read_buf, PAGE_LENGTH, maps_file)) {
         sscanf(read_buf, "%16lx-%16lx\n", &start_address, &end_address);
-        if (
-            start_address > MIN_MAP_ADDR
+        if (start_address > MIN_MAP_ADDR
             && end_address - start_address > MIN_MAP_LEN
             && is_rw_memory(read_buf)
             && !is_bullshit_memory(read_buf)) {
-            g_maps_range[i][0] = start_address;
-            g_maps_range[i][1] = end_address;
+
+            g_maps_range[i].start = start_address;
+            g_maps_range[i].end = end_address;
             i++;
         }
     }
 
-    g_maps_range[i][0] = 0;
-    g_maps_range[i][1] = 0;
+    g_maps_range[i].start = 0;
+    g_maps_range[i].end = 0;
 
     fclose(maps_file);
     return i ? TRUE : FALSE;

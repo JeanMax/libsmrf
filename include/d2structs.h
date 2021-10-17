@@ -1,19 +1,11 @@
 #ifndef _D2STRUCTS_H
 #define _D2STRUCTS_H
 
-#include <stdint.h>
-typedef uint8_t  BYTE;
-typedef uint16_t WORD;
-typedef uint32_t DWORD;
-typedef uint64_t QWORD;
-typedef uint64_t PTR;
+#include <ctype.h>
 
-typedef int      BOOL;
-#ifndef TRUE
-# define TRUE  1
-# define FALSE 0
-#endif
-
+#include "proc.h"  // is_valid_ptr
+#include "util/types.h"
+#include "util/log.h"
 
 typedef  struct UnitAny  UnitAny;
 
@@ -26,6 +18,7 @@ struct BnetData {
     WORD Unk3;                  // 0x1C
     BYTE _2;                    // 0x1E
     char szGameName[0x16];      // 0x1F
+    BYTE _pad1[7];
     WORD _3;                    // 0x35
     char szGameIP[0x10];        // 0x37
     BYTE _5[0x42];              // 0x47
@@ -41,6 +34,7 @@ struct BnetData {
     BYTE CreatedGameDifficulty; // 0x210
     void* _10;                  // 0x211
     BYTE _11[0x15];             // 0x215
+    BYTE _pad2[1];
     WORD _12;                   // 0x22A
     BYTE _13;                   // 0x22C
     char szRealmName2[0x18];    // 0x22D
@@ -50,8 +44,10 @@ struct BnetData {
     BYTE _14[0x40];             //+0x37f
     BYTE charlevel;             //+0x3bf
     BYTE ladderflag;            //+0x3c0
+    BYTE _pad3[1];
     DWORD passhash;             //+0x3c1
     BYTE passlength;            //+0x3c5
+    BYTE _pad4[3];
 };
 
 typedef  struct CollMap  CollMap;
@@ -110,6 +106,7 @@ struct Level {
         DWORD WarpY[9];
     };                   // 0x204
     DWORD dwRoomEntries; // 0x228
+    BYTE _pad1[4];
 };
 
 typedef  struct RoomTile  RoomTile;
@@ -162,6 +159,7 @@ struct Room2 {
     DWORD _4[2];             // 0x50
     PresetUnit* pPreset;     // 0x5C
     DWORD _5;
+    BYTE _pad1[4];
     Level *pLevel;
 };
 
@@ -305,6 +303,27 @@ struct UnitAny {
     /* UnitAny* pListNext;       // 0xE4 -> 0xD8 */
     /* UnitAny* pRoomNext;       // 0xE8 */
 };
+
+
+void hex_dump(void *ptr, size_t len);
+
+void log_BnetData(BnetData *ptr);
+void log_Level(Level *ptr);
+void log_Room1(Room1 *ptr);
+void log_Room2(Room2 *ptr);
+void log_Path(Path *ptr);
+void log_Act(Act *ptr);
+void log_PlayerData(PlayerData *ptr);
+void log_Player(Player *ptr);
+
+BOOL is_valid_BnetData(BnetData *ptr);
+BOOL is_valid_Level(Level *ptr);
+BOOL is_valid_Room1(Room1 *ptr);
+BOOL is_valid_Room2(Room2 *ptr);
+BOOL is_valid_Path(Path *ptr);
+BOOL is_valid_Act(Act *ptr);
+BOOL is_valid_PlayerData(PlayerData *ptr);
+BOOL is_valid_Player(Player *ptr);
 
 
 #endif

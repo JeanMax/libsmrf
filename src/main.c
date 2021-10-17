@@ -2,8 +2,150 @@
 
 #define MAX_PLAYER_DATA 256
 
+const char *AREAS[] = {
+    "None",
+    "Rogue Encampment",
+    "Blood Moor",
+    "Cold Plains",
+    "Stony Field",
+    "Dark Wood",
+    "Black Marsh",
+    "Tamoe Highland",
+    "Den Of Evil",
+    "Cave Level 1",
+    "Underground Passage Level 1",
+    "Hole Level 1",
+    "Pit Level 1",
+    "Cave Level 2",
+    "Underground Passage Level 2",
+    "Hole Level 2",
+    "Pit Level 2",
+    "Burial Grounds",
+    "Crypt",
+    "Mausoleum",
+    "Forgotten Tower",
+    "Tower Cellar Level 1",
+    "Tower Cellar Level 2",
+    "Tower Cellar Level 3",
+    "Tower Cellar Level 4",
+    "Tower Cellar Level 5",
+    "Monastery Gate",
+    "Outer Cloister",
+    "Barracks",
+    "Jail Level 1",
+    "Jail Level 2",
+    "Jail Level 3",
+    "Inner Cloister",
+    "Cathedral",
+    "Catacombs Level 1",
+    "Catacombs Level 2",
+    "Catacombs Level 3",
+    "Catacombs Level 4",
+    "Tristram",
+    "Moo Moo Farm",
+    "Lut Gholein",
+    "Rocky Waste",
+    "Dry Hills",
+    "Far Oasis",
+    "Lost City",
+    "Valley Of Snakes",
+    "Canyon Of The Magi",
+    "Sewers Level 1",
+    "Sewers Level 2",
+    "Sewers Level 3",
+    "Harem Level 1",
+    "Harem Level 2",
+    "Palace Cellar Level 1",
+    "Palace Cellar Level 2",
+    "Palace Cellar Level 3",
+    "Stony Tomb Level 1",
+    "Halls Of The Dead Level 1",
+    "Halls Of The Dead Level 2",
+    "Claw Viper Temple Level 1",
+    "Stony Tomb Level 2",
+    "Halls Of The Dead Level 3",
+    "Claw Viper Temple Level 2",
+    "Maggot Lair Level 1",
+    "Maggot Lair Level 2",
+    "Maggot Lair Level 3",
+    "Ancient Tunnels",
+    "Tal Rashas Tomb #1",
+    "Tal Rashas Tomb #2",
+    "Tal Rashas Tomb #3",
+    "Tal Rashas Tomb #4",
+    "Tal Rashas Tomb #5",
+    "Tal Rashas Tomb #6",
+    "Tal Rashas Tomb #7",
+    "Duriels Lair",
+    "Arcane Sanctuary",
+    "Kurast Docktown",
+    "Spider Forest",
+    "Great Marsh",
+    "Flayer Jungle",
+    "Lower Kurast",
+    "Kurast Bazaar",
+    "Upper Kurast",
+    "Kurast Causeway",
+    "Travincal",
+    "Spider Cave",
+    "Spider Cavern",
+    "Swampy Pit Level 1",
+    "Swampy Pit Level 2",
+    "Flayer Dungeon Level 1",
+    "Flayer Dungeon Level 2",
+    "Swampy Pit Level 3",
+    "Flayer Dungeon Level 3",
+    "Sewers Level 1",
+    "Sewers Level 2",
+    "Ruined Temple",
+    "Disused Fane",
+    "Forgotten Reliquary",
+    "Forgotten Temple",
+    "Ruined Fane",
+    "Disused Reliquary",
+    "Durance Of Hate Level 1",
+    "Durance Of Hate Level 2",
+    "Durance Of Hate Level 3",
+    "The Pandemonium Fortress",
+    "Outer Steppes",
+    "Plains Of Despair",
+    "City Of The Damned",
+    "River Of Flame",
+    "Chaos Sanctuary",
+    "Harrogath",
+    "Bloody Foothills",
+    "Frigid Highlands",
+    "Arreat Plateau",
+    "Crystalline Passage",
+    "Frozen River",
+    "Glacial Trail",
+    "Drifter Cavern",
+    "Frozen Tundra",
+    "Ancient's Way",
+    "Icy Cellar",
+    "Arreat Summit",
+    "Nihlathak's Temple",
+    "Halls Of Anguish",
+    "Halls Of Pain",
+    "Halls Of Vaught",
+    "Abaddon",
+    "Pit Of Acheron",
+    "Infernal Pit",
+    "Worldstone Keep Level 1",
+    "Worldstone Keep Level 2",
+    "Worldstone Keep Level 3",
+    "Throne Of Destruction",
+    "The Worldstone Chamber",
+    "Matron's Den",
+    "Fogotten Sands",
+    "Furnace of Pain",
+    "Tristram"
+};  //TODO: move that
 
-static BOOL find_player_data_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+
+//TODO: add enum for callback return
+
+static BOOL search_player_data_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
 {
     BYTE *b = buf;
     PlayerData *player_data;
@@ -11,10 +153,10 @@ static BOOL find_player_data_callback(BYTE *buf, size_t buf_len, PTR address, vo
         player_data = (PlayerData *)b;
         if (is_valid_PlayerData(player_data)) {
             PTR here = address + (PTR)(b - buf);
-#ifdef DEBUG_MODE
-            LOG_DEBUG("Valid player_data! %16lx", here);
-            log_PlayerData(player_data);
-#endif
+/* #ifdef NDEBUG */
+/*             LOG_DEBUG("Valid player_data! %16lx", here); */
+/*             log_PlayerData(player_data); */
+/* #endif */
             PTR *addr_list = (PTR *)data;
             while (*addr_list) {
                 addr_list++;
@@ -30,7 +172,7 @@ static BOOL find_player_data_callback(BYTE *buf, size_t buf_len, PTR address, vo
     return TRUE; // keep reading
 }
 
-static BOOL find_player_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+static BOOL search_player_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
 {
 
     BYTE *b = buf;
@@ -54,6 +196,30 @@ static BOOL find_player_callback(BYTE *buf, size_t buf_len, PTR address, void *d
     }
 
     return TRUE; // keep reading
+}
+
+static BOOL find_player_data_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+{
+    (void)buf_len, (void)address;
+    if (!is_valid_PlayerData((PlayerData *)buf)) {
+        LOG_WARNING("Invalid PlayerData %16lx", address);
+        log_PlayerData((PlayerData *)buf);
+        return TRUE;
+    }
+    memcpy(data, buf, sizeof(PlayerData));
+    return FALSE;
+}
+
+static BOOL find_player_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+{
+    (void)buf_len, (void)address;
+    if (!is_valid_Player((Player *)buf)) {
+        LOG_WARNING("Invalid player %16lx", address);
+        log_Player((Player *)buf);
+        return TRUE;
+    }
+    memcpy(data, buf, sizeof(Player));
+    return FALSE;
 }
 
 static BOOL find_act_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
@@ -117,112 +283,194 @@ static BOOL find_level_callback(BYTE *buf, size_t buf_len, PTR address, void *da
 }
 
 
-int main(void)
+
+static BOOL init(GameState *game)
 {
-    pid_t pid = pidof("D2R.exe");
-    if (!pid) {
+    game->pid = pidof("D2R.exe");
+    if (!game->pid) {
         LOG_ERROR("Can't find D2R.exe");
-        return EXIT_FAILURE;
+        return FALSE;
     }
 
-    if (!readmaps(pid)) {
+    if (!readmaps(game->pid)) {
         LOG_ERROR("Can't read maps");
-        return EXIT_FAILURE;
+        return FALSE;
+    }
+
+    if (game->player_addr) {
+        if (memread(game->pid, (PTR)game->player_addr, sizeof(Player),
+                    find_player_callback, &game->player)) {
+            return TRUE;
+        } else {
+            LOG_ERROR("Can't refresh player");
+        }
     }
 
     PTR player_data_addr[MAX_PLAYER_DATA] = {0};
-    memreadall(pid, TRUE, find_player_data_callback, &player_data_addr);
-    if (!player_data_addr[0]) {
+    memreadall(game->pid, TRUE, search_player_data_callback, &player_data_addr);
+    if (!*player_data_addr) {
         LOG_ERROR("Can't find PlayerData ptr");
-        return EXIT_FAILURE;
+        return FALSE;
     }
 
-#ifdef DEBUG_MODE
+#ifdef NDEBUG
     int i;
     for (i = 0; i < MAX_PLAYER_DATA && player_data_addr[i]; i++) {}
     LOG_WARNING("player_data found: %d", i);
 #endif
 
-    if (!memreadall(pid, FALSE, find_player_callback, &player_data_addr)) {
+    if (!memreadall(game->pid, FALSE, search_player_callback, &player_data_addr)) {
         LOG_ERROR("Can't find Player ptr");
-        return EXIT_FAILURE;
+        return FALSE;
     }
-    PTR player_addr = *(PTR *)player_data_addr;
+    game->player_addr = *(PTR *)player_data_addr;
+    memcpy(&game->player, ((PTR *)player_data_addr + 1), sizeof(Player));
+    log_Player(&game->player);
 
-    Player player;
-    memcpy(&player, ((PTR *)player_data_addr + 1), sizeof(Player));
-    LOG_DEBUG("pPlayer: %08lx", player_addr);
-    log_Player(&player);
+    return TRUE;
+}
 
-    Path path;
-    if (!memread(pid, (PTR)player.pPath, sizeof(Path),
-                 find_path_callback, &path)) {
+static BOOL update(GameState *game)
+{
+    if (!memread(game->pid, (PTR)game->player.pPlayerData, sizeof(PlayerData),
+                 find_player_data_callback, &game->player_data)) {
+        LOG_ERROR("Can't find playerData");
+        return FALSE;
+    }
+    log_PlayerData(&game->player_data);
+
+    if (!memread(game->pid, (PTR)game->player.pPath, sizeof(Path),
+                 find_path_callback, &game->path)) {
         LOG_ERROR("Can't find path");
-        return EXIT_FAILURE;
+        return FALSE;
     }
-    log_Path(&path);
+    log_Path(&game->path);
 
-    Act act;
-    if (!memread(pid, (PTR)player.pAct, sizeof(Act),
-                 find_act_callback, &act)) {
+    if (!memread(game->pid, (PTR)game->player.pAct, sizeof(Act),
+                 find_act_callback, &game->act)) {
         LOG_ERROR("Can't find act");
-        return EXIT_FAILURE;
+        return FALSE;
     }
-    log_Act(&act);
+    log_Act(&game->act);
 
-    Room1 room1;
-    if (!memread(pid, (PTR)act.pRoom1, sizeof(Room1),
-                 find_room1_callback, &room1)) {
+    if (!memread(game->pid, (PTR)game->path.pRoom1, sizeof(Room1),
+                 find_room1_callback, &game->room1)) {
         LOG_ERROR("Can't find room1");
-        return EXIT_FAILURE;
+        return FALSE;
     }
-    log_Room1(&room1);
+    log_Room1(&game->room1);
 
-    Room2 room2;
-    if (!memread(pid, (PTR)room1.pRoom2, sizeof(Room2),
-                 find_room2_callback, &room2)) {
+    if (!memread(game->pid, (PTR)game->room1.pRoom2, sizeof(Room2),
+                 find_room2_callback, &game->room2)) {
         LOG_ERROR("Can't find room2");
-        return EXIT_FAILURE;
+        return FALSE;
     }
-    log_Room2(&room2);
+    log_Room2(&game->room2);
 
-    Level level;
-    if (!memread(pid, (PTR)room2.pLevel, sizeof(Level),
-                 find_level_callback, &level)) {
+    if (!memread(game->pid, (PTR)game->room2.pLevel, sizeof(Level),
+                 find_level_callback, &game->level)) {
         LOG_ERROR("Can't find level");
-        return EXIT_FAILURE;
+        return FALSE;
     }
-    log_Level(&level);
+    log_Level(&game->level);
+
+    /* Level level_bis; */
+    /* memcpy(&level_bis, &game->level, sizeof(Level)); */
+    /* while (level_bis.pNextLevel) { */
+    /*     if (!memread(game->pid, (PTR)level_bis.pNextLevel, sizeof(Level), */
+    /*                  find_level_callback, &level_bis)) { */
+    /*         LOG_WARNING("Can't find level_bis"); */
+    /*            //TODO: some of the level_bis.pNextLevel are invalid?! */
+    /*         break; */
+    /*     } */
+
+    /*     log_Level(&level_bis); */
+    /*     if (game->room2.dwPosX + game->room2.dwSizeX >= level_bis.dwPosX */
+    /*         && game->room2.dwPosX <= level_bis.dwPosX + level_bis.dwSizeX */
+
+    /*         && game->room2.dwPosY + game->room2.dwSizeY >= level_bis.dwPosY */
+    /*         && game->room2.dwPosY <= level_bis.dwPosY + level_bis.dwSizeY) { */
+
+    /*         LOG_DEBUG("Found alternative area: old: %u - new: %u", */
+    /*                   game->level.dwLevelNo, level_bis.dwLevelNo); */
+    /*         memcpy(&game->level, &level_bis, sizeof(Level)); */
+    /*         break; */
+    /*     } */
+    /* } */
 
 
-    DWORD area = level.dwLevelNo;
 
-    Level level_bis;
-    memcpy(&level_bis, &level, sizeof(Level));
-    while ((PTR)level_bis.pNextLevel) {
-        if (!memread(pid, (PTR)level_bis.pNextLevel, sizeof(Level),
-                     find_level_callback, &level_bis)) {
-            LOG_ERROR("Can't find level");
+    /* LOG_INFO("SEED: %d", game->act.dwMapSeed); */
+    /* LOG_INFO("COORD: %d %d", game->path.xPos, game->path.yPos); */
+    /* LOG_INFO("AREA: %d", game->level.dwLevelNo); */
+    LOG_INFO("{"
+             /* "\"player_name\": \"%s\", " */
+             "\"seed\": %d, "
+             "\"x\": %d, "
+             "\"y\": %d, "
+             "\"area_name\": \"%s\", "
+             "\"area\": (%d)"
+             "}",
+             /* game->player_data.szName, */
+             game->act.dwMapSeed,
+             game->path.xPos,
+             game->path.yPos,
+             AREAS[game->level.dwLevelNo],
+             game->level.dwLevelNo);
+
+    return TRUE;
+}
+
+static BOOL main_loop(BOOL loop, BOOL json)
+{
+    GameState game = {0};
+    BOOL successful_update;
+
+    do {
+        successful_update = init(&game) && update(&game);
+        if (loop) {
+            sleep(1);
+        }
+    } while (loop);
+
+    return successful_update;
+}
+
+
+
+static void usage(const char *exe)
+{
+    LOG_INFO("Usage: %s [OPTION]...\n"
+             "List information about the D2R game state.\n"
+             "\n"
+             "  -l, --loop    refresh info in an endless loop\n"
+             "  -j, --json    json formated output\n"
+             "      --help    display this help and exit",
+             exe);
+}
+
+int main(int argc, const char **argv)
+{
+    BOOL loop = FALSE;
+    BOOL json = FALSE;
+
+    for (const char *exe = *argv++; argc > 1 && *argv; argv++) {
+        if (!strcmp(*argv, "--loop") || !strcmp(*argv, "-l")) {
+            loop = TRUE;
+        } else if (!strcmp(*argv, "--json") || !strcmp(*argv, "-j")) {
+            json = TRUE;
+        } else if (!strcmp(*argv, "--help")) {
+            usage(exe);
+            return EXIT_SUCCESS;
+        } else {
+            usage(exe);
             return EXIT_FAILURE;
         }
-
-
-        if (room2.dwPosX + room2.dwSizeX >= level_bis.dwPosX
-            && room2.dwPosX <= level_bis.dwPosX + level_bis.dwSizeX
-
-            && room2.dwPosY + room2.dwSizeY >= level_bis.dwPosY
-            && room2.dwPosY <= level_bis.dwPosY + level_bis.dwSizeY) {
-
-            area = level_bis.dwLevelNo;
-            break;
-        }
     }
 
-    log_Level(&level_bis);
-
-    LOG_INFO("SEED: %d", act.dwMapSeed);
-    LOG_INFO("COORD: %d %d", path.xPos, path.yPos);
-    LOG_INFO("AREA: %d", area);
+    if (!main_loop(loop, json)) {
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }
