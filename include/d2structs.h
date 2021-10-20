@@ -9,47 +9,6 @@
 
 typedef  struct UnitAny  UnitAny;
 
-typedef  struct BnetData  BnetData;
-struct BnetData {
-    DWORD dwId;                 // 0x00
-    DWORD dwId2;                // 0x04
-    BYTE _1[0x10];              // 0x08
-    DWORD dwId3;                // 0x18
-    WORD Unk3;                  // 0x1C
-    BYTE _2;                    // 0x1E
-    char szGameName[0x16];      // 0x1F
-    BYTE _pad1[7];
-    WORD _3;                    // 0x35
-    char szGameIP[0x10];        // 0x37
-    BYTE _5[0x42];              // 0x47
-    DWORD dwId4;                // 0x89
-    char szAccountName[0x30];   // 0x8D
-    char szPlayerName[0x18];    // 0xBD
-    char szRealmName[0x08];     // 0xD5
-    BYTE _8[0x111];             // 0xDD
-    BYTE nCharClass;            // 0x1EE
-    BYTE nCharFlags;            // 0x1EF
-    BYTE nMaxDiff;              // 0x1F0
-    BYTE _9[0x1F];              // 0x1F1
-    BYTE CreatedGameDifficulty; // 0x210
-    void* _10;                  // 0x211
-    BYTE _11[0x15];             // 0x215
-    BYTE _pad2[1];
-    WORD _12;                   // 0x22A
-    BYTE _13;                   // 0x22C
-    char szRealmName2[0x18];    // 0x22D
-    char szGamePass[0x18];      // 0x245
-    char szGameDesc[0x104];     // 0x25D
-    char channelname[0x20];     //+0x35f
-    BYTE _14[0x40];             //+0x37f
-    BYTE charlevel;             //+0x3bf
-    BYTE ladderflag;            //+0x3c0
-    BYTE _pad3[1];
-    DWORD passhash;             //+0x3c1
-    BYTE passlength;            //+0x3c5
-    BYTE _pad4[3];
-};
-
 typedef  struct CollMap  CollMap;
 /* struct CollMap { */
 /*     DWORD dwPosGameX;  // 0x00 */
@@ -82,7 +41,7 @@ typedef  struct Level  Level;
 struct Level {
     DWORD _1[4];        // 0x00
     Room2* pRoom2First; // 0x10
-    void* dunno;
+    void* pDunno;
     DWORD _2;        // 0x14
     DWORD dwPosX;       // 0x1C
     DWORD dwPosY;       // 0x20
@@ -110,57 +69,63 @@ struct Level {
 };
 
 typedef  struct RoomTile  RoomTile;
-struct RoomTile {
-    Room2* pRoom2;   // 0x00
-    RoomTile* pNext; // 0x04
-    DWORD _2[2];     // 0x08
-    DWORD* nNum;     // 0x10
-};
+/* struct RoomTile { */
+/*     Room2* pRoom2;   // 0x00 */
+/*     RoomTile* pNext; // 0x04 */
+/*     DWORD _2[2];     // 0x08 */
+/*     DWORD* nNum;     // 0x10 */
+/* }; */
 
 typedef  struct Room1  Room1;
 struct Room1 {
-    Room1** pRoomsNear;  // 0x00
-    void *dunno;
-    DWORD _1[2];         // 0x04
-    Room2* pRoom2;       // 0x10
-    DWORD _2[2];         // 0x14
-    CollMap* Coll;       // 0x20
-    DWORD dwRoomsNear;   // 0x24
-    DWORD _3[9];         // 0x28
-    DWORD dwXStart;      // 0x4C
-    DWORD dwYStart;      // 0x50
-    DWORD dwXSize;       // 0x54
-    DWORD dwYSize;       // 0x58
-    DWORD _4[6];         // 0x5C
-    UnitAny* pUnitFirst; // 0x74
-    DWORD _5;            // 0x78
-    DWORD _6;            // 0x78
-    Room1* pRoomNext;    // 0x7C
+    Room1** pRoomsNear;  //0
+    void *pDunno1; //8
+    DWORD _1[2];    //16
+    Room2* pRoom2;      //24
+    DWORD _2[2];         //32
+    CollMap* Coll;       //40 nop?
+    DWORD dwRoomsNear;   //48
+    DWORD _2bis; //52
+    void *pDunno2; //56
+    DWORD *pDunno2bis;         //64
+    void *pDunno3; //72  next?
+    DWORD _3[12];         //80
+    DWORD dwXStart; //128
+    DWORD dwYStart; //132
+    DWORD dwXSize; //136
+    DWORD dwYSize; //140
+    DWORD _4[6]; //144
+    UnitAny* pUnitFirst; //168
+    Room1* pRoomNext; //176
+    DWORD _5[2]; //184
+    DWORD _6[2]; //192
+    DWORD _debug[8]; //200
 };
 
 struct Room2 {
-    DWORD _1[2];        // 0x00
-    Room2** pRoom2Near; // 0x08
-    DWORD _2[6];        // 0x0C
-    Room2* pRoom2Next;       // 0x24
-    DWORD dwRoomFlags;       // 0x28
-    DWORD dwRoomsNear;       // 0x2C
-    Room1* pRoom1;           // 0x30
-    RoomTile* pRoomTiles;    // 0x4C
-    void* pNotLevel;           // 0x58
-    void* _2bis;
-    void* _2ter;
-    DWORD dwPosX;            // 0x34
-    DWORD dwPosY;            // 0x38
-    DWORD dwSizeX;           // 0x3C
-    DWORD dwSizeY;           // 0x40
-    DWORD _3;                // 0x44
-    DWORD dwPresetType;      // 0x48
-    DWORD _4[2];             // 0x50
-    PresetUnit* pPreset;     // 0x5C
-    DWORD _5;
-    BYTE _pad1[4];
-    Level *pLevel;
+    DWORD _1[2];        //0
+    Room2** pRoom2Near; //8
+    DWORD _2[6];        //16
+    void* pDunno1;       //40
+    DWORD dwRoomFlags;  //48
+    DWORD dwRoomsNear;  //52
+    void* pDunno2;       //56
+    RoomTile* pRoomTiles; //64
+    Room2* pRoom2Next;    //72
+    void* pDunno3;         //80
+    Room1* pRoom1;        //88
+    DWORD dwPosX;         //96
+    DWORD dwPosY;         //100
+    DWORD dwSizeX;        //104
+    DWORD dwSizeY;        //108
+    DWORD _3;             //112
+    DWORD dwPresetType;   //116
+    DWORD _4[2];          //120
+    PresetUnit* pPreset;  //128
+    DWORD _5;             //136
+    BYTE _pad1[4];        //140
+    Level *pLevel;        //144
+    DWORD _debug[10]; //152
 };
 
 typedef  struct Path  Path;
@@ -307,7 +272,6 @@ struct UnitAny {
 
 void hex_dump(void *ptr, size_t len);
 
-void log_BnetData(BnetData *ptr);
 void log_Level(Level *ptr);
 void log_Room1(Room1 *ptr);
 void log_Room2(Room2 *ptr);
@@ -316,7 +280,6 @@ void log_Act(Act *ptr);
 void log_PlayerData(PlayerData *ptr);
 void log_Player(Player *ptr);
 
-BOOL is_valid_BnetData(BnetData *ptr);
 BOOL is_valid_Level(Level *ptr);
 BOOL is_valid_Room1(Room1 *ptr);
 BOOL is_valid_Room2(Room2 *ptr);

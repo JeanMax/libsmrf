@@ -282,7 +282,7 @@ static BOOL find_level_callback(BYTE *buf, size_t buf_len, PTR address, void *da
     return FALSE;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 static BOOL init(GameState *game)
 {
@@ -400,6 +400,56 @@ static BOOL update(GameState *game)
 
 
 
+    Room2 lvl_room2;
+    if (!memread(game->pid, (PTR)game->level.pRoom2First, sizeof(Room2),
+                 find_room2_callback, &lvl_room2)) {
+        LOG_ERROR("Can't find lvl.room2");
+        return FALSE;
+    }
+    log_Room2(&lvl_room2);
+    LOG_INFO("(%x, %x) *", lvl_room2.dwPosX, lvl_room2.dwPosY);
+
+
+    // iterate room2.next
+    Room1 r1;
+    int i = 0;
+    while ((PTR)lvl_room2.pRoom2Next
+           && is_valid_ptr((PTR)lvl_room2.pRoom2Next)) {
+        if (!memread(game->pid, (PTR)lvl_room2.pRoom2Next, sizeof(Room2),
+                     find_room2_callback, &lvl_room2)) {
+            LOG_WARNING("Can't find lvl_room2.next");
+            break;
+        }
+        i++;
+        /* log_Room2(&lvl_room2); */
+        LOG_INFO("(%x, %x)", lvl_room2.dwPosX, lvl_room2.dwPosY);
+
+
+        if (!memread(game->pid, (PTR)lvl_room2.pRoom1, sizeof(Room1),
+                     find_room1_callback, &r1)) {
+            LOG_WARNING("Can't find lvl_room2.room1");
+            continue;
+        }
+        LOG_DEBUG("(%x, %x) *", r1.dwXStart, r1.dwYStart);
+
+        int j = 0;
+        while ((PTR)r1.pRoomNext
+               && is_valid_ptr((PTR)r1.pRoomNext)) {
+            if (!memread(game->pid, (PTR)r1.pRoomNext, sizeof(Room1),
+                         find_room1_callback, &r1)) {
+                LOG_WARNING("Can't find room1.next");
+                break;
+            }
+            j++;
+            /* log_Room1(&r1); */
+            LOG_DEBUG("(%x, %x)", r1.dwXStart, r1.dwYStart);
+        }
+        LOG_DEBUG("%d room1 found", j);
+
+    }
+    LOG_INFO("%d room2 found", i);
+
+
     /* LOG_INFO("SEED: %d", game->act.dwMapSeed); */
     /* LOG_INFO("COORD: %d %d", game->path.xPos, game->path.yPos); */
     /* LOG_INFO("AREA: %d", game->level.dwLevelNo); */
@@ -421,7 +471,7 @@ static BOOL update(GameState *game)
     return TRUE;
 }
 
-static BOOL main_loop(BOOL loop, BOOL json)
+static BOOL main_loop(BOOL loop)
 {
     GameState game = {0};
     BOOL successful_update;
@@ -444,7 +494,6 @@ static void usage(const char *exe)
              "List information about the D2R game state.\n"
              "\n"
              "  -l, --loop    refresh info in an endless loop\n"
-             "  -j, --json    json formated output\n"
              "      --help    display this help and exit",
              exe);
 }
@@ -452,13 +501,10 @@ static void usage(const char *exe)
 int main(int argc, const char **argv)
 {
     BOOL loop = FALSE;
-    BOOL json = FALSE;
 
     for (const char *exe = *argv++; argc > 1 && *argv; argv++) {
         if (!strcmp(*argv, "--loop") || !strcmp(*argv, "-l")) {
             loop = TRUE;
-        } else if (!strcmp(*argv, "--json") || !strcmp(*argv, "-j")) {
-            json = TRUE;
         } else if (!strcmp(*argv, "--help")) {
             usage(exe);
             return EXIT_SUCCESS;
@@ -468,7 +514,7 @@ int main(int argc, const char **argv)
         }
     }
 
-    if (!main_loop(loop, json)) {
+    if (!main_loop(loop)) {
         return EXIT_FAILURE;
     }
 
