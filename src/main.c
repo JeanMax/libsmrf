@@ -142,6 +142,8 @@ const char *AREAS[] = {
     "Tristram"
 };  //TODO: move that
 
+Level *g_levels[0xff] = {0};
+
 
 //TODO: add enum for callback return
 
@@ -246,6 +248,18 @@ static BOOL find_path_callback(BYTE *buf, size_t buf_len, PTR address, void *dat
     return FALSE;
 }
 
+static BOOL find_room2_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+{
+    (void)buf_len, (void)address;
+    if (!is_valid_Room2((Room2 *)buf)) {
+        LOG_WARNING("Invalid room2 %16lx", address);
+        log_Room2((Room2 *)buf);
+        return TRUE;
+    }
+    memcpy(data, buf, sizeof(Room2));
+    return FALSE;
+}
+
 static BOOL find_room1_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
 {
     (void)buf_len, (void)address;
@@ -258,17 +272,31 @@ static BOOL find_room1_callback(BYTE *buf, size_t buf_len, PTR address, void *da
     return FALSE;
 }
 
-static BOOL find_room2_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+static BOOL find_collmap_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
 {
-    (void)buf_len, (void)address;
-    if (!is_valid_Room2((Room2 *)buf)) {
-        LOG_WARNING("Invalid room2 %16lx", address);
-        log_Room2((Room2 *)buf);
+    (void)address;
+    /* hex_dump(buf, sizeof(CollMap)); /\* DEBUG *\/ */
+    if (!is_valid_CollMap((CollMap *)buf)) {
+        LOG_WARNING("Invalid collmap %16lx", address);
+        log_CollMap((CollMap *)buf);
         return TRUE;
     }
-    memcpy(data, buf, sizeof(Room2));
+    memcpy(data, buf, buf_len);
     return FALSE;
 }
+
+static BOOL find_preset_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+{
+    (void)buf_len, (void)address;
+    if (!is_valid_PresetUnit((PresetUnit *)buf)) {
+        LOG_WARNING("Invalid preset %16lx", address);
+        log_PresetUnit((PresetUnit *)buf);
+        return TRUE;
+    }
+    memcpy(data, buf, sizeof(PresetUnit));
+    return FALSE;
+}
+
 
 static BOOL find_level_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
 {
@@ -282,13 +310,162 @@ static BOOL find_level_callback(BYTE *buf, size_t buf_len, PTR address, void *da
     return FALSE;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
+static PresetUnit *parse_preset_list(pid_t pid, PTR pu_addr)
+{
+    PresetUnit pu;
+    PresetUnit *pu_first = NULL, *pu_prev, *pu_new;
+    int i = 0;                  /* DEBUG */
+
+    while (is_valid_ptr(pu_addr)) {
+        if (!memread(pid, pu_addr, sizeof(PresetUnit),
+                     find_preset_callback, &pu)) {
+            LOG_WARNING("Can't find preset");
+            break;
+        }
+        i++;              /* DEBUG */
+        /* log_PresetUnit(&pu); */
+        /* LOG_DEBUG("(%x, %x) *", pu.dwPosX, pu.dwPosY); */
+
+        DUPE(pu_new, &pu, sizeof(PresetUnit));
+        pu_new->pPresetNext = NULL;
+
+        if (!pu_first) {
+            pu_first = pu_new;
+        } else  {
+            pu_prev->pPresetNext = pu_new;
+        }
+        pu_prev = pu_new;
+        pu_addr = (PTR)pu.pPresetNext;
+    }
+
+    LOG_DEBUG("%d preset found", i);
+
+    return pu_first;
+}
+
+static CollMap *parse_collmap(pid_t pid, PTR col_addr)
+{
+    CollMap col;
+
+    if (!is_valid_ptr(col_addr)) {
+        return NULL;
+    }
+    if (!memread(pid, col_addr, sizeof(CollMap),
+                 find_collmap_callback, &col)) {
+        LOG_WARNING("Can't find collmap");
+        return NULL;
+    }
+
+    if ((PTR)col.pMapStart != col_addr + ((PTR)&col.coll - (PTR)&col)) {
+        LOG_ERROR("collmap isn't contiguous");
+        exit(EXIT_FAILURE);
+    }
+
+    size_t map_size = sizeof(DWORD) * col.dwSizeGameY * col.dwSizeGameX;
+    CollMap *ret;
+    MALLOC(ret, sizeof(CollMap) + map_size);
+
+    if (!memread(pid, col_addr, sizeof(CollMap) + map_size,
+                 find_collmap_callback, ret)) {
+        LOG_WARNING("Can't find collmap.coll");
+        return NULL;
+    }
+
+    return ret;
+}
+
+static Room1 *parse_room1_list(pid_t pid, PTR r1_addr)
+{
+    Room1 r1;
+    Room1 *r1_first = NULL, *r1_prev, *r1_new;
+    int i = 0;                  /* DEBUG */
+
+    while (is_valid_ptr(r1_addr)) {
+        if (!memread(pid, r1_addr, sizeof(Room1),
+                     find_room1_callback, &r1)) {
+            LOG_WARNING("Can't find room1");
+            break;
+        }
+        i++;              /* DEBUG */
+        /* log_Room1(&r1); */
+        /* LOG_DEBUG("(%x, %x) *", r1.dwXStart, r1.dwYStart); */
+
+        DUPE(r1_new, &r1, sizeof(Room1));
+        r1_new->pRoomNext = NULL;
+        r1_new->Coll = parse_collmap(pid, (PTR)r1.Coll);
+
+        if (!r1_first) {
+            r1_first = r1_new;
+        } else  {
+            r1_prev->pRoomNext = r1_new;
+        }
+        r1_prev = r1_new;
+        r1_addr = (PTR)r1.pRoomNext;
+    }
+
+    LOG_DEBUG("%d room1 found", i);
+
+    return r1_first;
+}
+
+static Room2 *parse_room2_list(pid_t pid, PTR r2_addr)
+{
+    Room2 r2;
+    Room2 *r2_first = NULL, *r2_prev, *r2_new;
+    int i = 0;                  /* DEBUG */
+
+    while (is_valid_ptr(r2_addr)) {
+        if (!memread(pid, r2_addr, sizeof(Room2),
+                     find_room2_callback, &r2)) {
+            LOG_WARNING("Can't find room2");
+            break;
+        }
+        i++;              /* DEBUG */
+        /* log_Room2(&r2); */
+        /* LOG_DEBUG("(%x, %x)", r2.dwPosX, r2.dwPosY); */
+
+        DUPE(r2_new, &r2, sizeof(Room2));
+        r2_new->pRoom2Next = NULL;
+        r2_new->pRoom1 = parse_room1_list(pid, (PTR)r2.pRoom1);
+        r2_new->pPreset = parse_preset_list(pid, (PTR)r2.pPreset);
+
+        if (!r2_first) {
+            r2_first = r2_new;
+        } else  {
+            r2_prev->pRoom2Next = r2_new;
+        }
+        r2_prev = r2_new;
+        r2_addr = (PTR)r2.pRoom2Next;
+    }
+
+    LOG_DEBUG("%d room2 found", i);
+
+    return r2_first;
+}
+
+static BOOL parse_map(pid_t pid, Level *level)
+{
+    if (g_levels[level->dwLevelNo]) {
+        return TRUE;
+    }
+
+    Level *new_level;
+    DUPE(new_level, level, sizeof(Level));
+
+    new_level->pRoom2First = parse_room2_list(pid, (PTR)level->pRoom2First);
+
+    g_levels[level->dwLevelNo] = new_level;
+    return TRUE;
+}
 
 static BOOL init(GameState *game)
 {
     game->pid = pidof("D2R.exe");
     if (!game->pid) {
         LOG_ERROR("Can't find D2R.exe");
+
         return FALSE;
     }
 
@@ -374,44 +551,15 @@ static BOOL update(GameState *game)
     }
     log_Level(&game->level);
 
-    /* Level level_bis; */
-    /* memcpy(&level_bis, &game->level, sizeof(Level)); */
-    /* while (level_bis.pNextLevel) { */
-    /*     if (!memread(game->pid, (PTR)level_bis.pNextLevel, sizeof(Level), */
-    /*                  find_level_callback, &level_bis)) { */
-    /*         LOG_WARNING("Can't find level_bis"); */
-    /*            //TODO: some of the level_bis.pNextLevel are invalid?! */
-    /*         break; */
-    /*     } */
+    parse_map(game->pid, &game->level);
 
-    /*     log_Level(&level_bis); */
-    /*     if (game->room2.dwPosX + game->room2.dwSizeX >= level_bis.dwPosX */
-    /*         && game->room2.dwPosX <= level_bis.dwPosX + level_bis.dwSizeX */
-
-    /*         && game->room2.dwPosY + game->room2.dwSizeY >= level_bis.dwPosY */
-    /*         && game->room2.dwPosY <= level_bis.dwPosY + level_bis.dwSizeY) { */
-
-    /*         LOG_DEBUG("Found alternative area: old: %u - new: %u", */
-    /*                   game->level.dwLevelNo, level_bis.dwLevelNo); */
-    /*         memcpy(&game->level, &level_bis, sizeof(Level)); */
-    /*         break; */
-    /*     } */
-    /* } */
-
-
-
-    /* LOG_INFO("SEED: %d", game->act.dwMapSeed); */
-    /* LOG_INFO("COORD: %d %d", game->path.xPos, game->path.yPos); */
-    /* LOG_INFO("AREA: %d", game->level.dwLevelNo); */
     LOG_INFO("{"
-             /* "\"player_name\": \"%s\", " */
              "\"seed\": %d, "
              "\"x\": %d, "
              "\"y\": %d, "
              "\"area_name\": \"%s\", "
              "\"area\": (%d)"
              "}",
-             /* game->player_data.szName, */
              game->act.dwMapSeed,
              game->path.xPos,
              game->path.yPos,
@@ -421,7 +569,7 @@ static BOOL update(GameState *game)
     return TRUE;
 }
 
-static BOOL main_loop(BOOL loop, BOOL json)
+static BOOL main_loop(BOOL loop)
 {
     GameState game = {0};
     BOOL successful_update;
@@ -444,7 +592,6 @@ static void usage(const char *exe)
              "List information about the D2R game state.\n"
              "\n"
              "  -l, --loop    refresh info in an endless loop\n"
-             "  -j, --json    json formated output\n"
              "      --help    display this help and exit",
              exe);
 }
@@ -452,13 +599,10 @@ static void usage(const char *exe)
 int main(int argc, const char **argv)
 {
     BOOL loop = FALSE;
-    BOOL json = FALSE;
 
     for (const char *exe = *argv++; argc > 1 && *argv; argv++) {
         if (!strcmp(*argv, "--loop") || !strcmp(*argv, "-l")) {
             loop = TRUE;
-        } else if (!strcmp(*argv, "--json") || !strcmp(*argv, "-j")) {
-            json = TRUE;
         } else if (!strcmp(*argv, "--help")) {
             usage(exe);
             return EXIT_SUCCESS;
@@ -468,7 +612,7 @@ int main(int argc, const char **argv)
         }
     }
 
-    if (!main_loop(loop, json)) {
+    if (!main_loop(loop)) {
         return EXIT_FAILURE;
     }
 
