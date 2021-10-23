@@ -175,6 +175,7 @@ BOOL readmaps(pid_t pid)
         }
     }
 
+    LOG_DEBUG("%d maps found", i); /* DEBUG */
     g_maps_range[i].start = 0;
     g_maps_range[i].end = 0;
 

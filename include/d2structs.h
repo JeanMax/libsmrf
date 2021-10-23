@@ -7,33 +7,61 @@
 #include "util/types.h"
 #include "util/log.h"
 
+/* enum CollisionFlag { */
+/*     None = 0x0000, */
+/*     BlockWalk = 0x0001, */
+/*     BlockLineOfSight = 0x0002, */
+/*     Wall = 0x0004, */
+/*     BlockPlayer = 0x0008, */
+/*     AlternateTile = 0x0010, */
+/*     Blank = 0x0020, */
+/*     Missile = 0x0040, */
+/*     Player = 0x0080, */
+/*     NPCLocation = 0x0100, */
+/*     Item = 0x0200, */
+/*     Object = 0x0400, */
+/*     ClosedDoor = 0x0800, */
+/*     NPCCollision = 0x1000, */
+/*     FriendlyNPC = 0x2000, */
+/*     Unknown = 0x4000, */
+/*     DeadBody = 0x8000, // also portal */
+/*     ThickenedWall = 0xfefe, */
+/*     Avoid = 0xffff */
+/* }; */
+
+// these Room1 Room2 naming are so confusing ):
+typedef  struct Room1  RoomSmall;
+typedef  struct Room2  RoomBig;
+
 typedef  struct UnitAny  UnitAny;
 
 typedef  struct CollMap  CollMap;
-/* struct CollMap { */
-/*     DWORD dwPosGameX;  // 0x00 */
-/*     DWORD dwPosGameY;  // 0x04 */
-/*     DWORD dwSizeGameX; // 0x08 */
-/*     DWORD dwSizeGameY; // 0x0C */
-/*     DWORD dwPosRoomX;  // 0x10 */
-/*     DWORD dwPosRoomY;  // 0x14 */
-/*     DWORD dwSizeRoomX; // 0x18 */
-/*     DWORD dwSizeRoomY; // 0x1C */
-/*     WORD* pMapStart;   // 0x20 */
-/*     WORD* pMapEnd;     // 0x22 */
-/* }; */
+struct CollMap {
+    DWORD dwPosGameX;  // 0x00
+    DWORD dwPosGameY;  // 0x04
+    DWORD dwSizeGameX; // 0x08
+    DWORD dwSizeGameY; // 0x0C
+    DWORD dwPosRoomX;  // 0x10
+    DWORD dwPosRoomY;  // 0x14
+    DWORD dwSizeRoomX; // 0x18
+    DWORD dwSizeRoomY; // 0x1C
+    WORD* pMapStart;   // 0x20
+    /* WORD* pMapEnd;     // 0x22 */
+    /* WORD coll[dwSizeGameY][dwSizeGameX]; //0x22 */
+};
 
 typedef  struct PresetUnit  PresetUnit;
-/* struct PresetUnit { */
-/*     DWORD _1;                // 0x00 */
-/*     DWORD dwTxtFileNo;       // 0x04 */
-/*     DWORD dwPosX;            // 0x08 */
-/*     DWORD _pad; */
-/*     PresetUnit* pPresetNext; // 0x0C */
-/*     DWORD _3;                // 0x10 */
-/*     DWORD dwType;            // 0x14 */
-/*     DWORD dwPosY;            // 0x18 */
-/* }; */
+struct PresetUnit {
+    DWORD _1;                // 0x00  //is_last?
+    DWORD dwTxtFileNo;       // 0x04
+    DWORD dwPosX;            // 0x08
+    DWORD _2;
+    PresetUnit* pPresetNext; // 0x0C
+    DWORD _3;                // 0x10
+    DWORD _4;
+    DWORD dwType;            // 0x14
+    DWORD dwPosY;            // 0x18
+};
 
 typedef  struct Room2  Room2;
 typedef  struct ActMisc  ActMisc;
@@ -77,18 +105,18 @@ typedef  struct RoomTile  RoomTile;
 /* }; */
 
 typedef  struct Room1  Room1;
-struct Room1 {
+struct Room1 { //small
     Room1** pRoomsNear;  //0
     void *pDunno1; //8
     DWORD _1[2];    //16
     Room2* pRoom2;      //24
     DWORD _2[2];         //32
-    CollMap* Coll;       //40 nop?
+    void *pDunno2;       //40
     DWORD dwRoomsNear;   //48
     DWORD _2bis; //52
-    void *pDunno2; //56
+    CollMap* Coll; //56
     DWORD *pDunno2bis;         //64
-    void *pDunno3; //72  next?
+    void *pDunno3; //72
     DWORD _3[12];         //80
     DWORD dwXStart; //128
     DWORD dwYStart; //132
@@ -99,10 +127,9 @@ struct Room1 {
     Room1* pRoomNext; //176
     DWORD _5[2]; //184
     DWORD _6[2]; //192
-    DWORD _debug[8]; //200
 };
 
-struct Room2 {
+struct Room2 { //big
     DWORD _1[2];        //0
     Room2** pRoom2Near; //8
     DWORD _2[6];        //16
@@ -120,12 +147,9 @@ struct Room2 {
     DWORD dwSizeY;        //108
     DWORD _3;             //112
     DWORD dwPresetType;   //116
-    DWORD _4[2];          //120
-    PresetUnit* pPreset;  //128
-    DWORD _5;             //136
-    BYTE _pad1[4];        //140
+    DWORD _4[6];          //120
     Level *pLevel;        //144
-    DWORD _debug[10]; //152
+    PresetUnit* pPreset; //152
 };
 
 typedef  struct Path  Path;
@@ -273,16 +297,20 @@ struct UnitAny {
 void hex_dump(void *ptr, size_t len);
 
 void log_Level(Level *ptr);
-void log_Room1(Room1 *ptr);
 void log_Room2(Room2 *ptr);
+void log_Room1(Room1 *ptr);
+void log_CollMap(CollMap *ptr);
+void log_PresetUnit(PresetUnit *ptr);
 void log_Path(Path *ptr);
 void log_Act(Act *ptr);
 void log_PlayerData(PlayerData *ptr);
 void log_Player(Player *ptr);
 
 BOOL is_valid_Level(Level *ptr);
-BOOL is_valid_Room1(Room1 *ptr);
 BOOL is_valid_Room2(Room2 *ptr);
+BOOL is_valid_Room1(Room1 *ptr);
+BOOL is_valid_CollMap(CollMap *ptr);
+BOOL is_valid_PresetUnit(PresetUnit *ptr);
 BOOL is_valid_Path(Path *ptr);
 BOOL is_valid_Act(Act *ptr);
 BOOL is_valid_PlayerData(PlayerData *ptr);

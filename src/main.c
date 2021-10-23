@@ -246,6 +246,18 @@ static BOOL find_path_callback(BYTE *buf, size_t buf_len, PTR address, void *dat
     return FALSE;
 }
 
+static BOOL find_room2_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+{
+    (void)buf_len, (void)address;
+    if (!is_valid_Room2((Room2 *)buf)) {
+        LOG_WARNING("Invalid room2 %16lx", address);
+        log_Room2((Room2 *)buf);
+        return TRUE;
+    }
+    memcpy(data, buf, sizeof(Room2));
+    return FALSE;
+}
+
 static BOOL find_room1_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
 {
     (void)buf_len, (void)address;
@@ -258,17 +270,31 @@ static BOOL find_room1_callback(BYTE *buf, size_t buf_len, PTR address, void *da
     return FALSE;
 }
 
-static BOOL find_room2_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+static BOOL find_collmap_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
 {
     (void)buf_len, (void)address;
-    if (!is_valid_Room2((Room2 *)buf)) {
-        LOG_WARNING("Invalid room2 %16lx", address);
-        log_Room2((Room2 *)buf);
+                hex_dump(buf, sizeof(CollMap)); /* DEBUG */
+    if (!is_valid_CollMap((CollMap *)buf)) {
+        LOG_WARNING("Invalid collmap %16lx", address);
+        log_CollMap((CollMap *)buf);
         return TRUE;
     }
-    memcpy(data, buf, sizeof(Room2));
+    memcpy(data, buf, sizeof(CollMap));
     return FALSE;
 }
+
+static BOOL find_preset_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+{
+    (void)buf_len, (void)address;
+    if (!is_valid_PresetUnit((PresetUnit *)buf)) {
+        LOG_WARNING("Invalid preset %16lx", address);
+        log_PresetUnit((PresetUnit *)buf);
+        return TRUE;
+    }
+    memcpy(data, buf, sizeof(PresetUnit));
+    return FALSE;
+}
+
 
 static BOOL find_level_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
 {
@@ -410,44 +436,85 @@ static BOOL update(GameState *game)
     LOG_INFO("(%x, %x) *", lvl_room2.dwPosX, lvl_room2.dwPosY);
 
 
-    // iterate room2.next
-    Room1 r1;
-    int i = 0;
-    while ((PTR)lvl_room2.pRoom2Next
-           && is_valid_ptr((PTR)lvl_room2.pRoom2Next)) {
-        if (!memread(game->pid, (PTR)lvl_room2.pRoom2Next, sizeof(Room2),
-                     find_room2_callback, &lvl_room2)) {
-            LOG_WARNING("Can't find lvl_room2.next");
-            break;
-        }
-        i++;
-        /* log_Room2(&lvl_room2); */
-        LOG_INFO("(%x, %x)", lvl_room2.dwPosX, lvl_room2.dwPosY);
+    /* // iterate room2.next */
+    /* Room1 r1; */
+    /* int i = 0; */
+    /* while ((PTR)lvl_room2.pRoom2Next */
+    /*        && is_valid_ptr((PTR)lvl_room2.pRoom2Next)) { */
+    /*     if (!memread(game->pid, (PTR)lvl_room2.pRoom2Next, sizeof(Room2), */
+    /*                  find_room2_callback, &lvl_room2)) { */
+    /*         LOG_WARNING("Can't find lvl_room2.next"); */
+    /*         break; */
+    /*     } */
+    /*     i++; */
+    /*     /\* log_Room2(&lvl_room2); *\/ */
+    /*     LOG_INFO("(%x, %x)", lvl_room2.dwPosX, lvl_room2.dwPosY); */
 
 
-        if (!memread(game->pid, (PTR)lvl_room2.pRoom1, sizeof(Room1),
-                     find_room1_callback, &r1)) {
-            LOG_WARNING("Can't find lvl_room2.room1");
-            continue;
-        }
-        LOG_DEBUG("(%x, %x) *", r1.dwXStart, r1.dwYStart);
+    /*     if (!memread(game->pid, (PTR)lvl_room2.pRoom1, sizeof(Room1), */
+    /*                  find_room1_callback, &r1)) { */
+    /*         LOG_WARNING("Can't find lvl_room2.room1"); */
+    /*         continue; */
+    /*     } */
+    /*     LOG_DEBUG("(%x, %x) *", r1.dwXStart, r1.dwYStart); */
 
-        int j = 0;
-        while ((PTR)r1.pRoomNext
-               && is_valid_ptr((PTR)r1.pRoomNext)) {
-            if (!memread(game->pid, (PTR)r1.pRoomNext, sizeof(Room1),
-                         find_room1_callback, &r1)) {
-                LOG_WARNING("Can't find room1.next");
-                break;
+    /*     int j = 0; */
+    /*     while ((PTR)r1.pRoomNext */
+    /*            && is_valid_ptr((PTR)r1.pRoomNext)) { */
+    /*         if (!memread(game->pid, (PTR)r1.pRoomNext, sizeof(Room1), */
+    /*                      find_room1_callback, &r1)) { */
+    /*             LOG_WARNING("Can't find room1.next"); */
+    /*             break; */
+    /*         } */
+    /*         j++; */
+    /*         /\* log_Room1(&r1); *\/ */
+    /*         LOG_DEBUG("(%x, %x)", r1.dwXStart, r1.dwYStart); */
+    /*     } */
+    /*     LOG_DEBUG("%d room1 found", j); */
+
+    /* } */
+    /* LOG_INFO("%d room2 found", i); */
+
+
+    /* Room1 r2r1; */
+    /* if (memread(game->pid, (PTR)game->room2.pRoom1, sizeof(Room1), */
+    /* /\* if (memread(game->pid, (PTR)lvl_room2.pRoom1, sizeof(Room1), *\/ */
+    /*             find_room1_callback, &r2r1)) { */
+    /*     LOG_ERROR("ZGEG"); */
+    /*     log_Room1(&r2r1); */
+    /* } */
+
+    //search room1.next in room1
+    BYTE *b = (BYTE *)&game->room2;
+    /* BYTE *b = (BYTE *)&r2r1; */
+    PresetUnit preset;
+    /* for (PTR offset = 0; offset < sizeof(Room2); offset += sizeof(PTR)) { */
+        PTR offset = 152;
+        /* PTR maybe_preset = *(PTR *)(b + offset); */
+        PTR maybe_preset = (PTR)game->room2.pPreset;
+        if (is_valid_ptr(maybe_preset)) {
+            LOG_INFO("found ptr in room2: %16lx - offset: %lu",
+                     maybe_preset, offset);
+            if (memread(game->pid, maybe_preset, sizeof(PresetUnit),
+                         find_preset_callback, &preset)) {
+                if (is_valid_PresetUnit(&preset)) {
+                    LOG_ERROR("YAY");
+                    log_PresetUnit(&preset);
+                    LOG_ERROR("%d", preset.dwTxtFileNo);
+                }
             }
-            j++;
-            /* log_Room1(&r1); */
-            LOG_DEBUG("(%x, %x)", r1.dwXStart, r1.dwYStart);
         }
-        LOG_DEBUG("%d room1 found", j);
+    /* } */
 
-    }
-    LOG_INFO("%d room2 found", i);
+        while (is_valid_ptr((PTR)preset.pPresetNext)) {
+            if (memread(game->pid, (PTR)preset.pPresetNext, sizeof(PresetUnit),
+                         find_preset_callback, &preset)) {
+                if (is_valid_PresetUnit(&preset)) {
+                    log_PresetUnit(&preset);
+                    LOG_ERROR("%d", preset.dwTxtFileNo);
+                }
+            }
+        }
 
 
     /* LOG_INFO("SEED: %d", game->act.dwMapSeed); */

@@ -74,57 +74,6 @@ void log_Level(Level *ptr)
               ptr->dwRoomEntries);
 }
 
-void log_Room1(Room1 *ptr)
-{
-    (void)ptr;
-    LOG_DEBUG("struct " CLR_GREEN "Room1" CLR_RESET " {\n"
-              "    Room1** pRoomsNear: %16lx\n"
-              "    void* pDunno1: %16lx\n"
-              "    DWORD _1[2]: %08x %08x\n"
-              "    Room2* pRoom2: %16lx\n"
-              "    DWORD _2[2]: %08x %08x\n"
-              "    CollMap* Coll: %16lx\n"
-              "    DWORD dwRoomsNear: %08x\n"
-              "    DWORD _2bis: %08x\n"
-              "    void* pDunno2: %16lx\n"
-              "    void* pDunno2bis: %16lx\n"
-              "    void* pDunno3: %16lx\n"
-              "    DWORD _3[12]: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
-              "    DWORD dwXStart: %08x\n"
-              "    DWORD dwYStart: %08x\n"
-              "    DWORD dwXSize: %08x\n"
-              "    DWORD dwYSize: %08x\n"
-              "    DWORD _4[6]: %08x %08x %08x %08x %08x %08x\n"
-              "    UnitAny* pUnitFirst: %16lx\n"
-              "    Room1* pRoomNext: %16lx\n"
-              "    DWORD _5[2]: %08x %08x\n"
-              "    DWORD _6[2]: %08x %08x\n"
-              "    DWORD _debug[8]: %08x %08x %08x %08x %08x %08x %08x %08x\n"
-              "}",
-              (PTR)ptr->pRoomsNear,
-              (PTR)ptr->pDunno1,
-              ptr->_1[0], ptr->_1[1],
-              (PTR)ptr->pRoom2,
-              ptr->_2[0], ptr->_2[1],
-              (PTR)ptr->Coll,
-              ptr->dwRoomsNear,
-              ptr->_2bis,
-              (PTR)ptr->pDunno2,
-              (PTR)ptr->pDunno2bis,
-              (PTR)ptr->pDunno3,
-              ptr->_3[0], ptr->_3[1], ptr->_3[2], ptr->_3[3], ptr->_3[4], ptr->_3[5], ptr->_3[6], ptr->_3[7], ptr->_3[8], ptr->_3[9], ptr->_3[10], ptr->_3[11],
-              ptr->dwXStart,
-              ptr->dwYStart,
-              ptr->dwXSize,
-              ptr->dwYSize,
-              ptr->_4[0], ptr->_4[1], ptr->_4[2], ptr->_4[3], ptr->_4[4], ptr->_4[5],
-              (PTR)ptr->pUnitFirst,
-              (PTR)ptr->pRoomNext,
-              ptr->_5[0], ptr->_5[1],
-              ptr->_6[0], ptr->_6[1],
-              ptr->_debug[0], ptr->_debug[1], ptr->_debug[2], ptr->_debug[3], ptr->_debug[4], ptr->_debug[5], ptr->_debug[6], ptr->_debug[7]);
-}
-
 void log_Room2(Room2 *ptr)
 {
     (void)ptr;
@@ -146,10 +95,9 @@ void log_Room2(Room2 *ptr)
               "    DWORD dwSizeY: %08x\n"
               "    DWORD _3: %08x\n"
               "    DWORD dwPresetType: %08x\n"
-              "    DWORD _4[2]: %08x %08x\n"
-              "    PresetUnit* pPreset: %16lx\n"
-              "    DWORD _5[5]: %08x\n"
+              "    DWORD _4[2]: %08x %08x %08x %08x %08x %08x\n"
               "    Level* pLevel: %16lx\n"
+              "    PresetUnit* pPreset: %16lx\n"
               "}",
               ptr->_1[0], ptr->_1[1],
               (PTR)ptr->pRoom2Near,
@@ -168,10 +116,108 @@ void log_Room2(Room2 *ptr)
               ptr->dwSizeY,
               ptr->_3,
               ptr->dwPresetType,
-              ptr->_4[0], ptr->_4[1],
-              (PTR)ptr->pPreset,
-              ptr->_5,
-              (PTR)ptr->pLevel);
+              ptr->_4[0], ptr->_4[1], ptr->_4[2], ptr->_4[3], ptr->_4[4], ptr->_4[5],
+              (PTR)ptr->pLevel,
+              (PTR)ptr->pPreset);
+}
+
+void log_Room1(Room1 *ptr)
+{
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "Room1" CLR_RESET " {\n"
+              "    Room1** pRoomsNear: %16lx\n"
+              "    void* pDunno1: %16lx\n"
+              "    DWORD _1[2]: %08x %08x\n"
+              "    Room2* pRoom2: %16lx\n"
+              "    DWORD _2[2]: %08x %08x\n"
+              "    void* pDunno2: %16lx\n"
+              "    DWORD dwRoomsNear: %08x\n"
+              "    DWORD _2bis: %08x\n"
+              "    CollMap* Coll: %16lx\n"
+              "    void* pDunno2bis: %16lx\n"
+              "    void* pDunno3: %16lx\n"
+              "    DWORD _3[12]: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
+              "    DWORD dwXStart: %08x\n"
+              "    DWORD dwYStart: %08x\n"
+              "    DWORD dwXSize: %08x\n"
+              "    DWORD dwYSize: %08x\n"
+              "    DWORD _4[6]: %08x %08x %08x %08x %08x %08x\n"
+              "    UnitAny* pUnitFirst: %16lx\n"
+              "    Room1* pRoomNext: %16lx\n"
+              "    DWORD _5[2]: %08x %08x\n"
+              "    DWORD _6[2]: %08x %08x\n"
+              "}",
+              (PTR)ptr->pRoomsNear,
+              (PTR)ptr->pDunno1,
+              ptr->_1[0], ptr->_1[1],
+              (PTR)ptr->pRoom2,
+              ptr->_2[0], ptr->_2[1],
+              (PTR)ptr->Coll,
+              ptr->dwRoomsNear,
+              ptr->_2bis,
+              (PTR)ptr->pDunno2,
+              (PTR)ptr->pDunno2bis,
+              (PTR)ptr->pDunno3,
+              ptr->_3[0], ptr->_3[1], ptr->_3[2], ptr->_3[3], ptr->_3[4], ptr->_3[5], ptr->_3[6], ptr->_3[7], ptr->_3[8], ptr->_3[9], ptr->_3[10], ptr->_3[11],
+              ptr->dwXStart,
+              ptr->dwYStart,
+              ptr->dwXSize,
+              ptr->dwYSize,
+              ptr->_4[0], ptr->_4[1], ptr->_4[2], ptr->_4[3], ptr->_4[4], ptr->_4[5],
+              (PTR)ptr->pUnitFirst,
+              (PTR)ptr->pRoomNext,
+              ptr->_5[0], ptr->_5[1],
+              ptr->_6[0], ptr->_6[1]);
+}
+
+void log_CollMap(CollMap *ptr)
+{
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "CollMap" CLR_RESET " {\n"
+              "    DWORD dwPosGameX: %08x\n"
+              "    DWORD dwPosGameY: %08x\n"
+              "    DWORD dwSizeGameX: %08x\n"
+              "    DWORD dwSizeGameY: %08x\n"
+              "    DWORD dwPosRoomX: %08x\n"
+              "    DWORD dwPosRoomY: %08x\n"
+              "    DWORD dwSizeRoomX: %08x\n"
+              "    DWORD dwSizeRoomY: %08x\n"
+              "    WORD* pMapStart: %16lx\n"
+              "}",
+              ptr->dwPosGameX,
+              ptr->dwPosGameY,
+              ptr->dwSizeGameX,
+              ptr->dwSizeGameY,
+              ptr->dwPosRoomX,
+              ptr->dwPosRoomY,
+              ptr->dwSizeRoomX,
+              ptr->dwSizeRoomY,
+              (PTR)ptr->pMapStart);
+}
+
+void log_PresetUnit(PresetUnit *ptr)
+{
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "PresetUnit" CLR_RESET " {\n"
+              "    DWORD _1: %08x\n"
+              "    DWORD dwTxtFileNo: %08x\n"
+              "    DWORD dwPosX: %08x\n"
+              "    DWORD _2: %08x\n"
+              "    PresetUnit* pPresetNext: %16lx\n"
+              "    DWORD _3: %08x\n"
+              "    DWORD _4: %08x\n"
+              "    DWORD dwType: %08x\n"
+              "    DWORD dwPosY: %08x\n"
+              "}",
+              ptr->_1,
+              ptr->dwTxtFileNo,
+              ptr->dwPosX,
+              ptr->_2,
+              (PTR)ptr->pPresetNext,
+              ptr->_3,
+              ptr->_4,
+              ptr->dwType,
+              ptr->dwPosY);
 }
 
 void log_Path(Path *ptr)
@@ -345,6 +391,16 @@ inline BOOL is_valid_Level(Level *ptr)
         && (!ptr->pMisc || is_valid_ptr((PTR)ptr->pMisc));
 }
 
+inline BOOL is_valid_Room2(Room2 *ptr)
+{
+    return IS_ALIGNED(ptr)
+        /* && is_valid_ptr((PTR)ptr->pRoom2Near) */
+        && is_valid_ptr((PTR)ptr->pRoomTiles)
+        && is_valid_ptr((PTR)ptr->pLevel)
+        && (!ptr->pPreset || is_valid_ptr((PTR)ptr->pPreset));
+        ;
+}
+
 inline BOOL is_valid_Room1(Room1 *ptr)
 {
 
@@ -367,7 +423,7 @@ inline BOOL is_valid_Room1(Room1 *ptr)
     return IS_ALIGNED(ptr)
         && (!ptr->pRoomsNear || is_valid_ptr((PTR)ptr->pRoomsNear))
         && (!ptr->pRoom2 || is_valid_ptr((PTR)ptr->pRoom2))
-        /* && (!ptr->pDunno2 || is_valid_ptr((PTR)ptr->pDunno2)) */
+        && (!ptr->pDunno2 || is_valid_ptr((PTR)ptr->pDunno2))
         /* && is_valid_ptr((PTR)ptr->pDunno3) */
         && (!ptr->Coll || is_valid_ptr((PTR)ptr->Coll))
         /* && is_valid_ptr((PTR)ptr->pUnitFirst) */
@@ -375,14 +431,24 @@ inline BOOL is_valid_Room1(Room1 *ptr)
         ;
 }
 
-inline BOOL is_valid_Room2(Room2 *ptr)
+inline BOOL is_valid_CollMap(CollMap *ptr)
 {
+    if (!is_valid_ptr((PTR)ptr->pMapStart)) {
+        LOG_WARNING("invalid pMapStart");
+    }
+
+    return IS_ALIGNED(ptr) && is_valid_ptr((PTR)ptr->pMapStart);
+}
+
+inline BOOL is_valid_PresetUnit(PresetUnit *ptr)
+{
+
+    if (ptr->pPresetNext && !is_valid_ptr((PTR)ptr->pPresetNext)) {
+        LOG_WARNING("invalid pPresetNext");
+    }
+
     return IS_ALIGNED(ptr)
-        /* && is_valid_ptr((PTR)ptr->pRoom2Near) */
-        && is_valid_ptr((PTR)ptr->pRoomTiles)
-        && is_valid_ptr((PTR)ptr->pLevel)
-        /* && (!ptr->pPreset || is_valid_ptr((PTR)ptr->pPreset)); */
-        ;
+        && (!ptr->pPresetNext || is_valid_ptr((PTR)ptr->pPresetNext));
 }
 
 inline BOOL is_valid_Path(Path *ptr)
