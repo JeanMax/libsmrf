@@ -34,6 +34,10 @@ typedef  struct Room1  RoomSmall;
 typedef  struct Room2  RoomBig;
 
 typedef  struct UnitAny  UnitAny;
+typedef  struct Room1  Room1;
+typedef  struct Room2  Room2;
+typedef  struct ActMisc  ActMisc;
+
 
 typedef  struct CollMap  CollMap;
 struct CollMap {
@@ -46,7 +50,7 @@ struct CollMap {
     DWORD dwSizeRoomX; // 0x18
     DWORD dwSizeRoomY; // 0x1C
     WORD* pMapStart;   // 0x20
-    /* WORD* pMapEnd;     // 0x22 */
+    WORD* coll;     // 0x22
     /* WORD coll[dwSizeGameY][dwSizeGameX]; //0x22 */
 };
 
@@ -63,8 +67,6 @@ struct PresetUnit {
     DWORD dwPosY;            // 0x18
 };
 
-typedef  struct Room2  Room2;
-typedef  struct ActMisc  ActMisc;
 typedef  struct Level  Level;
 struct Level {
     DWORD _1[4];        // 0x00
@@ -104,7 +106,29 @@ typedef  struct RoomTile  RoomTile;
 /*     DWORD* nNum;     // 0x10 */
 /* }; */
 
-typedef  struct Room1  Room1;
+struct Room2 { //big
+    DWORD _1[2];        //0
+    Room2** pRoom2Near; //8
+    DWORD _2[6];        //16
+    void* pDunno1;       //40
+    DWORD dwRoomFlags;  //48
+    DWORD dwRoomsNear;  //52
+    void* pDunno2;       //56
+    RoomTile* pRoomTiles; //64
+    Room2* pRoom2Next;    //72
+    void* pDunno3;         //80
+    Room1* pRoom1;        //88
+    DWORD dwPosX;         //96
+    DWORD dwPosY;         //100
+    DWORD dwSizeX;        //104
+    DWORD dwSizeY;        //108
+    DWORD _3;             //112
+    DWORD dwPresetType;   //116
+    DWORD _4[6];          //120
+    Level *pLevel;        //144
+    PresetUnit* pPreset; //152
+};
+
 struct Room1 { //small
     Room1** pRoomsNear;  //0
     void *pDunno1; //8
@@ -127,29 +151,6 @@ struct Room1 { //small
     Room1* pRoomNext; //176
     DWORD _5[2]; //184
     DWORD _6[2]; //192
-};
-
-struct Room2 { //big
-    DWORD _1[2];        //0
-    Room2** pRoom2Near; //8
-    DWORD _2[6];        //16
-    void* pDunno1;       //40
-    DWORD dwRoomFlags;  //48
-    DWORD dwRoomsNear;  //52
-    void* pDunno2;       //56
-    RoomTile* pRoomTiles; //64
-    Room2* pRoom2Next;    //72
-    void* pDunno3;         //80
-    Room1* pRoom1;        //88
-    DWORD dwPosX;         //96
-    DWORD dwPosY;         //100
-    DWORD dwSizeX;        //104
-    DWORD dwSizeY;        //108
-    DWORD _3;             //112
-    DWORD dwPresetType;   //116
-    DWORD _4[6];          //120
-    Level *pLevel;        //144
-    PresetUnit* pPreset; //152
 };
 
 typedef  struct Path  Path;
