@@ -1,4 +1,4 @@
-#include "seed.h"
+#include "smrf.h"
 #include <dirent.h>
 
 #define PAGE_LENGTH 0x1000

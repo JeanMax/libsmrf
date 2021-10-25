@@ -16,8 +16,8 @@
 ## CUSTOM CONFIG
 ##
 
-# name of the binary to make
-PROJECT = seed
+# name of the lib to make
+PROJECT = libsmrf.a
 
 # file-names of the sources
 SRC_NAME = main.c  proc.c  d2structs.c
@@ -26,7 +26,7 @@ SRC_NAME = main.c  proc.c  d2structs.c
 SRC_PATH = src
 
 # folder-names containing headers files
-INC_PATH = include
+INC_PATH = include include/smrf
 
 # where are your tests?
 TEST_DIR = test
@@ -149,9 +149,9 @@ test: all
 ## PRIVATE RULES
 ##
 
-# create binary (link)
+# create archive
 $(PROJECT): $(OBJ)
-	$(CC) $(CFLAGS) $(INC) $(LDFLAGS) $(OBJ) $(LDLIBS) -o $@
+	ar -rcs $@ $(OBJ)
 
 # create object files (compile)
 $(OBJ_PATH)/%.o: $(SRC_PATH)/%.c | $(OBJ_PATH)

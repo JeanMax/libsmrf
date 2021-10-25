@@ -1,4 +1,4 @@
-#include "seed.h"
+#include "smrf.h"
 
 #define MAX_PLAYER_DATA 256
 
@@ -445,10 +445,50 @@ static Room2 *parse_room2_list(pid_t pid, PTR r2_addr)
     return r2_first;
 }
 
-static BOOL parse_map(pid_t pid, Level *level)
+static void free_preset(PresetUnit *preset)
+{
+    if (!preset) {
+        return;
+    }
+    free_preset(preset->pPresetNext);
+    free(preset);
+}
+
+static void free_room1(Room1 *room1)
+{
+    if (!room1) {
+        return;
+    }
+    free_room1(room1->pRoomNext);
+    free(room1);
+}
+
+static void free_room2(Room2 *room2)
+{
+    if (!room2) {
+        return;
+    }
+    free_room1(room2->pRoom1);
+    free_preset(room2->pPreset);
+    free_room2(room2->pRoom2Next);
+    free(room2);
+}
+
+static void free_level(Level *level)
+{
+    if (!level) {
+        return;
+    }
+    free_room2(level->pRoom2First);
+    free(level);
+}
+
+static Level *parse_map(pid_t pid, Level *level)
 {
     if (g_levels[level->dwLevelNo]) {
-        return TRUE;
+        /* return g_levels[level->dwLevelNo]; */
+        free_level(g_levels[level->dwLevelNo]); //TODO: just update room1/preset
+        g_levels[level->dwLevelNo] = NULL;
     }
 
     Level *new_level;
@@ -457,7 +497,7 @@ static BOOL parse_map(pid_t pid, Level *level)
     new_level->pRoom2First = parse_room2_list(pid, (PTR)level->pRoom2First);
 
     g_levels[level->dwLevelNo] = new_level;
-    return TRUE;
+    return new_level;
 }
 
 static BOOL init(GameState *game)
@@ -544,14 +584,15 @@ static BOOL update(GameState *game)
     }
     log_Room2(&game->room2);
 
+    Level level;
     if (!memread(game->pid, (PTR)game->room2.pLevel, sizeof(Level),
-                 find_level_callback, &game->level)) {
+                 find_level_callback, &level)) {
         LOG_ERROR("Can't find level");
         return FALSE;
     }
-    log_Level(&game->level);
+    log_Level(&level);
 
-    parse_map(game->pid, &game->level);
+    game->level = parse_map(game->pid, &level);
 
     LOG_INFO("{"
              "\"seed\": %d, "
@@ -563,58 +604,66 @@ static BOOL update(GameState *game)
              game->act.dwMapSeed,
              game->path.xPos,
              game->path.yPos,
-             AREAS[game->level.dwLevelNo],
-             game->level.dwLevelNo);
+             AREAS[game->level->dwLevelNo],
+             game->level->dwLevelNo);
 
     return TRUE;
 }
 
-static BOOL main_loop(BOOL loop)
+GameState *refresh(void)
 {
-    GameState game = {0};
-    BOOL successful_update;
+    static GameState game = {0};
 
-    do {
-        successful_update = init(&game) && update(&game);
-        if (loop) {
-            sleep(1);
-        }
-    } while (loop);
-
-    return successful_update;
-}
-
-
-
-static void usage(const char *exe)
-{
-    LOG_INFO("Usage: %s [OPTION]...\n"
-             "List information about the D2R game state.\n"
-             "\n"
-             "  -l, --loop    refresh info in an endless loop\n"
-             "      --help    display this help and exit",
-             exe);
-}
-
-int main(int argc, const char **argv)
-{
-    BOOL loop = FALSE;
-
-    for (const char *exe = *argv++; argc > 1 && *argv; argv++) {
-        if (!strcmp(*argv, "--loop") || !strcmp(*argv, "-l")) {
-            loop = TRUE;
-        } else if (!strcmp(*argv, "--help")) {
-            usage(exe);
-            return EXIT_SUCCESS;
-        } else {
-            usage(exe);
-            return EXIT_FAILURE;
-        }
+    if (init(&game) && update(&game)) {
+        return &game;
     }
-
-    if (!main_loop(loop)) {
-        return EXIT_FAILURE;
-    }
-
-    return EXIT_SUCCESS;
+    return NULL;
 }
+
+/* static BOOL main_loop(BOOL loop) */
+/* { */
+/*     GameState game = {0}; */
+/*     BOOL successful_update; */
+
+/*     do { */
+/*         successful_update = init(&game) && update(&game); */
+/*         if (loop) { */
+/*             sleep(1); */
+/*         } */
+/*     } while (loop); */
+
+/*     return successful_update; */
+/* } */
+
+/* static void usage(const char *exe) */
+/* { */
+/*     LOG_INFO("Usage: %s [OPTION]...\n" */
+/*              "List information about the D2R game state.\n" */
+/*              "\n" */
+/*              "  -l, --loop    refresh info in an endless loop\n" */
+/*              "      --help    display this help and exit", */
+/*              exe); */
+/* } */
+
+/* int main(int argc, const char **argv) */
+/* { */
+/*     BOOL loop = FALSE; */
+
+/*     for (const char *exe = *argv++; argc > 1 && *argv; argv++) { */
+/*         if (!strcmp(*argv, "--loop") || !strcmp(*argv, "-l")) { */
+/*             loop = TRUE; */
+/*         } else if (!strcmp(*argv, "--help")) { */
+/*             usage(exe); */
+/*             return EXIT_SUCCESS; */
+/*         } else { */
+/*             usage(exe); */
+/*             return EXIT_FAILURE; */
+/*         } */
+/*     } */
+
+/*     if (!main_loop(loop)) { */
+/*         return EXIT_FAILURE; */
+/*     } */
+
+/*     return EXIT_SUCCESS; */
+/* } */

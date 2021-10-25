@@ -137,11 +137,15 @@ void log_Room1(Room1 *ptr)
               "    void* pDunno2bis: %16lx\n"
               "    void* pDunno3: %16lx\n"
               "    DWORD _3[12]: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
-              "    DWORD dwXStart: %08x\n"
-              "    DWORD dwYStart: %08x\n"
-              "    DWORD dwXSize: %08x\n"
-              "    DWORD dwYSize: %08x\n"
-              "    DWORD _4[6]: %08x %08x %08x %08x %08x %08x\n"
+              "    DWORD dwPosXBig: %08x\n"
+              "    DWORD dwPosYBig: %08x\n"
+              "    DWORD dwSizeXBig: %08x\n"
+              "    DWORD dwSizeYBig: %08x\n"
+              "    DWORD dwPosX: %08x\n"
+              "    DWORD dwPosY: %08x\n"
+              "    DWORD dwSizeX: %08x\n"
+              "    DWORD dwSizeY: %08x\n"
+              "    DWORD _4[2]: %08x %08x\n"
               "    UnitAny* pUnitFirst: %16lx\n"
               "    Room1* pRoomNext: %16lx\n"
               "    DWORD _5[2]: %08x %08x\n"
@@ -159,11 +163,15 @@ void log_Room1(Room1 *ptr)
               (PTR)ptr->pDunno2bis,
               (PTR)ptr->pDunno3,
               ptr->_3[0], ptr->_3[1], ptr->_3[2], ptr->_3[3], ptr->_3[4], ptr->_3[5], ptr->_3[6], ptr->_3[7], ptr->_3[8], ptr->_3[9], ptr->_3[10], ptr->_3[11],
-              ptr->dwXStart,
-              ptr->dwYStart,
-              ptr->dwXSize,
-              ptr->dwYSize,
-              ptr->_4[0], ptr->_4[1], ptr->_4[2], ptr->_4[3], ptr->_4[4], ptr->_4[5],
+              ptr->dwPosXBig,
+              ptr->dwPosYBig,
+              ptr->dwSizeXBig,
+              ptr->dwSizeYBig,
+              ptr->dwPosX,
+              ptr->dwPosY,
+              ptr->dwSizeX,
+              ptr->dwSizeY,
+              ptr->_4[0], ptr->_4[1],
               (PTR)ptr->pUnitFirst,
               (PTR)ptr->pRoomNext,
               ptr->_5[0], ptr->_5[1],

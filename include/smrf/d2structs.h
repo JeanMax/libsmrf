@@ -142,11 +142,15 @@ struct Room1 { //small
     DWORD *pDunno2bis;         //64
     void *pDunno3; //72
     DWORD _3[12];         //80
-    DWORD dwXStart; //128
-    DWORD dwYStart; //132
-    DWORD dwXSize; //136
-    DWORD dwYSize; //140
-    DWORD _4[6]; //144
+    DWORD dwPosXBig; //128  in big coord
+    DWORD dwPosYBig; //132
+    DWORD dwSizeXBig; //136
+    DWORD dwSizeYBig; //140
+    DWORD dwPosX; //128  in small coord
+    DWORD dwPosY; //132
+    DWORD dwSizeX; //136
+    DWORD dwSizeY; //140
+    DWORD _4[2];
     UnitAny* pUnitFirst; //168
     Room1* pRoomNext; //176
     DWORD _5[2]; //184

@@ -1,12 +1,18 @@
-#ifndef _SEED_H
-#define _SEED_H
+#ifndef _SMRF_H
+#define _SMRF_H
 
-#define _GNU_SOURCE
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
 
 #include <unistd.h> // sleep
 
-#include "d2structs.h"
-#include "proc.h"
+#include "smrf/d2structs.h"
+#include "smrf/proc.h"
 
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -32,10 +38,17 @@ struct GameState {
     Act act; //TODO: remove?
     Room1 room1; //TODO: remove?
     Room2 room2; //TODO: remove?
-    Level level;
+    Level *level;
     PTR player_addr;
     pid_t pid;
     BYTE _pad[4];
 };
+
+GameState *refresh(void);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
