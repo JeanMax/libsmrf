@@ -2,6 +2,7 @@
 #define _PROC_H
 
 #include <string.h>
+#include <unistd.h> // geteuid
 
 #include "util/types.h"
 #include "util/log.h"

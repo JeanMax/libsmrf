@@ -142,7 +142,7 @@ const char *AREAS[] = {
     "Tristram"
 };  //TODO: move that
 
-Level *g_levels[0xff] = {0};
+Level *g_levels[MAX_AREA] = {0};
 
 
 //TODO: add enum for callback return
@@ -312,6 +312,55 @@ static BOOL find_level_callback(BYTE *buf, size_t buf_len, PTR address, void *da
 
 ////////////////////////////////////////////////////////////////////////////////
 
+static void free_preset(PresetUnit *preset)
+{
+    if (!preset) {
+        return;
+    }
+    free_preset(preset->pPresetNext);
+    FREE(preset);
+}
+
+static void free_room1(Room1 *room1)
+{
+    if (!room1) {
+        return;
+    }
+    if (room1->Coll) {
+        FREE(room1->Coll);
+    }
+    free_room1(room1->pRoomNext);
+    FREE(room1);
+}
+
+static void free_room2(Room2 *room2)
+{
+    if (!room2) {
+        return;
+    }
+    free_room1(room2->pRoom1);
+    free_preset(room2->pPreset);
+    free_room2(room2->pRoom2Next);
+    FREE(room2);
+}
+
+static void free_level(Level *level)
+{
+    if (!level) {
+        return;
+    }
+    free_room2(level->pRoom2First);
+    FREE(level);
+}
+
+static void free_all_levels()
+{
+    for (int i = 0; i < MAX_AREA; i++) {
+        free_level(g_levels[i]);
+        g_levels[i] = NULL;
+    }
+}
+
 static PresetUnit *parse_preset_list(pid_t pid, PTR pu_addr)
 {
     PresetUnit pu;
@@ -445,86 +494,73 @@ static Room2 *parse_room2_list(pid_t pid, PTR r2_addr)
     return r2_first;
 }
 
-static void free_preset(PresetUnit *preset)
+static Level *parse_level_list(pid_t pid, PTR level_addr)
 {
-    if (!preset) {
-        return;
-    }
-    free_preset(preset->pPresetNext);
-    free(preset);
-}
+    Level level;
+    Level *level_first = NULL, *level_prev, *level_new;
+    int i = 0;                  /* DEBUG */
 
-static void free_room1(Room1 *room1)
-{
-    if (!room1) {
-        return;
-    }
-    free_room1(room1->pRoomNext);
-    free(room1);
-}
+    while (is_valid_ptr(level_addr)) {
+        if (!memread(pid, level_addr, sizeof(Level),
+                     find_level_callback, &level)) {
+            LOG_WARNING("Can't find level");
+            break;
+        }
+        i++;              /* DEBUG */
+        /* log_Level(&level); */
+        /* LOG_DEBUG("(%x, %x)", level.dwPosX, level.dwPosY); */
 
-static void free_room2(Room2 *room2)
-{
-    if (!room2) {
-        return;
-    }
-    free_room1(room2->pRoom1);
-    free_preset(room2->pPreset);
-    free_room2(room2->pRoom2Next);
-    free(room2);
-}
+        level_new = g_levels[level.dwLevelNo];
+        if (level_new) { // not new eh
+            if (!level_first) { //current lvl
+                free_room2(level_new->pRoom2First); //TODO: just update preset/room1/col
+                level_new->pRoom2First = parse_room2_list(pid, (PTR)level.pRoom2First);
+            }
+        } else {
+            DUPE(level_new, &level, sizeof(Level));
+            level_new->pNextLevel = NULL;
+            g_levels[level.dwLevelNo] = level_new;
+            level_new->pRoom2First = parse_room2_list(pid, (PTR)level.pRoom2First);
+        }
 
-static void free_level(Level *level)
-{
-    if (!level) {
-        return;
-    }
-    free_room2(level->pRoom2First);
-    free(level);
-}
-
-static Level *parse_map(pid_t pid, Level *level)
-{
-    if (g_levels[level->dwLevelNo]) {
-        /* return g_levels[level->dwLevelNo]; */
-        free_level(g_levels[level->dwLevelNo]); //TODO: just update room1/preset
-        g_levels[level->dwLevelNo] = NULL;
+        if (!level_first) {
+            level_first = level_new;
+        } else  {
+            level_prev->pNextLevel = level_new;
+        }
+        level_prev = level_new;
+        level_addr = (PTR)level.pNextLevel;
     }
 
-    Level *new_level;
-    DUPE(new_level, level, sizeof(Level));
+    LOG_DEBUG("%d level found", i);
 
-    new_level->pRoom2First = parse_room2_list(pid, (PTR)level->pRoom2First);
-
-    g_levels[level->dwLevelNo] = new_level;
-    return new_level;
+    return level_first;
 }
 
-static BOOL init(GameState *game)
+static BOOL init(GameState *game, Player *player)
 {
-    game->pid = pidof("D2R.exe");
-    if (!game->pid) {
+    pid_t pid = pidof("D2R.exe");
+    if (!pid) {
         LOG_ERROR("Can't find D2R.exe");
-
         return FALSE;
     }
 
-    if (!readmaps(game->pid)) {
+    if (!readmaps(pid)) {
         LOG_ERROR("Can't read maps");
         return FALSE;
     }
 
-    if (game->player_addr) {
-        if (memread(game->pid, (PTR)game->player_addr, sizeof(Player),
-                    find_player_callback, &game->player)) {
+    if (pid == game->_pid && game->_player_addr) {
+        if (memread(pid, (PTR)game->_player_addr, sizeof(Player),
+                    find_player_callback, player)) {
             return TRUE;
         } else {
-            LOG_ERROR("Can't refresh player");
+            LOG_WARNING("Can't refresh player");
         }
     }
 
     PTR player_data_addr[MAX_PLAYER_DATA] = {0};
-    memreadall(game->pid, TRUE, search_player_data_callback, &player_data_addr);
+    memreadall(pid, TRUE, search_player_data_callback, &player_data_addr);
     if (!*player_data_addr) {
         LOG_ERROR("Can't find PlayerData ptr");
         return FALSE;
@@ -536,74 +572,93 @@ static BOOL init(GameState *game)
     LOG_WARNING("player_data found: %d", i);
 #endif
 
-    if (!memreadall(game->pid, FALSE, search_player_callback, &player_data_addr)) {
+    if (!memreadall(pid, FALSE, search_player_callback, &player_data_addr)) {
         LOG_ERROR("Can't find Player ptr");
         return FALSE;
     }
-    game->player_addr = *(PTR *)player_data_addr;
-    memcpy(&game->player, ((PTR *)player_data_addr + 1), sizeof(Player));
-    log_Player(&game->player);
 
+    /* pthread_mutex_lock(&game->mutex); */
+    game->_pid = pid;
+    game->_player_addr = *(PTR *)player_data_addr;
+    /* pthread_mutex_unlock(&game->mutex); */
+
+    memcpy(player, ((PTR *)player_data_addr + 1), sizeof(Player));
+    log_Player(&game->player);
     return TRUE;
 }
 
 static BOOL update(GameState *game)
 {
-    if (!memread(game->pid, (PTR)game->player.pPlayerData, sizeof(PlayerData),
-                 find_player_data_callback, &game->player_data)) {
+    static PlayerContent pc = {0};
+    static PlayerContent tmp = {0};
+    static Player player = {0};
+
+    if (!init(game, &player)) {
+        pthread_mutex_lock(&game->mutex);
+        free_all_levels();
+        game->level = NULL;
+        pthread_mutex_unlock(&game->mutex);
+        return FALSE;
+    }
+
+    if (!memread(game->_pid, (PTR)player.pPlayerData, sizeof(PlayerData),
+                 find_player_data_callback, &tmp.player_data)) {
         LOG_ERROR("Can't find playerData");
         return FALSE;
     }
-    log_PlayerData(&game->player_data);
+    log_PlayerData(&tmp.player_data);
 
-    if (!memread(game->pid, (PTR)game->player.pPath, sizeof(Path),
-                 find_path_callback, &game->path)) {
-        LOG_ERROR("Can't find path");
-        return FALSE;
-    }
-    log_Path(&game->path);
-
-    if (!memread(game->pid, (PTR)game->player.pAct, sizeof(Act),
-                 find_act_callback, &game->act)) {
+    if (!memread(game->_pid, (PTR)player.pAct, sizeof(Act),
+                 find_act_callback, &tmp.act)) {
         LOG_ERROR("Can't find act");
         return FALSE;
     }
-    log_Act(&game->act);
+    log_Act(&tmp.act);
 
-    if (!memread(game->pid, (PTR)game->path.pRoom1, sizeof(Room1),
-                 find_room1_callback, &game->room1)) {
+    if (!memread(game->_pid, (PTR)player.pPath, sizeof(Path),
+                 find_path_callback, &tmp.path)) {
+        LOG_ERROR("Can't find path");
+        return FALSE;
+    }
+    log_Path(&tmp.path);
+
+    if (!memread(game->_pid, (PTR)tmp.path.pRoom1, sizeof(Room1),
+                 find_room1_callback, &tmp.room1)) {
         LOG_ERROR("Can't find room1");
         return FALSE;
     }
-    log_Room1(&game->room1);
+    log_Room1(&tmp.room1);
 
-    if (!memread(game->pid, (PTR)game->room1.pRoom2, sizeof(Room2),
-                 find_room2_callback, &game->room2)) {
+    if (!memread(game->_pid, (PTR)tmp.room1.pRoom2, sizeof(Room2),
+                 find_room2_callback, &tmp.room2)) {
         LOG_ERROR("Can't find room2");
         return FALSE;
     }
-    log_Room2(&game->room2);
+    log_Room2(&tmp.room2);
 
-    Level level;
-    if (!memread(game->pid, (PTR)game->room2.pLevel, sizeof(Level),
-                 find_level_callback, &level)) {
-        LOG_ERROR("Can't find level");
-        return FALSE;
-    }
-    log_Level(&level);
+    pthread_mutex_lock(&game->mutex);
+    game->all_levels = g_levels;
+    game->level = parse_level_list(game->_pid, (PTR)tmp.room2.pLevel);
+    tmp.room2.pLevel = game->level;
+    memcpy(&pc, &tmp, sizeof(PlayerContent));
+    memcpy(&game->player, &player, sizeof(Player));
+    game->player.pPlayerData = &pc.player_data;
+    game->player.pAct = &pc.act;
+    game->player.pPath = &pc.path;
+    game->player.pPath->pRoom1 = &pc.room1;
+    game->player.pPath->pRoom1->pRoom2 = &pc.room2;
+    pthread_mutex_unlock(&game->mutex);
 
-    game->level = parse_map(game->pid, &level);
-
-    LOG_INFO("{"
+    LOG_DEBUG("{"
              "\"seed\": %d, "
              "\"x\": %d, "
              "\"y\": %d, "
              "\"area_name\": \"%s\", "
              "\"area\": (%d)"
              "}",
-             game->act.dwMapSeed,
-             game->path.xPos,
-             game->path.yPos,
+             game->player.pAct->dwMapSeed,
+             game->player.pPath->xPos,
+             game->player.pPath->yPos,
              AREAS[game->level->dwLevelNo],
              game->level->dwLevelNo);
 
@@ -612,9 +667,9 @@ static BOOL update(GameState *game)
 
 GameState *refresh(void)
 {
-    static GameState game = {0};
+    static GameState game = {.mutex = PTHREAD_MUTEX_INITIALIZER};
 
-    if (init(&game) && update(&game)) {
+    if (update(&game)) {
         return &game;
     }
     return NULL;

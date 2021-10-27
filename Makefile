@@ -32,7 +32,7 @@ INC_PATH = include include/smrf
 TEST_DIR = test
 
 # extra libraries needed for linking
-LDLIBS =
+LDLIBS = -pthread
 
 # linking flags
 LDFLAGS =

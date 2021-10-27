@@ -9,13 +9,20 @@
 # define _GNU_SOURCE
 #endif
 
-#include <unistd.h> // sleep
+#include <pthread.h>
 
 #include "smrf/d2structs.h"
 #include "smrf/proc.h"
 
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+#define FREE(p) do {                              \
+         if ((p)) {                               \
+             free((p));                           \
+             (p) = NULL;                          \
+         }                                        \
+     } while (0)
 
 #define MALLOC(dst, size) do {                                      \
         if (!((dst) = malloc((size)))) {                            \
@@ -30,18 +37,26 @@
     } while (0)
 
 
+#define MAX_AREA 137
+
+typedef  struct PlayerContent  PlayerContent;
+struct PlayerContent {
+    PlayerData player_data;
+    Act act;
+    Path path;
+    Room1 room1;
+    Room2 room2;
+};
+
 typedef  struct GameState  GameState;
 struct GameState {
     Player player;
-    PlayerData player_data;
-    Path path;
-    Act act; //TODO: remove?
-    Room1 room1; //TODO: remove?
-    Room2 room2; //TODO: remove?
     Level *level;
-    PTR player_addr;
-    pid_t pid;
+    PTR _player_addr; //TODO: internal, hide
+    pid_t _pid; //TODO: internal, hide
     BYTE _pad[4];
+    pthread_mutex_t mutex;
+    Level **all_levels; // Level *all_levels[MAX_AREA]
 };
 
 GameState *refresh(void);
