@@ -11,11 +11,13 @@
 
 #include <pthread.h>
 
+#include "smrf/d2sdk.h"
 #include "smrf/d2structs.h"
 #include "smrf/proc.h"
 
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define ABS(x)    ((x) > 0   ? (x) : -(x))
 
 #define FREE(p) do {                              \
          if ((p)) {                               \
@@ -59,7 +61,10 @@ struct GameState {
     Level **all_levels; // Level *all_levels[MAX_AREA]
 };
 
-GameState *refresh(void);
+
+BOOL       update_game_state(GameState *game);
+void       init_game_state(GameState *game);
+void       destroy_game_state(GameState *game);
 
 
 #ifdef __cplusplus

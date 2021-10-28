@@ -7,28 +7,6 @@
 #include "util/types.h"
 #include "util/log.h"
 
-/* enum CollisionFlag { */
-/*     None = 0x0000, */
-/*     BlockWalk = 0x0001, */
-/*     BlockLineOfSight = 0x0002, */
-/*     Wall = 0x0004, */
-/*     BlockPlayer = 0x0008, */
-/*     AlternateTile = 0x0010, */
-/*     Blank = 0x0020, */
-/*     Missile = 0x0040, */
-/*     Player = 0x0080, */
-/*     NPCLocation = 0x0100, */
-/*     Item = 0x0200, */
-/*     Object = 0x0400, */
-/*     ClosedDoor = 0x0800, */
-/*     NPCCollision = 0x1000, */
-/*     FriendlyNPC = 0x2000, */
-/*     Unknown = 0x4000, */
-/*     DeadBody = 0x8000, // also portal */
-/*     ThickenedWall = 0xfefe, */
-/*     Avoid = 0xffff */
-/* }; */
-
 // these Room1 Room2 naming are so confusing ):
 typedef  struct Room1  RoomSmall;
 typedef  struct Room2  RoomBig;
@@ -299,8 +277,6 @@ struct UnitAny {
 };
 
 
-void hex_dump(void *ptr, size_t len);
-
 void log_Level(Level *ptr);
 void log_Room2(Room2 *ptr);
 void log_Room1(Room1 *ptr);
@@ -321,5 +297,27 @@ BOOL is_valid_Act(Act *ptr);
 BOOL is_valid_PlayerData(PlayerData *ptr);
 BOOL is_valid_Player(Player *ptr);
 
+#define DEF_STRUCT_CPY_CALLBACK(STRUCT) \
+    inline static BOOL find_##STRUCT##_callback(BYTE *buf, size_t buf_len, PTR address, void *data) \
+    {                                                                       \
+        (void)buf_len, (void)address;                                       \
+        if (!is_valid_##STRUCT((STRUCT *)buf)) {                            \
+            LOG_WARNING("Invalid "#STRUCT" %16lx", address);                \
+            log_##STRUCT((STRUCT *)buf);                                    \
+            return TRUE;                                                    \
+        }                                                                   \
+        memcpy(data, buf, sizeof(STRUCT));                                  \
+        return FALSE;                                                       \
+    }
+
+DEF_STRUCT_CPY_CALLBACK(Level)
+DEF_STRUCT_CPY_CALLBACK(Room2)
+DEF_STRUCT_CPY_CALLBACK(Room1)
+DEF_STRUCT_CPY_CALLBACK(CollMap)
+DEF_STRUCT_CPY_CALLBACK(PresetUnit)
+DEF_STRUCT_CPY_CALLBACK(Path)
+DEF_STRUCT_CPY_CALLBACK(Act)
+DEF_STRUCT_CPY_CALLBACK(PlayerData)
+DEF_STRUCT_CPY_CALLBACK(Player)
 
 #endif

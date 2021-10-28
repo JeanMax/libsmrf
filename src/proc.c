@@ -5,7 +5,7 @@
 #define MAX_PATH 128
 
 #define MAX_MAPS     0x1000
-MapAddress g_maps_range[MAX_MAPS] = {0};  //TODO: this is ugly
+static MapAddress g_maps_range[MAX_MAPS] = {0};  //TODO: this is ugly
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -169,6 +169,10 @@ BOOL readmaps(pid_t pid)
             && is_rw_memory(read_buf)
             && !is_bullshit_memory(read_buf)) {
 
+            if (i == MAX_MAPS) {
+                LOG_ERROR("Too many mappings, abort.");
+                exit(EXIT_FAILURE);
+            }
             g_maps_range[i].start = start_address;
             g_maps_range[i].end = end_address;
             i++;

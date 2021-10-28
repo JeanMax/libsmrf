@@ -20,7 +20,13 @@
 PROJECT = libsmrf.a
 
 # file-names of the sources
-SRC_NAME = main.c  proc.c  d2structs.c
+SRC_NAME = main.c  proc.c  d2structs.c  d2sdk.c  util/log.c
+
+# name of the example to make
+PROJECT_EXAMPLE = smrfexample
+
+# file-name of the example source
+SRC_EXAMPLE = example/example.c
 
 # folder-names of the sources
 SRC_PATH = src
@@ -54,7 +60,7 @@ WWFLAGS = $(WFLAGS) -Wpedantic -Wshadow -Wconversion -Wcast-align \
   -Wstrict-prototypes -Wmissing-prototypes -Wunreachable-code -Winit-self \
   -Wmissing-declarations -Wfloat-equal -Wbad-function-cast -Wundef \
   -Waggregate-return -Wstrict-overflow=5 -Wold-style-definition  \
-  -Wredundant-decls -Wpadded   # moar warnings
+  -Wredundant-decls -Wpadded -Winline   # moar warnings
 
 # folder used to store all compilations sub-products (.o and .d mostly)
 OBJ_DIR ?= obj
@@ -70,7 +76,7 @@ LN =		ln -s
 RM =		rm -f
 RMDIR =		rmdir
 MKDIR =		mkdir -p
-CC =		gcc  # $(shell clang --version >/dev/null 2>&1 && echo clang || echo gcc)
+# CC =		gcc  # $(shell clang --version >/dev/null 2>&1 && echo clang || echo gcc)
 MAKE ?=		make -j$(shell nproc 2>/dev/null || echo 1)
 SUB_MAKE =	make -C
 
@@ -106,13 +112,13 @@ mecry:
 # build for gdb/valgrind debugging
 dev:
 	+$(MAKE) $(PROJECT).dev \
-		"PROJECT = $(PROJECT).dev" \
+		"PROJECT = $(PROJECT).dev" "PROJECT_EXAMPLE = $(PROJECT_EXAMPLE).dev" \
 		"CFLAGS = $(DCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/dev"
 
 # build for runtime debugging (fsanitize)
 san:
 	+$(MAKE) $(PROJECT).san \
-		"PROJECT = $(PROJECT).san" \
+		"PROJECT = $(PROJECT).san" "PROJECT_EXAMPLE = $(PROJECT_EXAMPLE).san" \
 		"CFLAGS = $(SCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/san"
 
 # remove all generated .o and .d
@@ -129,11 +135,11 @@ fclean: clean
 	test -d $(OBJ_DIR) \
 && find $(OBJ_DIR) -type d | sort -r | xargs $(RMDIR) || true
 	$(RM) $(PROJECT) $(PROJECT).san $(PROJECT).dev
+	$(RM) $(PROJECT_EXAMPLE) $(PROJECT_EXAMPLE).san $(PROJECT_EXAMPLE).dev
 
 # some people like it real clean
 mrproper:
 	$(RM) -r $(OBJ_DIR)
-	$(RM) -r $(TEST_DIR)
 	+$(MAKE) fclean
 
 # clean build and recompile
@@ -150,8 +156,14 @@ test: all
 ##
 
 # create archive
-$(PROJECT): $(OBJ)
+$(PROJECT): $(OBJ) $(SRC_EXAMPLE)
 	ar -rcs $@ $(OBJ)
+	+$(MAKE) $(PROJECT_EXAMPLE) || true
+
+# create example binary
+$(PROJECT_EXAMPLE): $(SRC_EXAMPLE) $(PROJECT)
+	$(CC) $(CFLAGS) $(INC) $(LDFLAGS) $(SRC_EXAMPLE) $(PROJECT) $(LDLIBS) -o $@
+
 
 # create object files (compile)
 $(OBJ_PATH)/%.o: $(SRC_PATH)/%.c | $(OBJ_PATH)
