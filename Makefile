@@ -70,7 +70,7 @@ LN =		ln -s
 RM =		rm -f
 RMDIR =		rmdir
 MKDIR =		mkdir -p
-CC =		gcc  # $(shell clang --version >/dev/null 2>&1 && echo clang || echo gcc)
+#CC =		gcc  # $(shell clang --version >/dev/null 2>&1 && echo clang || echo gcc)
 MAKE ?=		make -j$(shell nproc 2>/dev/null || echo 1)
 SUB_MAKE =	make -C
 
@@ -105,14 +105,14 @@ mecry:
 
 # build for gdb/valgrind debugging
 dev:
-	+$(MAKE) $(PROJECT).dev \
-		"PROJECT = $(PROJECT).dev" \
+	+$(MAKE) $(PROJECT)_dev \
+		"PROJECT = $(PROJECT)_dev" \
 		"CFLAGS = $(DCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/dev"
 
 # build for runtime debugging (fsanitize)
 san:
-	+$(MAKE) $(PROJECT).san \
-		"PROJECT = $(PROJECT).san" \
+	+$(MAKE) $(PROJECT)_san \
+		"PROJECT = $(PROJECT)_san" \
 		"CFLAGS = $(SCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/san"
 
 # remove all generated .o and .d
@@ -128,7 +128,7 @@ clean:
 fclean: clean
 	test -d $(OBJ_DIR) \
 && find $(OBJ_DIR) -type d | sort -r | xargs $(RMDIR) || true
-	$(RM) $(PROJECT) $(PROJECT).san $(PROJECT).dev
+	$(RM) $(PROJECT) $(PROJECT)_san $(PROJECT)_dev
 
 # some people like it real clean
 mrproper:

@@ -1,6 +1,6 @@
 #include "seed.h"
 
-#define MAX_PLAYER_DATA 256
+#define MAX_PLAYER_DATA 0x200
 
 const char *AREAS[] = {
     "None",
@@ -145,19 +145,19 @@ const char *AREAS[] = {
 
 //TODO: add enum for callback return
 
-static BOOL search_player_data_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+static bool search_player_data_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
-    BYTE *b = buf;
+    byte *b = buf;
     PlayerData *player_data;
     while (buf_len >= sizeof(PlayerData)) {
         player_data = (PlayerData *)b;
         if (is_valid_PlayerData(player_data)) {
-            PTR here = address + (PTR)(b - buf);
+            ptr_t here = address + (ptr_t)(b - buf);
 /* #ifdef NDEBUG */
-/*             LOG_DEBUG("Valid player_data! %16lx", here); */
+/*             LOG_DEBUG("Valid player_data! %16jx", here); */
 /*             log_PlayerData(player_data); */
 /* #endif */
-            PTR *addr_list = (PTR *)data;
+            ptr_t *addr_list = (ptr_t *)data;
             while (*addr_list) {
                 addr_list++;
             }
@@ -165,44 +165,44 @@ static BOOL search_player_data_callback(BYTE *buf, size_t buf_len, PTR address, 
             /* return 2; */
             /* return FALSE; */
         }
-        b += sizeof(PTR);
-        buf_len -= sizeof(PTR);
+        b += sizeof(ptr_t);
+        buf_len -= sizeof(ptr_t);
     }
 
     return TRUE; // keep reading
 }
 
-static BOOL search_player_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+static bool search_player_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
 
-    BYTE *b = buf;
-    PTR *player_data_addr = (PTR *)data;
-    PTR *p;
+    byte *b = buf;
+    ptr_t *player_data_addr = (ptr_t *)data;
+    ptr_t *p;
     Player *player;
 
     while (buf_len >= sizeof(Player)) {
         player = (Player *)b;
         for (p = player_data_addr; *p; p++) {
-            if ((PTR)player->pPlayerData == *p && is_valid_Player(player)) {
-                PTR here = address + (PTR)(b - buf);
-                LOG_DEBUG("Valid player! %08lx", here);
-                *(PTR *)data = here;
-                memcpy(((PTR *)data) + 1, b, sizeof(Player));
+            if ((ptr_t)player->pPlayerData == *p && is_valid_Player(player)) {
+                ptr_t here = address + (ptr_t)(b - buf);
+                LOG_DEBUG("Valid player! %16jx", here);
+                *(ptr_t *)data = here;
+                memcpy(((ptr_t *)data) + 1, b, sizeof(Player));
                 return FALSE;
             }
         }
-        b += sizeof(PTR);
-        buf_len -= sizeof(PTR);
+        b += sizeof(ptr_t);
+        buf_len -= sizeof(ptr_t);
     }
 
     return TRUE; // keep reading
 }
 
-static BOOL find_player_data_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+static bool find_player_data_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
     (void)buf_len, (void)address;
     if (!is_valid_PlayerData((PlayerData *)buf)) {
-        LOG_WARNING("Invalid PlayerData %16lx", address);
+        LOG_WARNING("Invalid PlayerData %16jx", address);
         log_PlayerData((PlayerData *)buf);
         return TRUE;
     }
@@ -210,11 +210,11 @@ static BOOL find_player_data_callback(BYTE *buf, size_t buf_len, PTR address, vo
     return FALSE;
 }
 
-static BOOL find_player_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+static bool find_player_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
     (void)buf_len, (void)address;
     if (!is_valid_Player((Player *)buf)) {
-        LOG_WARNING("Invalid player %16lx", address);
+        LOG_WARNING("Invalid player %16jx", address);
         log_Player((Player *)buf);
         return TRUE;
     }
@@ -222,11 +222,11 @@ static BOOL find_player_callback(BYTE *buf, size_t buf_len, PTR address, void *d
     return FALSE;
 }
 
-static BOOL find_act_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+static bool find_act_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
     (void)buf_len, (void)address;
     if (!is_valid_Act((Act *)buf)) {
-        LOG_WARNING("Invalid act %16lx", address);
+        LOG_WARNING("Invalid act %16jx", address);
         log_Act((Act *)buf);
         return TRUE;
     }
@@ -234,11 +234,11 @@ static BOOL find_act_callback(BYTE *buf, size_t buf_len, PTR address, void *data
     return FALSE;
 }
 
-static BOOL find_path_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+static bool find_path_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
     (void)buf_len, (void)address;
     if (!is_valid_Path((Path *)buf)) {
-        LOG_WARNING("Invalid path %16lx", address);
+        LOG_WARNING("Invalid path %16jx", address);
         log_Path((Path *)buf);
         return TRUE;
     }
@@ -246,11 +246,11 @@ static BOOL find_path_callback(BYTE *buf, size_t buf_len, PTR address, void *dat
     return FALSE;
 }
 
-static BOOL find_room1_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+static bool find_room1_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
     (void)buf_len, (void)address;
     if (!is_valid_Room1((Room1 *)buf)) {
-        LOG_WARNING("Invalid room1 %16lx", address);
+        LOG_WARNING("Invalid room1 %16jx", address);
         log_Room1((Room1 *)buf);
         return TRUE;
     }
@@ -258,11 +258,11 @@ static BOOL find_room1_callback(BYTE *buf, size_t buf_len, PTR address, void *da
     return FALSE;
 }
 
-static BOOL find_room2_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+static bool find_room2_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
     (void)buf_len, (void)address;
     if (!is_valid_Room2((Room2 *)buf)) {
-        LOG_WARNING("Invalid room2 %16lx", address);
+        LOG_WARNING("Invalid room2 %16jx", address);
         log_Room2((Room2 *)buf);
         return TRUE;
     }
@@ -270,11 +270,11 @@ static BOOL find_room2_callback(BYTE *buf, size_t buf_len, PTR address, void *da
     return FALSE;
 }
 
-static BOOL find_level_callback(BYTE *buf, size_t buf_len, PTR address, void *data)
+static bool find_level_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
     (void)buf_len, (void)address;
     if (!is_valid_Level((Level *)buf)) {
-        LOG_WARNING("Invalid level %16lx", address);
+        LOG_WARNING("Invalid level %16jx", address);
         log_Level((Level *)buf);
         return TRUE;
     }
@@ -284,7 +284,7 @@ static BOOL find_level_callback(BYTE *buf, size_t buf_len, PTR address, void *da
 
 
 
-static BOOL init(GameState *game)
+static bool init(GameState *game)
 {
     game->pid = pidof("D2R.exe");
     if (!game->pid) {
@@ -298,7 +298,7 @@ static BOOL init(GameState *game)
     }
 
     if (game->player_addr) {
-        if (memread(game->pid, (PTR)game->player_addr, sizeof(Player),
+        if (memread(game->pid, (ptr_t)game->player_addr, sizeof(Player),
                     find_player_callback, &game->player)) {
             return TRUE;
         } else {
@@ -306,7 +306,7 @@ static BOOL init(GameState *game)
         }
     }
 
-    PTR player_data_addr[MAX_PLAYER_DATA] = {0};
+    ptr_t player_data_addr[MAX_PLAYER_DATA] = {0};
     memreadall(game->pid, TRUE, search_player_data_callback, &player_data_addr);
     if (!*player_data_addr) {
         LOG_ERROR("Can't find PlayerData ptr");
@@ -323,53 +323,53 @@ static BOOL init(GameState *game)
         LOG_ERROR("Can't find Player ptr");
         return FALSE;
     }
-    game->player_addr = *(PTR *)player_data_addr;
-    memcpy(&game->player, ((PTR *)player_data_addr + 1), sizeof(Player));
+    game->player_addr = *(ptr_t *)player_data_addr;
+    memcpy(&game->player, ((ptr_t *)player_data_addr + 1), sizeof(Player));
     log_Player(&game->player);
 
     return TRUE;
 }
 
-static BOOL update(GameState *game)
+static bool update(GameState *game)
 {
-    if (!memread(game->pid, (PTR)game->player.pPlayerData, sizeof(PlayerData),
+    if (!memread(game->pid, (ptr_t)game->player.pPlayerData, sizeof(PlayerData),
                  find_player_data_callback, &game->player_data)) {
-        LOG_ERROR("Can't find playerData");
+        LOG_ERROR("Can't update playerData");
         return FALSE;
     }
     log_PlayerData(&game->player_data);
 
-    if (!memread(game->pid, (PTR)game->player.pPath, sizeof(Path),
+    if (!memread(game->pid, (ptr_t)game->player.pPath, sizeof(Path),
                  find_path_callback, &game->path)) {
-        LOG_ERROR("Can't find path");
+        LOG_ERROR("Can't update path");
         return FALSE;
     }
     log_Path(&game->path);
 
-    if (!memread(game->pid, (PTR)game->player.pAct, sizeof(Act),
+    if (!memread(game->pid, (ptr_t)game->player.pAct, sizeof(Act),
                  find_act_callback, &game->act)) {
-        LOG_ERROR("Can't find act");
+        LOG_ERROR("Can't update act");
         return FALSE;
     }
     log_Act(&game->act);
 
-    if (!memread(game->pid, (PTR)game->path.pRoom1, sizeof(Room1),
+    if (!memread(game->pid, (ptr_t)game->path.pRoom1, sizeof(Room1),
                  find_room1_callback, &game->room1)) {
-        LOG_ERROR("Can't find room1");
+        LOG_ERROR("Can't update room1");
         return FALSE;
     }
     log_Room1(&game->room1);
 
-    if (!memread(game->pid, (PTR)game->room1.pRoom2, sizeof(Room2),
+    if (!memread(game->pid, (ptr_t)game->room1.pRoom2, sizeof(Room2),
                  find_room2_callback, &game->room2)) {
-        LOG_ERROR("Can't find room2");
+        LOG_ERROR("Can't update room2");
         return FALSE;
     }
     log_Room2(&game->room2);
 
-    if (!memread(game->pid, (PTR)game->room2.pLevel, sizeof(Level),
+    if (!memread(game->pid, (ptr_t)game->room2.pLevel, sizeof(Level),
                  find_level_callback, &game->level)) {
-        LOG_ERROR("Can't find level");
+        LOG_ERROR("Can't update level");
         return FALSE;
     }
     log_Level(&game->level);
@@ -377,9 +377,9 @@ static BOOL update(GameState *game)
     /* Level level_bis; */
     /* memcpy(&level_bis, &game->level, sizeof(Level)); */
     /* while (level_bis.pNextLevel) { */
-    /*     if (!memread(game->pid, (PTR)level_bis.pNextLevel, sizeof(Level), */
+    /*     if (!memread(game->pid, (ptr_t)level_bis.pNextLevel, sizeof(Level), */
     /*                  find_level_callback, &level_bis)) { */
-    /*         LOG_WARNING("Can't find level_bis"); */
+    /*         LOG_WARNING("Can't update level_bis"); */
     /*            //TODO: some of the level_bis.pNextLevel are invalid?! */
     /*         break; */
     /*     } */
@@ -409,7 +409,7 @@ static BOOL update(GameState *game)
              "\"x\": %d, "
              "\"y\": %d, "
              "\"area_name\": \"%s\", "
-             "\"area\": (%d)"
+             "\"area\": %d"
              "}",
              /* game->player_data.szName, */
              game->act.dwMapSeed,
@@ -421,10 +421,10 @@ static BOOL update(GameState *game)
     return TRUE;
 }
 
-static BOOL main_loop(BOOL loop, BOOL json)
+static bool main_loop(bool loop, bool json)
 {
     GameState game = {0};
-    BOOL successful_update;
+    bool successful_update;
 
     do {
         successful_update = init(&game) && update(&game);
@@ -451,8 +451,8 @@ static void usage(const char *exe)
 
 int main(int argc, const char **argv)
 {
-    BOOL loop = FALSE;
-    BOOL json = FALSE;
+    bool loop = FALSE;
+    bool json = FALSE;
 
     for (const char *exe = *argv++; argc > 1 && *argv; argv++) {
         if (!strcmp(*argv, "--loop") || !strcmp(*argv, "-l")) {

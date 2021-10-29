@@ -21,9 +21,9 @@ struct GameState {
     Room1 room1;
     Room2 room2;
     Level level;
-    PTR player_addr;
+    ptr_t player_addr;
     pid_t pid;
-    BYTE _pad[4];
+    byte _pad[4];
 };
 
 #endif

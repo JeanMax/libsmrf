@@ -1,5 +1,6 @@
 seed
-*.san
-*.dev
+*_san*
+*_dev*
 *.o
 *.d
+*.exe
