@@ -1,4 +1,5 @@
-seed
+smrfexample
+libsmrf.a
 *_san*
 *_dev*
 *.o

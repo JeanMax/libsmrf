@@ -49,4 +49,6 @@
     fprintf(stderr, CLR_RED "[ERROR]: " CLR_RESET str "\n", ##__VA_ARGS__)
 
 
+void hex_dump(void *ptr, size_t len);
+
 #endif

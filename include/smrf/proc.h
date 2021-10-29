@@ -2,6 +2,7 @@
 #define _PROC_H
 
 #include <string.h>
+#include <unistd.h> // geteuid
 
 #include "util/types.h"
 #include "util/log.h"
@@ -22,6 +23,7 @@ typedef bool t_read_callback(byte *buf, size_t buf_len, ptr_t address, void *dat
                                 || (ptr_t)(ptr) >> 36 == 0x7f \
                                 || (ptr_t)(ptr) >> 32 == 0x7f \
                                 || (ptr_t)(ptr) >> 24 == 0x7f)
+
 
 #define fast_is_valid_ptr(ptr) (IS_ALIGNED(ptr) && IS_VALID_MAP_PREFIX(ptr))
 bool is_valid_ptr(ptr_t ptr);

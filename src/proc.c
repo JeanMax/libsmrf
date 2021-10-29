@@ -1,4 +1,4 @@
-#include "seed.h"
+#include "smrf.h"
 
 #ifndef _WIN32
 # include <dirent.h>
@@ -13,7 +13,7 @@
 #endif
 
 #define MAX_MAPS     0x2000
-MapAddress g_maps_range[MAX_MAPS] = {0};  //TODO: this is ugly
+static MapAddress g_maps_range[MAX_MAPS] = {0};  //TODO: this is ugly
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -193,6 +193,10 @@ bool readmaps(pid_t pid)
     while (fgets(read_buf, PAGE_LENGTH, maps_file)) {
         sscanf(read_buf, "%16jx-%16jx\n", &start_address, &end_address);
         if (is_rw_memory(read_buf) && !is_bullshit_memory(read_buf)) {
+            if (i == MAX_MAPS) {
+                LOG_ERROR("Too many mappings, abort.");
+                exit(EXIT_FAILURE);
+            }
             g_maps_range[i].start = start_address;
             g_maps_range[i].end = end_address;
             i++;
@@ -226,6 +230,7 @@ bool readmaps(pid_t pid)
     }
     CloseHandle(process);
 #endif
+    LOG_DEBUG("%d maps found", i); /* DEBUG */
     g_maps_range[i].start = 0;
     g_maps_range[i].end = 0;
     return i ? TRUE : FALSE;
