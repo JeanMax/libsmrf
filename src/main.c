@@ -1,6 +1,6 @@
 #include "smrf.h"
 
-#define MAX_PLAYER_DATA 0x200
+#define MAX_PLAYER_DATA 0x1000
 
 Level *g_levels[MAX_AREA] = {0};
 
@@ -322,6 +322,7 @@ static bool update_player(GameState *game, Player *player)
         LOG_ERROR("Can't find PlayerData ptr");
         return FALSE;
     }
+    LOG_INFO("found PlayerData ptr at %jx", *player_data_addr); /* DEBUG */
 
 #ifdef NDEBUG
     int i;
@@ -351,16 +352,14 @@ bool update_game_state(GameState *game)
     static Player player = {0};
 
     if (!update_player(game, &player)) {
-        pthread_mutex_lock(&game->mutex);
-        free_all_levels();
-        game->level = NULL;
-        pthread_mutex_unlock(&game->mutex);
+        destroy_game_state(game);
         return FALSE;
     }
 
     if (!memread(game->_pid, (ptr_t)player.pPlayerData, sizeof(PlayerData),
                  find_PlayerData_callback, &tmp.player_data)) {
         LOG_ERROR("Can't find playerData");
+        destroy_game_state(game);
         return FALSE;
     }
     log_PlayerData(&tmp.player_data);

@@ -48,7 +48,7 @@ static bool main_loop(bool loop)
                      "\"x\": %d, "
                      "\"y\": %d, "
                      "\"area_name\": \"%s\", "
-                     "\"area\": (%d)"
+                     "\"area\": %d"
                      "}",
                      game.player.pAct->dwMapSeed,
                      game.player.pPath->xPos,
