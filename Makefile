@@ -20,7 +20,7 @@
 PROJECT = libsmrf.a
 
 # file-names of the sources
-SRC_NAME = main.c  proc.c  d2structs.c  d2sdk.c  util/log.c
+SRC_NAME = smrf.c  proc.c  d2structs.c  d2sdk.c  util/log.c
 
 # name of the example to make
 PROJECT_EXAMPLE = smrfexample
@@ -41,7 +41,7 @@ TEST_DIR = test
 LDLIBS = -pthread
 
 # linking flags
-LDFLAGS =
+LDFLAGS = -static
 
 # compilation flags
 CPPFLAGS =
@@ -72,30 +72,23 @@ DEP = $(OBJ:.o=.d)
 INC = $(addprefix -I, $(INC_PATH))
 
 # specify flags for commands used in the following rules
-LN =		ln -s
-RM =		rm -f
-RMDIR =		rmdir
-MKDIR =		mkdir -p
-# CC =		gcc  # $(shell clang --version >/dev/null 2>&1 && echo clang || echo gcc)
-MAKE ?=		make -j$(shell nproc 2>/dev/null || echo 1)
-SUB_MAKE =	make -C
+LN = ln -s
+RM = rm -f
+RMDIR = rmdir
+MKDIR = mkdir -p
+# CC = gcc  # $(shell clang --version >/dev/null 2>&1 && echo clang || echo gcc)
+MAKE ?= make -j$(shell nproc 2>/dev/null || echo 1)
+SUB_MAKE = make -C
 
-# default to "pretty" Makefile, but you can run ´VERBOSE=t make´
-# ifndef VERBOSE
-#  ifndef TRAVIS
-# .SILENT:
-#  endif
-# endif
-# PRINTF = test $(VERBOSE)$(TRAVIS) || printf
+# try to be cross-platform
+# UNAME_S = $(shell uname -s)
+ifeq ($(OS), Windows_NT)
+    AR = x86_64-w64-mingw32-gcc-ar
+    CC = x86_64-w64-mingw32-gcc -static -static-libgcc
 
-# some colors for pretty printing
-WHITE =		\033[37m
-RED =		\033[31m
-GREEN =		\033[32m
-YELLOW =	\033[33m
-BLUE =		\033[34m
-BASIC =		\033[0m
+# else ifeq ($(UNAME_S), Linux)
 
+endif
 
 ##
 ## PUBLIC RULES
@@ -134,7 +127,7 @@ clean:
 fclean: clean
 	test -d $(OBJ_DIR) \
 && find $(OBJ_DIR) -type d | sort -r | xargs $(RMDIR) || true
-	$(RM) $(PROJECT){,_san,_dev} $(PROJECT_EXAMPLE){,_san,_dev}
+	$(RM) $(PROJECT){,_san,_dev} $(PROJECT_EXAMPLE){,_san,_dev}{,.exe}
 
 # some people like it real clean
 mrproper:
@@ -156,7 +149,7 @@ test: all
 
 # create archive
 $(PROJECT): $(OBJ) $(SRC_EXAMPLE)
-	ar -rcs $@ $(OBJ)
+	$(AR) -rcs $@ $(OBJ)
 	+$(MAKE) $(PROJECT_EXAMPLE) || true
 
 # create example binary
