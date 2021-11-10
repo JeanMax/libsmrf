@@ -4,19 +4,27 @@
 #include <stdlib.h> // size_t
 #include <sys/types.h> // pid_t
 
-#include <stdint.h>
-typedef uint8_t  BYTE;
-typedef uint16_t WORD;
-typedef uint32_t DWORD;
-typedef uint64_t QWORD;
-typedef uint64_t PTR;
+// prevent your compiler from thinking you are on *nix when cygwin building
+#ifdef __CYGWIN__
+# define _WIN32
+#endif
 
-typedef int      BOOL;
+#include <stdint.h>
+typedef uint8_t  byte;
+typedef uint16_t word;
+typedef uint32_t dword;
+typedef uint64_t qword;
+typedef uint64_t ptr_t;
+
+
+#ifndef __cplusplus
+typedef int      bool;
+#endif
 #ifndef TRUE
 # define TRUE  1
 # define FALSE 0
 #endif
 
-#define IS_ALIGNED(ptr) !((PTR)(ptr) % sizeof(PTR))
+#define IS_ALIGNED(ptr) !((ptr_t)(ptr) % sizeof(dword))
 
 #endif

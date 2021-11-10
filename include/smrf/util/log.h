@@ -3,6 +3,14 @@
 
 #include <stdio.h>
 
+// windows users are color blind or something, I don't know
+#ifdef _WIN32
+# define NO_COLORS
+#endif
+#ifdef __CYGWIN__
+# define NO_COLORS
+#endif
+
 #ifdef NO_COLORS
 # define CLR_BLACK ""
 # define CLR_RED ""

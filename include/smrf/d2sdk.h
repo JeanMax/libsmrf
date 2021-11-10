@@ -3,7 +3,7 @@
 
 #include "util/types.h"
 
-inline DWORD act_from_area(DWORD area)
+inline dword act_from_area(dword area)
 {
     return area < 40 ? 1 :
            (area < 75 ? 2 :
@@ -12,7 +12,7 @@ inline DWORD act_from_area(DWORD area)
 }
 
 // PRESETS
-inline BOOL is_shrine(DWORD id)
+inline bool is_shrine(dword id)
 {
     return id == 2   // Shrine
         || id == 77  // Healthorama
@@ -121,7 +121,7 @@ inline BOOL is_shrine(DWORD id)
         // || id == 31  // Fountain
 }
 
-inline BOOL is_quest(DWORD id)
+inline bool is_quest(dword id)
 {
     return id == 8   // Tower Tome
         || id == 17  // StoneAlpha
@@ -160,7 +160,7 @@ inline BOOL is_quest(DWORD id)
         || id == 742; // tristram portal
 }
 
-inline BOOL is_waypoint(DWORD id)
+inline bool is_waypoint(dword id)
 {
     return id == 119 // Waypoint Portal
         || id == 145 // Waypointi Inner Hell
@@ -180,7 +180,7 @@ inline BOOL is_waypoint(DWORD id)
         || id == 511; // IcecaveWaypoint
 }
 
-inline BOOL is_transit(DWORD id)
+inline bool is_transit(dword id)
 {
     return id == 59  // Town Portal
         || id == 74  // Trap Door
@@ -211,7 +211,7 @@ inline BOOL is_transit(DWORD id)
         // || id == 451 // Hellgate
 }
 
-inline BOOL is_interesting_preset(DWORD id)
+inline bool is_interesting_preset(dword id)
 {
     return is_quest(id)
         || is_shrine(id)
@@ -220,7 +220,7 @@ inline BOOL is_interesting_preset(DWORD id)
         || id == 267; // Bank
 }
 
-inline BOOL is_uninteresting_unit(DWORD id)
+inline bool is_uninteresting_unit(dword id)
 {
     return id == 149 // rock
         || id == 152 // rogue
@@ -250,7 +250,7 @@ inline BOOL is_uninteresting_unit(DWORD id)
         ;
 }
 
-inline BOOL is_backward_tile(DWORD id)
+inline bool is_backward_tile(dword id)
 {
     return id == 5 //Cave Down
         || id == 8 //Crypt Up

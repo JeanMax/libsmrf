@@ -28,7 +28,7 @@
 
 #define MALLOC(dst, size) do {                                      \
         if (!((dst) = malloc((size)))) {                            \
-            LOG_ERROR("malloc(%lu) failed, that sucks", (size));    \
+            LOG_ERROR("malloc(%zu) failed, that sucks", (size));    \
             exit(EXIT_FAILURE);                                     \
         }                                                           \
     } while (0)
@@ -54,15 +54,15 @@ typedef  struct GameState  GameState;
 struct GameState {
     Player player;
     Level *level;
-    PTR _player_addr; //TODO: internal, hide
+    ptr_t _player_addr; //TODO: internal, hide
     pid_t _pid; //TODO: internal, hide
-    BYTE _pad[4];
+    byte _pad[4];
     pthread_mutex_t mutex;
     Level **all_levels; // Level *all_levels[MAX_AREA]
 };
 
 
-BOOL       update_game_state(GameState *game);
+bool       update_game_state(GameState *game);
 void       init_game_state(GameState *game);
 void       destroy_game_state(GameState *game);
 

@@ -34,12 +34,12 @@ static void background_update()
 }
 */
 
-static BOOL main_loop(BOOL loop)
+static bool main_loop(bool loop)
 {
     GameState game;
     init_game_state(&game);
 
-    BOOL successful_update;
+    bool successful_update;
     do {
         successful_update = update_game_state(&game);
         if (successful_update) {
@@ -48,7 +48,7 @@ static BOOL main_loop(BOOL loop)
                      "\"x\": %d, "
                      "\"y\": %d, "
                      "\"area_name\": \"%s\", "
-                     "\"area\": (%d)"
+                     "\"area\": %d"
                      "}",
                      game.player.pAct->dwMapSeed,
                      game.player.pPath->xPos,
@@ -77,7 +77,7 @@ static void usage(const char *exe)
 
 int main(int argc, const char **argv)
 {
-    BOOL loop = FALSE;
+    bool loop = FALSE;
 
     for (const char *exe = *argv++; argc > 1 && *argv; argv++) {
         if (!strcmp(*argv, "--loop") || !strcmp(*argv, "-l")) {
