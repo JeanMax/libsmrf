@@ -1,5 +1,6 @@
 smrfexample
 libsmrf.a
+libsmrfWindows_NT.a
 *_san*
 *_dev*
 *.o

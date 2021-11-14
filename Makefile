@@ -17,7 +17,7 @@
 ##
 
 # name of the lib to make
-PROJECT = libsmrf.a
+PROJECT = libsmrf$(OS).a
 
 # file-names of the sources
 SRC_NAME = smrf.c  proc.c  d2structs.c  d2sdk.c  util/log.c
@@ -97,23 +97,23 @@ endif
 
 # release build
 all:
-	+$(MAKE) $(PROJECT) "CFLAGS = $(RCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/rel"
+	+$(MAKE) $(PROJECT) "CFLAGS = $(RCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/rel$(OS)"
 
 # masochist build
 mecry:
-	+$(MAKE) $(PROJECT) "CFLAGS = $(WWFLAGS)" "OBJ_PATH = $(OBJ_DIR)/rel"
+	+$(MAKE) $(PROJECT) "CFLAGS = $(WWFLAGS)" "OBJ_PATH = $(OBJ_DIR)/rel$(OS)"
 
 # build for gdb/valgrind debugging
 dev:
 	+$(MAKE) $(PROJECT:.a=_dev.a) \
 		"PROJECT = $(PROJECT:.a=_dev.a)" "PROJECT_EXAMPLE = $(PROJECT_EXAMPLE)_dev" \
-		"CFLAGS = $(DCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/dev"
+		"CFLAGS = $(DCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/dev$(OS)"
 
 # build for runtime debugging (fsanitize)
 san:
 	+$(MAKE) $(PROJECT:.a=_san.a) \
 		"PROJECT = $(PROJECT:.a=_san.a)" "PROJECT_EXAMPLE = $(PROJECT_EXAMPLE)_san" \
-		"CFLAGS = $(SCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/san"
+		"CFLAGS = $(SCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/san$(OS)"
 
 # remove all generated .o and .d
 clean:
@@ -128,7 +128,8 @@ clean:
 fclean: clean
 	test -d $(OBJ_DIR) \
 && find $(OBJ_DIR) -type d | sort -r | xargs $(RMDIR) || true
-	$(RM) $(PROJECT){,_san,_dev} $(PROJECT_EXAMPLE){,_san,_dev}{,.exe}
+	$(RM) $(PROJECT) $(PROJECT:.a=_dev.a) $(PROJECT:.a=_san.a) \
+$(PROJECT_EXAMPLE){,_san,_dev}{,.exe}
 
 # some people like it real clean
 mrproper:
