@@ -41,7 +41,7 @@ TEST_DIR = test
 LDLIBS = -pthread
 
 # linking flags
-LDFLAGS = -static
+LDFLAGS =
 
 # compilation flags
 CPPFLAGS =
@@ -81,12 +81,13 @@ MAKE ?= make -j$(shell nproc 2>/dev/null || echo 1)
 SUB_MAKE = make -C
 
 # try to be cross-platform
-# UNAME_S = $(shell uname -s)
+UNAME_S = $(shell uname -s)
 ifeq ($(OS), Windows_NT)
     AR = x86_64-w64-mingw32-gcc-ar
     CC = x86_64-w64-mingw32-gcc -static -static-libgcc
 
-# else ifeq ($(UNAME_S), Linux)
+else ifeq ($(UNAME_S), Linux)
+    CC += -march=native
 
 endif
 
@@ -104,14 +105,14 @@ mecry:
 
 # build for gdb/valgrind debugging
 dev:
-	+$(MAKE) $(PROJECT)_dev \
-		"PROJECT = $(PROJECT)_dev" "PROJECT_EXAMPLE = $(PROJECT_EXAMPLE)_dev" \
+	+$(MAKE) $(PROJECT:.a=_dev.a) \
+		"PROJECT = $(PROJECT:.a=_dev.a)" "PROJECT_EXAMPLE = $(PROJECT_EXAMPLE)_dev" \
 		"CFLAGS = $(DCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/dev"
 
 # build for runtime debugging (fsanitize)
 san:
-	+$(MAKE) $(PROJECT)_san \
-		"PROJECT = $(PROJECT)_san" "PROJECT_EXAMPLE = $(PROJECT_EXAMPLE)_san" \
+	+$(MAKE) $(PROJECT:.a=_san.a) \
+		"PROJECT = $(PROJECT:.a=_san.a)" "PROJECT_EXAMPLE = $(PROJECT_EXAMPLE)_san" \
 		"CFLAGS = $(SCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/san"
 
 # remove all generated .o and .d

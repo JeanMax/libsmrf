@@ -5,3 +5,4 @@ libsmrf.a
 *.o
 *.d
 *.exe
+sdk

@@ -323,11 +323,11 @@ void log_Player(Player *ptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static bool is_word_str(const char *b, size_t len)
+static bool is_valid_player_name_str(const char *b, size_t len)
 {
     const char *start = b;
     while ((size_t)(b - start) < len) {
-        if (*b && !isalpha((int)*b)) {
+        if (*b && !(isupper((int)*b) || islower((int)*b) || *b == '_')) {
             return FALSE;
         }
         // check if right side is 0 padded
@@ -417,19 +417,19 @@ inline bool is_valid_Act(Act *ptr)
 inline bool is_valid_PlayerData(PlayerData *ptr)
 {
     return IS_ALIGNED(ptr)
-        && fast_is_valid_ptr((ptr_t)ptr->pNormalQuest)
-        && fast_is_valid_ptr((ptr_t)ptr->pNightmareQuest)
-        && fast_is_valid_ptr((ptr_t)ptr->pHellQuest)
-        && fast_is_valid_ptr((ptr_t)ptr->pNormalWaypoint)
-        && fast_is_valid_ptr((ptr_t)ptr->pNightmareWaypoint)
-        && fast_is_valid_ptr((ptr_t)ptr->pHellWaypoint)
-        && is_word_str(ptr->szName, 0x10);
+        && is_valid_stack_ptr((ptr_t)ptr->pNormalQuest)
+        && is_valid_stack_ptr((ptr_t)ptr->pNightmareQuest)
+        && is_valid_stack_ptr((ptr_t)ptr->pHellQuest)
+        && is_valid_stack_ptr((ptr_t)ptr->pNormalWaypoint)
+        && is_valid_stack_ptr((ptr_t)ptr->pNightmareWaypoint)
+        && is_valid_stack_ptr((ptr_t)ptr->pHellWaypoint)
+        && is_valid_player_name_str(ptr->szName, 0x10);
 }
 
 inline bool is_valid_Player(Player *ptr)
 {
     return IS_ALIGNED(ptr)
-        && fast_is_valid_ptr((ptr_t)ptr->pPlayerData)
+        && is_valid_stack_ptr((ptr_t)ptr->pPlayerData)
         && is_valid_ptr((ptr_t)ptr->pAct)
         && is_valid_ptr((ptr_t)ptr->pPath)
         && ptr->dwAct < 5;

@@ -312,11 +312,13 @@ static bool update_player(GameState *game, Player *player)
                     find_Player_callback, player)) {
             return TRUE;
         } else {
-            LOG_WARNING("Can't refresh player");
+            LOG_ERROR("Can't refresh player");
+            return FALSE;       /* DEBUG */
         }
     }
 
     static ptr_t player_data_addr[MAX_PLAYER_DATA] = {0}; //TODO: ugly
+    memset(&player_data_addr, 0, sizeof(player_data_addr));
     memreadall(pid, TRUE, search_player_data_callback, &player_data_addr);
     if (!*player_data_addr) {
         LOG_ERROR("Can't find PlayerData ptr");
