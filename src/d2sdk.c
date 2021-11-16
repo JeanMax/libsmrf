@@ -1,6 +1,6 @@
 #include "d2sdk.h"
 
-const char *AREAS[] = {
+const char *AREAS[MAX_AREA] = {
     "None",
     "Rogue Encampment",
     "Blood Moor",

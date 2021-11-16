@@ -168,6 +168,12 @@ static CollMap *parse_collmap(pid_t pid, ptr_t col_addr) //TODO
     }
 
     size_t map_size = sizeof(dword) * col.dwSizeGameY * col.dwSizeGameX;
+    if (map_size > 1000000000) { //TODO
+        LOG_ERROR("giganormous collmap (%zu), not parsing it", map_size);
+        log_CollMap(&col);
+        return NULL;
+    }
+
     CollMap *ret;
     MALLOC(ret, sizeof(CollMap) + map_size);
 

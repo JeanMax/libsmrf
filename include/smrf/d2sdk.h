@@ -281,7 +281,9 @@ inline bool is_backward_tile(dword id)
         || id == 81; //Baal Temple Up
 }
 
-extern const char *AREAS[];
+
+#define MAX_AREA 137
+extern const char *AREAS[MAX_AREA];
 
 enum collision_flag {
     COL_NONE = 0x0000,

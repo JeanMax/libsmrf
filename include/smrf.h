@@ -26,20 +26,18 @@
          }                                        \
      } while (0)
 
-#define MALLOC(dst, size) do {                                      \
-        if (!((dst) = malloc((size)))) {                            \
-            LOG_ERROR("malloc(%zu) failed, that sucks", (size));    \
-            exit(EXIT_FAILURE);                                     \
-        }                                                           \
-    } while (0)
+#define MALLOC(dst, size) do {                                          \
+         if (!((dst) = malloc((size)))) {                               \
+             LOG_ERROR(AT ": malloc(%zu) failed, that sucks", (size));  \
+             exit(EXIT_FAILURE);                                        \
+         }                                                              \
+     } while (0)
 
 #define DUPE(dst, src, size) do {               \
         MALLOC((dst), (size));                  \
         memcpy((dst), (src), (size));           \
     } while (0)
 
-
-#define MAX_AREA 137
 
 typedef  struct PlayerContent  PlayerContent;
 struct PlayerContent {

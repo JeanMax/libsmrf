@@ -48,6 +48,9 @@
 #define LOG_ERROR(str, ...) \
     fprintf(stderr, CLR_RED "[ERROR]: " CLR_RESET str "\n", ##__VA_ARGS__)
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define AT CLR_WHITE __FILE__ ":" TOSTRING(__LINE__) CLR_RESET
 
 void hex_dump(void *ptr, size_t len);
 

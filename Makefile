@@ -113,7 +113,7 @@ dev:
 san:
 	+$(MAKE) $(PROJECT:.a=_san.a) \
 		"PROJECT = $(PROJECT:.a=_san.a)" "PROJECT_EXAMPLE = $(PROJECT_EXAMPLE)_san" \
-		"CFLAGS = $(SCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/san$(OS)"
+		"CFLAGS = $(SCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/san$(OS)" "CC = clang"
 
 # remove all generated .o and .d
 clean:

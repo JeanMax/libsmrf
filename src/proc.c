@@ -12,7 +12,7 @@
 # define PATH_MAX 0x100
 #endif
 
-#define MAX_MAPS     0x2000
+#define MAX_MAPS     0x4000
 static MapAddress g_maps_range[MAX_MAPS] = {0};  //TODO: this is ugly
 MapAddress g_stack = {0};
 
@@ -234,6 +234,10 @@ bool readmaps(pid_t pid)
         if (info.State == MEM_COMMIT && info.Type == MEM_PRIVATE
                 && !(info.Protect & PAGE_GUARD) && !(info.Protect & PAGE_NOACCESS)
                 && (info.Protect & PAGE_READWRITE) ) {
+            if (i == MAX_MAPS) {
+                LOG_ERROR("Too many mappings, abort.");
+                exit(EXIT_FAILURE);
+            }
             g_maps_range[i].start = ptr;
             g_maps_range[i].end = ptr + info.RegionSize;
             g_stack.end = MAX(g_stack.end, g_maps_range[i].end);
