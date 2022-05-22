@@ -150,7 +150,7 @@ inline bool is_quest(dword id)
         || id == 405 // Khalim Chest
         || id == 406 // Khalim Chest
         || id == 407 // Khalim Chest
-        || id == 458 // Temple Altar
+        // || id == 458 // Temple Altar // some random altar in halls of anguish
         || id == 460 // Drehya Outside Town
         || id == 462 // Nihlathak Outside Town
         // || id == 523 //  Blacksmith // it's larzuk forge eh
@@ -217,9 +217,11 @@ inline bool is_interesting_preset(dword id)
         || is_shrine(id)
         || is_waypoint(id)
         || is_transit(id)
-        || id == 267; // Bank
+        || id == 267 // Bank
+        || id == 455; // special chest TODO: list them all
 }
 
+// for preset unit with type 1
 inline bool is_uninteresting_unit(dword id)
 {
     return id == 149 // rock
@@ -230,13 +232,26 @@ inline bool is_uninteresting_unit(dword id)
         || id == 197 // lut gholein stuff
         || id == 203 // lut gholein npc
         || id == 205 // lut gholein npc
+        || id == 273 // gargoyle trap
         || id == 294 // kurast stuff
         || id == 296 // kurast stuff
+        || id == 327 // a2 tomb trap
+        || id == 328 // a2 tomb trap
+        || id == 372 // Bonepile (act2 trap)
         || id == 359 // iron wolf
-        || id == 822 // fallen stuff
-        || id == 823 // fallen stuff
-
+        || id == 432 // a5 door
+        || id == 433 // a5 door
+        || id == 434 // a5 prison barb
+        || id == 435 // a5 tower
+        || id == 497 // a5 tower
+        || id == 498 // a5 catapult
         // || id == 513 // drehya
+        || id == 516 // a5 tree
+        || id == 517 // a5 flames
+        || id == 522 // barb
+        || id == 524 // a5 door
+        || id == 525 // a5 door
+        || id == 528 // a5 demon hut
         // || id == 563 // baal tentacle
         // || id == 564 // baal tentacle
         // || id == 565 // baal tentacle
@@ -247,9 +262,20 @@ inline bool is_uninteresting_unit(dword id)
         || id == 570 // injuried barb
         // || id == 571 // baal crab clone
         // || id == 575 // worldstone effect
-        ;
+        || id == 795 // a5 prison barb
+        || id == 822 // fallen stuff
+        || id == 823 // fallen stuff
+        || id == 829 // catapult impact
+        || id == 830 // dead barb
+        || id == 831 // catapult impact
+        || id == 832 // dead barb (pickable)
+        || id == 834 // catapult impact
+        || id == 835 // catapult impact
+        || id == 836 // catapult impact
+        || id == 837; // pindle friends
 }
 
+// for preset unit with type 5
 inline bool is_backward_tile(dword id)
 {
     return id == 5 //Cave Down

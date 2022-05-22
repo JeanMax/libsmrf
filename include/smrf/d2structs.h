@@ -174,24 +174,26 @@ struct Act {
     dword dwAct;
     dword _2[9];
     ActMisc* pMisc;
+    dword _debug[32];
 };
 
-/* struct ActMisc { */
-/*     dword _1[37];           // 0x00 */
-/*     dword dwStaffTombLevel; // 0x94 */
-/*     dword _2[245];          // 0x98 */
-/*     dword _pad;          // 0x98 */
-/*     Act* pAct;              // 0x46C */
-/*     dword _3[3];            // 0x470 */
-/*     Level* pLevelFirst;     // 0x47C */
-/* }; */
+struct ActMisc {
+    dword _1[37];
+    dword dwStaffTombLevel;
+    dword _2[245];
+    dword _pad;
+    Act* pAct;
+    dword _3[3];
+    Level* pLevelFirst;
+    dword _debug[256];
+};
 
 
 typedef  struct QuestInfo  QuestInfo;
 /* struct QuestInfo { */
 /*     void* pBuffer; // 0x00 */
 /*     dword _1;      // 0x04 */
-/*     dword _pad;      // 0x04 */
+/*     dword _pad;            */
 /* }; */
 
 typedef  struct Waypoint  Waypoint;
@@ -199,9 +201,11 @@ typedef  struct Waypoint  Waypoint;
 /*     byte flags; // 0x00 */
 /* }; */
 
+
+#define PLAYER_DATA_NAME_MAX 0x40
 typedef  struct PlayerData  PlayerData;
 struct PlayerData {
-    char szName[0x10];            // 0x00
+    char szName[PLAYER_DATA_NAME_MAX];            // 0x00
     QuestInfo* pNormalQuest;      // 0x10
     QuestInfo* pNightmareQuest;   // 0x14
     QuestInfo* pHellQuest;        // 0x18
@@ -282,6 +286,7 @@ void log_CollMap(CollMap *ptr);
 void log_PresetUnit(PresetUnit *ptr);
 void log_Path(Path *ptr);
 void log_Act(Act *ptr);
+void log_ActMisc(ActMisc *ptr);
 void log_PlayerData(PlayerData *ptr);
 void log_Player(Player *ptr);
 
@@ -292,6 +297,7 @@ bool is_valid_CollMap(CollMap *ptr);
 bool is_valid_PresetUnit(PresetUnit *ptr);
 bool is_valid_Path(Path *ptr);
 bool is_valid_Act(Act *ptr);
+bool is_valid_ActMisc(ActMisc *ptr);
 bool is_valid_PlayerData(PlayerData *ptr);
 bool is_valid_Player(Player *ptr);
 
@@ -315,6 +321,7 @@ DEF_STRUCT_CPY_CALLBACK(CollMap)
 DEF_STRUCT_CPY_CALLBACK(PresetUnit)
 DEF_STRUCT_CPY_CALLBACK(Path)
 DEF_STRUCT_CPY_CALLBACK(Act)
+DEF_STRUCT_CPY_CALLBACK(ActMisc)
 DEF_STRUCT_CPY_CALLBACK(PlayerData)
 DEF_STRUCT_CPY_CALLBACK(Player)
 

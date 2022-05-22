@@ -269,6 +269,29 @@ void log_Act(Act *ptr)
               ptr->dwAct,
               ptr->_2[0], ptr->_2[1], ptr->_2[2], ptr->_2[3], ptr->_2[4], ptr->_2[5], ptr->_2[6], ptr->_2[7], ptr->_2[8],
               (ptr_t)ptr->pMisc);
+    hex_dump(ptr, sizeof(Act)); /* DEBUG */
+}
+
+void log_ActMisc(ActMisc *ptr)
+{
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "ActMisc" CLR_RESET " {\n"
+              "    dword _1[37]: %08x\n"
+              "    dword dwStaffTombLevel: %08x\n"
+              "    dword _2[245]: %08x\n"
+              "    dword _pad: %08x\n"
+              "    Act* pAct: %16jx\n"
+              "    dword _3[3]: %08x\n"
+              "    Level* pLevelFirst: %16jx\n"
+              "}",
+              ptr->_1[0],
+              ptr->dwStaffTombLevel,
+              ptr->_2[0],
+              ptr->_pad,
+              (ptr_t)ptr->pAct,
+              ptr->_3[0],
+              (ptr_t)ptr->pLevelFirst);
+    hex_dump(ptr, sizeof(ActMisc));
 }
 
 void log_PlayerData(PlayerData *ptr)
@@ -350,8 +373,8 @@ inline bool is_valid_Level(Level *ptr)
     return IS_ALIGNED(ptr)
         && (!ptr->pRoom2First || is_valid_ptr((ptr_t)ptr->pRoom2First))
         /* && is_valid_ptr((ptr_t)ptr->pDunno) */
-        && (!ptr->pNextLevel || is_valid_ptr((ptr_t)ptr->pNextLevel))
-        && (!ptr->pMisc || is_valid_ptr((ptr_t)ptr->pMisc));
+        && (!ptr->pNextLevel || is_valid_ptr((ptr_t)ptr->pNextLevel));
+        /* && (!ptr->pMisc || is_valid_ptr((ptr_t)ptr->pMisc)); */
 }
 
 inline bool is_valid_Room2(Room2 *ptr)
@@ -408,10 +431,18 @@ inline bool is_valid_Path(Path *ptr)
 inline bool is_valid_Act(Act *ptr)
 {
     return IS_ALIGNED(ptr)
-        && is_valid_ptr((ptr_t)ptr->pDunno)
-        && is_valid_ptr((ptr_t)ptr->pRoom1)
-        && (!ptr->pMisc || is_valid_ptr((ptr_t)ptr->pMisc))
-        && ptr->dwAct < 5;
+        && is_valid_ptr((ptr_t)ptr->pDunno);
+        /* && is_valid_ptr((ptr_t)ptr->pRoom1) */
+        /* && (!ptr->pMisc || is_valid_ptr((ptr_t)ptr->pMisc)) */
+        /* && ptr->dwAct < 5; */
+}
+
+inline bool is_valid_ActMisc(ActMisc *ptr)
+{
+    return IS_ALIGNED(ptr)
+        && is_valid_ptr((ptr_t)ptr->pAct)
+        && is_valid_ptr((ptr_t)ptr->pLevelFirst)
+        && ptr->dwStaffTombLevel < 12; //TODO
 }
 
 inline bool is_valid_PlayerData(PlayerData *ptr)
@@ -423,7 +454,7 @@ inline bool is_valid_PlayerData(PlayerData *ptr)
         && is_valid_stack_ptr((ptr_t)ptr->pNormalWaypoint)
         && is_valid_stack_ptr((ptr_t)ptr->pNightmareWaypoint)
         && is_valid_stack_ptr((ptr_t)ptr->pHellWaypoint)
-        && is_valid_player_name_str(ptr->szName, 0x10);
+        && is_valid_player_name_str(ptr->szName, PLAYER_DATA_NAME_MAX);
 }
 
 inline bool is_valid_Player(Player *ptr)

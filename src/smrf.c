@@ -15,10 +15,10 @@ inline static bool search_player_data_callback(byte *buf, size_t buf_len, ptr_t 
         player_data = (PlayerData *)b;
         if (is_valid_PlayerData(player_data)) {
             ptr_t here = address + (ptr_t)(b - buf);
-/* #ifdef NDEBUG */
-/*             LOG_DEBUG("Valid player_data! %16jx", here); */
-/*             log_PlayerData(player_data); */
-/* #endif */
+#ifdef NDEBUG
+            LOG_DEBUG("Valid player_data! %16jx", here);
+            log_PlayerData(player_data);
+#endif
             ptr_t *addr_list = (ptr_t *)data;
             for (int i = 0; *addr_list; addr_list++, i++) {
                 if (i == MAX_PLAYER_DATA) {
@@ -48,9 +48,11 @@ inline static bool search_player_callback(byte *buf, size_t buf_len, ptr_t addre
     while (buf_len >= sizeof(Player)) {
         player = (Player *)b;
         for (p = player_data_addr; *p; p++) {
-            if ((ptr_t)player->pPlayerData == *p && is_valid_Player(player)) {
+            if ((ptr_t)player->pPlayerData == *p && is_valid_Player(player)
+                /*&& player->dwUnitId == 1 && !player->dwTxtFileNo*/) {
                 ptr_t here = address + (ptr_t)(b - buf);
-                LOG_DEBUG("Valid player! %16jx", here);
+                LOG_INFO("found Player ptr at %16jx", here); /* DEBUG */
+                log_Player(player);                          /* DEBUG */
                 *(ptr_t *)data = here;
                 memcpy(((ptr_t *)data) + 1, b, sizeof(Player));
                 return FALSE;
@@ -120,7 +122,7 @@ static PresetUnit *parse_preset_list(pid_t pid, ptr_t pu_addr)
 {
     PresetUnit pu;
     PresetUnit *pu_first = NULL, *pu_prev, *pu_new;
-    int i = 0;                  /* DEBUG */
+    /* int i = 0;                  /\* DEBUG *\/ */
 
     while (is_valid_ptr(pu_addr)) {
         if (!memread(pid, pu_addr, sizeof(PresetUnit),
@@ -128,8 +130,8 @@ static PresetUnit *parse_preset_list(pid_t pid, ptr_t pu_addr)
             LOG_WARNING("Can't find preset");
             break;
         }
-        i++;              /* DEBUG */
-        log_PresetUnit(&pu);
+        /* i++;              /\* DEBUG *\/ */
+        /* log_PresetUnit(&pu); */
         /* LOG_DEBUG("(%x, %x) *", pu.dwPosX, pu.dwPosY); */
 
         DUPE(pu_new, &pu, sizeof(PresetUnit));
@@ -144,53 +146,53 @@ static PresetUnit *parse_preset_list(pid_t pid, ptr_t pu_addr)
         pu_addr = (ptr_t)pu.pPresetNext;
     }
 
-    LOG_DEBUG("%d preset found", i);
+    /* LOG_DEBUG("%d preset found", i); */
 
     return pu_first;
 }
 
-static CollMap *parse_collmap(pid_t pid, ptr_t col_addr) //TODO
-{
-    CollMap col;
+/* static CollMap *parse_collmap(pid_t pid, ptr_t col_addr) //TODO */
+/* { */
+/*     CollMap col; */
 
-    if (!is_valid_ptr(col_addr)) {
-        return NULL;
-    }
-    if (!memread(pid, col_addr, sizeof(CollMap),
-                 find_CollMap_callback, &col)) {
-        LOG_WARNING("Can't find collmap");
-        return NULL;
-    }
+/*     if (!is_valid_ptr(col_addr)) { */
+/*         return NULL; */
+/*     } */
+/*     if (!memread(pid, col_addr, sizeof(CollMap), */
+/*                  find_CollMap_callback, &col)) { */
+/*         LOG_WARNING("Can't find collmap"); */
+/*         return NULL; */
+/*     } */
 
-    if ((ptr_t)col.pMapStart != col_addr + ((ptr_t)&col.coll - (ptr_t)&col)) {
-        LOG_ERROR("collmap isn't contiguous");
-        exit(EXIT_FAILURE);
-    }
+/*     if ((ptr_t)col.pMapStart != col_addr + ((ptr_t)&col.coll - (ptr_t)&col)) { */
+/*         LOG_ERROR("collmap isn't contiguous"); */
+/*         exit(EXIT_FAILURE); */
+/*     } */
 
-    size_t map_size = sizeof(dword) * col.dwSizeGameY * col.dwSizeGameX;
-    if (map_size > 1000000000) { //TODO
-        LOG_ERROR("giganormous collmap (%zu), not parsing it", map_size);
-        log_CollMap(&col);
-        return NULL;
-    }
+/*     size_t map_size = sizeof(dword) * col.dwSizeGameY * col.dwSizeGameX; */
+/*     if (map_size > 1000000000) { //TODO */
+/*         LOG_ERROR("giganormous collmap (%zu), not parsing it", map_size); */
+/*         log_CollMap(&col); */
+/*         return NULL; */
+/*     } */
 
-    CollMap *ret;
-    MALLOC(ret, sizeof(CollMap) + map_size);
+/*     CollMap *ret; */
+/*     MALLOC(ret, sizeof(CollMap) + map_size); */
 
-    if (!memread(pid, col_addr, sizeof(CollMap) + map_size,
-                 find_CollMap_callback, ret)) {
-        LOG_WARNING("Can't find collmap.coll");
-        return NULL;
-    }
+/*     if (!memread(pid, col_addr, sizeof(CollMap) + map_size, */
+/*                  find_CollMap_callback, ret)) { */
+/*         LOG_WARNING("Can't find collmap.coll"); */
+/*         return NULL; */
+/*     } */
 
-    return ret;
-}
+/*     return ret; */
+/* } */
 
 static Room1 *parse_room1_list(pid_t pid, ptr_t r1_addr)
 {
     Room1 r1;
     Room1 *r1_first = NULL, *r1_prev, *r1_new;
-    int i = 0;                  /* DEBUG */
+    /* int i = 0;                  /\* DEBUG *\/ */
 
     while (is_valid_ptr(r1_addr)) {
         if (!memread(pid, r1_addr, sizeof(Room1),
@@ -198,13 +200,31 @@ static Room1 *parse_room1_list(pid_t pid, ptr_t r1_addr)
             LOG_WARNING("Can't find room1");
             break;
         }
-        i++;              /* DEBUG */
+        /* i++;              /\* DEBUG *\/ */
         /* log_Room1(&r1); */
+        /* DEBUG */
+        /* ptr_t unit_addr = (ptr_t)r1.pUnitFirst; */
+        /* if (!is_valid_ptr(unit_addr)) { */
+        /*     LOG_WARNING("Invalid unit addr :/"); */
+        /* } else { */
+        /*     Player u1; */
+        /*     if (!memread(pid, unit_addr, sizeof(Player), */
+        /*                  find_Player_callback, &u1)) { */
+        /*         LOG_WARNING("Can't find unit ):"); */
+        /*     } else /\* if (u1.dwType == 1) *\/ { //monster */
+        /*         log_Player(&u1); */
+        /*     } */
+
+
+        /*     /\* LOG_WARNING("invalid pUnitFirst"); *\/ */
+        /* } */
+        /* DEBUG */
         /* LOG_DEBUG("(%x, %x) *", r1.dwXStart, r1.dwYStart); */
 
         DUPE(r1_new, &r1, sizeof(Room1));
         r1_new->pRoomNext = NULL;
-        r1_new->Coll = parse_collmap(pid, (ptr_t)r1.Coll);
+        /* r1_new->Coll = parse_collmap(pid, (ptr_t)r1.Coll); */
+		r1_new->Coll = NULL;
 
         if (!r1_first) {
             r1_first = r1_new;
@@ -215,7 +235,7 @@ static Room1 *parse_room1_list(pid_t pid, ptr_t r1_addr)
         r1_addr = (ptr_t)r1.pRoomNext;
     }
 
-    LOG_DEBUG("%d room1 found", i);
+    /* LOG_DEBUG("%d room1 found", i); */
 
     return r1_first;
 }
@@ -224,7 +244,7 @@ static Room2 *parse_room2_list(pid_t pid, ptr_t r2_addr)
 {
     Room2 r2;
     Room2 *r2_first = NULL, *r2_prev, *r2_new;
-    int i = 0;                  /* DEBUG */
+    /* int i = 0;                  /\* DEBUG *\/ */
 
     while (is_valid_ptr(r2_addr)) {
         if (!memread(pid, r2_addr, sizeof(Room2),
@@ -232,7 +252,7 @@ static Room2 *parse_room2_list(pid_t pid, ptr_t r2_addr)
             LOG_WARNING("Can't find room2");
             break;
         }
-        i++;              /* DEBUG */
+        /* i++;              /\* DEBUG *\/ */
         /* log_Room2(&r2); */
         /* LOG_DEBUG("(%x, %x)", r2.dwPosX, r2.dwPosY); */
 
@@ -250,7 +270,7 @@ static Room2 *parse_room2_list(pid_t pid, ptr_t r2_addr)
         r2_addr = (ptr_t)r2.pRoom2Next;
     }
 
-    LOG_DEBUG("%d room2 found", i);
+    /* LOG_DEBUG("%d room2 found", i); */
 
     return r2_first;
 }
@@ -259,7 +279,7 @@ static Level *parse_level_list(pid_t pid, ptr_t level_addr)
 {
     Level level;
     Level *level_first = NULL, *level_prev, *level_new;
-    int i = 0;                  /* DEBUG */
+    /* int i = 0;                  /\* DEBUG *\/ */
 
     while (is_valid_ptr(level_addr)) {
         if (!memread(pid, level_addr, sizeof(Level),
@@ -267,14 +287,14 @@ static Level *parse_level_list(pid_t pid, ptr_t level_addr)
             LOG_WARNING("Can't find level");
             break;
         }
-        i++;              /* DEBUG */
+        /* i++;              /\* DEBUG *\/ */
         /* log_Level(&level); */
         /* LOG_DEBUG("(%x, %x)", level.dwPosX, level.dwPosY); */
 
         level_new = g_levels[level.dwLevelNo];
         if (level_new) { // not new eh
             if (!level_first) { //current lvl
-                free_room2(level_new->pRoom2First); //TODO: just update preset/room1/col
+                free_room2(level_new->pRoom2First); //TODO: "just" update preset/room1/col
                 level_new->pRoom2First = parse_room2_list(pid, (ptr_t)level.pRoom2First);
             }
         } else {
@@ -293,7 +313,7 @@ static Level *parse_level_list(pid_t pid, ptr_t level_addr)
         level_addr = (ptr_t)level.pNextLevel;
     }
 
-    LOG_DEBUG("%d level found", i);
+    /* LOG_DEBUG("%d level found", i); */
 
     return level_first;
 }
@@ -330,13 +350,12 @@ static bool update_player(GameState *game, Player *player)
         LOG_ERROR("Can't find PlayerData ptr");
         return FALSE;
     }
-    LOG_INFO("found PlayerData ptr at %jx", *player_data_addr); /* DEBUG */
 
-#ifdef NDEBUG
+/* #ifdef NDEBUG */
     int i;
     for (i = 0; i < MAX_PLAYER_DATA && player_data_addr[i]; i++) {}
-    LOG_WARNING("player_data found: %d", i);
-#endif
+    LOG_INFO("player_data found: %d", i); /* DEBUG */
+/* #endif */
 
     if (!memreadall(pid, FALSE, search_player_callback, &player_data_addr)) {
         LOG_ERROR("Can't find Player ptr");
@@ -349,7 +368,8 @@ static bool update_player(GameState *game, Player *player)
     /* pthread_mutex_unlock(&game->mutex); */
 
     memcpy(player, ((ptr_t *)player_data_addr + 1), sizeof(Player));
-    log_Player(&game->player);
+    log_Player(player);
+    LOG_INFO("found PlayerData ptr at %16jx", (ptr_t)player->pPlayerData); /* DEBUG */
     return TRUE;
 }
 
@@ -370,35 +390,37 @@ bool update_game_state(GameState *game)
         destroy_game_state(game);
         return FALSE;
     }
-    log_PlayerData(&tmp.player_data);
+    /* log_PlayerData(&tmp.player_data); */
 
     if (!memread(game->_pid, (ptr_t)player.pAct, sizeof(Act),
                  find_Act_callback, &tmp.act)) {
         LOG_ERROR("Can't find act");
+        //TODO: handle this the smart way
         return FALSE;
     }
-    log_Act(&tmp.act);
+    /* log_Act(&tmp.act); */
 
     if (!memread(game->_pid, (ptr_t)player.pPath, sizeof(Path),
                  find_Path_callback, &tmp.path)) {
+        //TODO: handle this the smart way
         LOG_ERROR("Can't find path");
         return FALSE;
     }
-    log_Path(&tmp.path);
+    /* log_Path(&tmp.path); */
 
     if (!memread(game->_pid, (ptr_t)tmp.path.pRoom1, sizeof(Room1),
                  find_Room1_callback, &tmp.room1)) {
         LOG_ERROR("Can't find room1");
         return FALSE;
     }
-    log_Room1(&tmp.room1);
+    /* log_Room1(&tmp.room1); */
 
     if (!memread(game->_pid, (ptr_t)tmp.room1.pRoom2, sizeof(Room2),
                  find_Room2_callback, &tmp.room2)) {
         LOG_ERROR("Can't find room2");
         return FALSE;
     }
-    log_Room2(&tmp.room2);
+    /* log_Room2(&tmp.room2); */
 
     pthread_mutex_lock(&game->mutex);
     game->all_levels = g_levels;
@@ -412,6 +434,24 @@ bool update_game_state(GameState *game)
     game->player.pPath->pRoom1 = &pc.room1;
     game->player.pPath->pRoom1->pRoom2 = &pc.room2;
     pthread_mutex_unlock(&game->mutex);
+
+
+    /* DEBUG */
+    /* log_Act(&tmp.act); */
+    /* ActMisc misc; */
+    /* if (!memread(game->_pid, (ptr_t)tmp.act.pMisc, sizeof(ActMisc), */
+    /*              find_ActMisc_callback, &misc)) { */
+    /*     LOG_ERROR("Can't find actmisc 1"); */
+    /* } */
+    /* log_ActMisc(&misc); */
+
+    /* if (!memread(game->_pid, (ptr_t)game->level->pMisc, sizeof(ActMisc), */
+    /*              find_ActMisc_callback, &misc)) { */
+    /*     LOG_ERROR("Can't find actmisc 2"); */
+    /* } */
+    /* log_ActMisc(&misc); */
+
+    /* DEBUG */
 
     return TRUE;
 }

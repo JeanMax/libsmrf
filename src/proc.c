@@ -118,27 +118,29 @@ bool memreadall(pid_t pid, bool stack_only, t_read_callback *on_page_read, void 
             continue;
         }
         if (memread(pid, start, length, on_page_read, data) == 2) {
-#ifdef NDEBUG
+/* #ifdef NDEBUG */
             fprintf(stderr, "\n");   /* DEBUG */
-#endif
+/* #endif */
             return TRUE;
         }
-#ifdef NDEBUG
-        fprintf(stderr, ".");   /* DEBUG */
-#endif
+/* #ifdef NDEBUG */
+        if (i && !(i % 10)) {
+            fprintf(stderr, ".");   /* DEBUG */
+        }
+/* #endif */
     }
     return FALSE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool is_valid_ptr(ptr_t ptr)
+inline bool is_valid_ptr(ptr_t ptr)
 {
     if (!IS_ALIGNED(ptr)) {
         return FALSE;
     }
 
-    for (int i = 0; i < MAX_MAPS && g_maps_range[i].start; i++) {
+    for (int i = 0; i < MAX_MAPS && g_maps_range[i].end; i++) {
         if (ptr >= g_maps_range[i].start
             && ptr <= g_maps_range[i].end) {
             return TRUE;
@@ -212,6 +214,7 @@ bool readmaps(pid_t pid)
             g_stack.end = MAX(g_stack.end, end_address);
             i++;
         }
+        g_stack.start = g_maps_range[0].start; /* DEBUG */
     }
     fclose(maps_file);
 #else
@@ -252,6 +255,7 @@ bool readmaps(pid_t pid)
             break;
         }
     }
+	g_stack.start >>= 0x10; // just in case he
 #endif
     LOG_DEBUG("stack: %16jx - %16jx", g_stack.start, g_stack.end); /* DEBUG */
     LOG_DEBUG("%d maps found", i); /* DEBUG */
