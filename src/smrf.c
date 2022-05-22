@@ -151,43 +151,6 @@ static PresetUnit *parse_preset_list(pid_t pid, ptr_t pu_addr)
     return pu_first;
 }
 
-/* static CollMap *parse_collmap(pid_t pid, ptr_t col_addr) //TODO */
-/* { */
-/*     CollMap col; */
-
-/*     if (!is_valid_ptr(col_addr)) { */
-/*         return NULL; */
-/*     } */
-/*     if (!memread(pid, col_addr, sizeof(CollMap), */
-/*                  find_CollMap_callback, &col)) { */
-/*         LOG_WARNING("Can't find collmap"); */
-/*         return NULL; */
-/*     } */
-
-/*     if ((ptr_t)col.pMapStart != col_addr + ((ptr_t)&col.coll - (ptr_t)&col)) { */
-/*         LOG_ERROR("collmap isn't contiguous"); */
-/*         exit(EXIT_FAILURE); */
-/*     } */
-
-/*     size_t map_size = sizeof(dword) * col.dwSizeGameY * col.dwSizeGameX; */
-/*     if (map_size > 1000000000) { //TODO */
-/*         LOG_ERROR("giganormous collmap (%zu), not parsing it", map_size); */
-/*         log_CollMap(&col); */
-/*         return NULL; */
-/*     } */
-
-/*     CollMap *ret; */
-/*     MALLOC(ret, sizeof(CollMap) + map_size); */
-
-/*     if (!memread(pid, col_addr, sizeof(CollMap) + map_size, */
-/*                  find_CollMap_callback, ret)) { */
-/*         LOG_WARNING("Can't find collmap.coll"); */
-/*         return NULL; */
-/*     } */
-
-/*     return ret; */
-/* } */
-
 static Room1 *parse_room1_list(pid_t pid, ptr_t r1_addr)
 {
     Room1 r1;
