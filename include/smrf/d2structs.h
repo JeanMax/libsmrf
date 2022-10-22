@@ -36,7 +36,7 @@ struct PresetUnit {
     dword dwTxtFileNo;       // 0x04
     dword dwPosX;            // 0x08
     dword _2;
-    PresetUnit* pPresetNext; // 0x0C
+    PresetUnit* pNext; // 0x0C
     dword _3;                // 0x10
     dword _4;
     dword dwType;            // 0x14
@@ -49,13 +49,13 @@ struct Level {
     Room2* pRoom2First; // 0x10
     void* pDunno;
     dword _2;        // 0x14
+    dword _2bis;        // 0x14
     dword dwPosX;       // 0x1C
     dword dwPosY;       // 0x20
     dword dwSizeX;      // 0x24
     dword dwSizeY;      // 0x28
     dword _3[96];       // 0x2C
-    dword _pad;
-    Level* pNextLevel;  // 0x1AC
+    Level* pNext;  // 0x1AC
     dword _4[4];           // 0x1B0
     ActMisc* pMisc;     // 0x1B4
     dword _5[8];        // 0x1BC
@@ -91,7 +91,7 @@ struct Room2 { //big
     dword dwRoomsNear;  //52
     void* pDunno2;       //56
     RoomTile* pRoomTiles; //64
-    Room2* pRoom2Next;    //72
+    Room2* pNext;    //72
     void* pDunno3;         //80
     Room1* pRoom1;        //88
     dword dwPosX;         //96
@@ -128,7 +128,7 @@ struct Room1 { //small
     dword dwSizeY; //140
     dword _4[2];
     UnitAny* pUnitFirst; //168
-    Room1* pRoomNext; //176
+    Room1* pNext; //176
     dword _5[2]; //184
     dword _6[2]; //192
 };
@@ -174,7 +174,7 @@ struct Act {
     dword dwAct;
     dword _2[9];
     ActMisc* pMisc;
-    dword _debug[32];
+    /* dword _debug[32]; */
 };
 
 struct ActMisc {
@@ -185,7 +185,7 @@ struct ActMisc {
     Act* pAct;
     dword _3[3];
     Level* pLevelFirst;
-    dword _debug[256];
+    /* dword _debug[256]; */
 };
 
 
@@ -275,7 +275,7 @@ struct UnitAny {
     /* dword _10[5];             // 0xCC */
     /* UnitAny* pChangedNext;    // 0xE0 */
     /* UnitAny* pListNext;       // 0xE4 -> 0xD8 */
-    /* UnitAny* pRoomNext;       // 0xE8 */
+    /* UnitAny* pNext;       // 0xE8 */
 };
 
 

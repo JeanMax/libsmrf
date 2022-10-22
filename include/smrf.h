@@ -38,6 +38,24 @@
         memcpy((dst), (src), (size));           \
     } while (0)
 
+#define ADD_LINK(first, last, newby) do {       \
+         if (!(first)) {                        \
+             (first) = (newby);                 \
+         } else {                               \
+             (last)->pNext = (newby);           \
+         }                                      \
+         (last) = (newby);                      \
+    } while (0)
+
+#define LAST_LINK(first, last) do {             \
+        if ((first)) {                          \
+            (last) = (first);                   \
+            while ((last)->pNext) {             \
+                (last) = (last)->pNext;         \
+            }                                   \
+        }                                       \
+    } while (0)
+
 
 typedef  struct PlayerContent  PlayerContent;
 struct PlayerContent {

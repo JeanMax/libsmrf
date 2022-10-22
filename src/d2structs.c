@@ -13,7 +13,7 @@ void log_Level(Level *ptr)
               "    dword dwSizeX: %08x\n"
               "    dword dwSizeY: %08x\n"
               "    dword _3[96]: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
-              "    Level* pNextLevel: %16jx\n"
+              "    Level* pNext: %16jx\n"
               "    dword _4: %08x %08x %08x %08x\n"
               "    ActMisc* pMisc: %16jx\n"
               "    dword _5[6]: %08x %08x %08x %08x %08x %08x\n"
@@ -32,7 +32,7 @@ void log_Level(Level *ptr)
               ptr->dwSizeX,
               ptr->dwSizeY,
               ptr->_3[0], ptr->_3[1], ptr->_3[2], ptr->_3[3], ptr->_3[4], ptr->_3[5], ptr->_3[6], ptr->_3[7], ptr->_3[8], ptr->_3[9], ptr->_3[10], ptr->_3[11], ptr->_3[12], ptr->_3[13], ptr->_3[14], ptr->_3[15], ptr->_3[16], ptr->_3[17], ptr->_3[18], ptr->_3[19], ptr->_3[20], ptr->_3[21], ptr->_3[22], ptr->_3[23], ptr->_3[24], ptr->_3[25], ptr->_3[26], ptr->_3[27], ptr->_3[28], ptr->_3[29], ptr->_3[30], ptr->_3[31], ptr->_3[32], ptr->_3[33], ptr->_3[34], ptr->_3[35], ptr->_3[36], ptr->_3[37], ptr->_3[38], ptr->_3[39], ptr->_3[40], ptr->_3[41], ptr->_3[42], ptr->_3[43], ptr->_3[44], ptr->_3[45], ptr->_3[46], ptr->_3[47], ptr->_3[48], ptr->_3[49], ptr->_3[50], ptr->_3[51], ptr->_3[52], ptr->_3[53], ptr->_3[54], ptr->_3[55], ptr->_3[56], ptr->_3[57], ptr->_3[58], ptr->_3[59], ptr->_3[60], ptr->_3[61], ptr->_3[62], ptr->_3[63], ptr->_3[64], ptr->_3[65], ptr->_3[66], ptr->_3[67], ptr->_3[68], ptr->_3[69], ptr->_3[70], ptr->_3[71], ptr->_3[72], ptr->_3[73], ptr->_3[74], ptr->_3[75], ptr->_3[76], ptr->_3[77], ptr->_3[78], ptr->_3[79], ptr->_3[80], ptr->_3[81], ptr->_3[82], ptr->_3[83], ptr->_3[84], ptr->_3[85], ptr->_3[86], ptr->_3[87], ptr->_3[88], ptr->_3[89], ptr->_3[90], ptr->_3[91], ptr->_3[92], ptr->_3[93], ptr->_3[94], ptr->_3[95],
-              (ptr_t)ptr->pNextLevel,
+              (ptr_t)ptr->pNext,
               ptr->_4[0], ptr->_4[1], ptr->_4[2], ptr->_4[3],
               (ptr_t)ptr->pMisc,
               ptr->_5[0], ptr->_5[1], ptr->_5[2], ptr->_5[3], ptr->_5[4], ptr->_5[5],
@@ -55,7 +55,7 @@ void log_Room2(Room2 *ptr)
               "    dword dwRoomsNear: %08x\n"
               "    void* pDunno2: %16jx\n"
               "    RoomTile* pRoomTiles: %16jx\n"
-              "    Room2* pRoom2Next: %16jx\n"
+              "    Room2* pNext: %16jx\n"
               "    void* pDunno3: %16jx\n"
               "    Room1* pRoom1: %16jx\n"
               "    dword dwPosX: %08x\n"
@@ -76,7 +76,7 @@ void log_Room2(Room2 *ptr)
               ptr->dwRoomsNear,
               (ptr_t)ptr->pDunno2,
               (ptr_t)ptr->pRoomTiles,
-              (ptr_t)ptr->pRoom2Next,
+              (ptr_t)ptr->pNext,
               (ptr_t)ptr->pDunno3,
               (ptr_t)ptr->pRoom1,
               ptr->dwPosX,
@@ -116,7 +116,7 @@ void log_Room1(Room1 *ptr)
               "    dword dwSizeY: %08x\n"
               "    dword _4[2]: %08x %08x\n"
               "    UnitAny* pUnitFirst: %16jx\n"
-              "    Room1* pRoomNext: %16jx\n"
+              "    Room1* pNext: %16jx\n"
               "    dword _5[2]: %08x %08x\n"
               "    dword _6[2]: %08x %08x\n"
               "}",
@@ -142,7 +142,7 @@ void log_Room1(Room1 *ptr)
               ptr->dwSizeY,
               ptr->_4[0], ptr->_4[1],
               (ptr_t)ptr->pUnitFirst,
-              (ptr_t)ptr->pRoomNext,
+              (ptr_t)ptr->pNext,
               ptr->_5[0], ptr->_5[1],
               ptr->_6[0], ptr->_6[1]);
 }
@@ -180,7 +180,7 @@ void log_PresetUnit(PresetUnit *ptr)
               "    dword dwTxtFileNo: %08x\n"
               "    dword dwPosX: %08x\n"
               "    dword _2: %08x\n"
-              "    PresetUnit* pPresetNext: %16jx\n"
+              "    PresetUnit* pNext: %16jx\n"
               "    dword _3: %08x\n"
               "    dword _4: %08x\n"
               "    dword dwType: %08x\n"
@@ -190,7 +190,7 @@ void log_PresetUnit(PresetUnit *ptr)
               ptr->dwTxtFileNo,
               ptr->dwPosX,
               ptr->_2,
-              (ptr_t)ptr->pPresetNext,
+              (ptr_t)ptr->pNext,
               ptr->_3,
               ptr->_4,
               ptr->dwType,
@@ -324,11 +324,9 @@ void log_Player(Player *ptr)
               "    dword dwUnitId: %08x\n"
               "    dword dwMode: %08x\n"
               "    PlayerData* pPlayerData: %16jx\n"
-              "    dword _1: %08x\n"
               "    dword dwAct: %08x\n"
               "    Act* pAct: %16jx\n"
               "    dword dwSeed[2]: %08x, %08x\n"
-              "    dword _2: %08x\n"
               "    Path* pPath: %16jx\n"
               "}",
               ptr->dwType,
@@ -336,11 +334,10 @@ void log_Player(Player *ptr)
               ptr->dwUnitId,
               ptr->dwMode,
               (ptr_t)ptr->pPlayerData,
-              ptr->_1,
+              /* ptr->_1, */
               ptr->dwAct,
               (ptr_t)ptr->pAct,
               ptr->dwSeed[0], ptr->dwSeed[1],
-              ptr->_2,
               (ptr_t)ptr->pPath);
 }
 
@@ -373,7 +370,7 @@ inline bool is_valid_Level(Level *ptr)
     return IS_ALIGNED(ptr)
         && (!ptr->pRoom2First || is_valid_ptr((ptr_t)ptr->pRoom2First))
         /* && is_valid_ptr((ptr_t)ptr->pDunno) */
-        && (!ptr->pNextLevel || is_valid_ptr((ptr_t)ptr->pNextLevel));
+        && (!ptr->pNext || is_valid_ptr((ptr_t)ptr->pNext));
         /* && (!ptr->pMisc || is_valid_ptr((ptr_t)ptr->pMisc)); */
 }
 
@@ -396,7 +393,7 @@ inline bool is_valid_Room1(Room1 *ptr)
         /* && is_valid_ptr((ptr_t)ptr->pDunno3) */
         && (!ptr->Coll || is_valid_ptr((ptr_t)ptr->Coll))
         /* && is_valid_ptr((ptr_t)ptr->pUnitFirst) */
-        /* && is_valid_ptr((ptr_t)ptr->pRoomNext) */
+        /* && is_valid_ptr((ptr_t)ptr->pNext) */
         ;
 }
 
@@ -411,12 +408,12 @@ inline bool is_valid_CollMap(CollMap *ptr)
 
 inline bool is_valid_PresetUnit(PresetUnit *ptr)
 {
-    if (ptr->pPresetNext && !is_valid_ptr((ptr_t)ptr->pPresetNext)) {
-        LOG_WARNING("invalid pPresetNext");
+    if (ptr->pNext && !is_valid_ptr((ptr_t)ptr->pNext)) {
+        LOG_WARNING("invalid pNext");
     }
 
     return IS_ALIGNED(ptr)
-        && (!ptr->pPresetNext || is_valid_ptr((ptr_t)ptr->pPresetNext));
+        && (!ptr->pNext || is_valid_ptr((ptr_t)ptr->pNext));
 }
 
 inline bool is_valid_Path(Path *ptr)
