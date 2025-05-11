@@ -208,7 +208,8 @@ void log_Path(Path *ptr)
               "    dword _1[2]: %08x %08x\n"
               "    word xTarget: %04x\n"
               "    word yTarget: %04x\n"
-              "    dword _2[2]: %08x %08x\n"
+              /* "    dword _2[2]: %08x %08x\n" */
+              "    Room1* pRoom1_bis: %16jx\n"
               "    Room1* pRoom1: %16jx\n"
               "    Room1* pRoomUnk: %16jx\n"
               "    dword _3[3]: %08x %08x %08x\n"
@@ -231,7 +232,8 @@ void log_Path(Path *ptr)
               ptr->_1[0], ptr->_1[1],
               ptr->xTarget,
               ptr->yTarget,
-              ptr->_2[0], ptr->_2[1],
+              /* ptr->_2[0], ptr->_2[1], */
+              (ptr_t)ptr->pRoom1_bis,
               (ptr_t)ptr->pRoom1,
               (ptr_t)ptr->pRoomUnk,
               ptr->_3[0], ptr->_3[1], ptr->_3[2],
@@ -269,7 +271,7 @@ void log_Act(Act *ptr)
               ptr->dwAct,
               ptr->_2[0], ptr->_2[1], ptr->_2[2], ptr->_2[3], ptr->_2[4], ptr->_2[5], ptr->_2[6], ptr->_2[7], ptr->_2[8],
               (ptr_t)ptr->pMisc);
-    hex_dump(ptr, sizeof(Act)); /* DEBUG */
+    /* hex_dump(ptr, sizeof(Act)); /\* DEBUG *\/ */
 }
 
 void log_ActMisc(ActMisc *ptr)
@@ -291,7 +293,7 @@ void log_ActMisc(ActMisc *ptr)
               (ptr_t)ptr->pAct,
               ptr->_3[0],
               (ptr_t)ptr->pLevelFirst);
-    hex_dump(ptr, sizeof(ActMisc));
+    /* hex_dump(ptr, sizeof(ActMisc)); */
 }
 
 void log_PlayerData(PlayerData *ptr)
@@ -341,6 +343,65 @@ void log_Player(Player *ptr)
               (ptr_t)ptr->pPath);
 }
 
+void log_UnitAny(UnitAny *ptr)
+{
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "UnitAny" CLR_RESET " {\n"
+              "    dword dwType: %08x\n"
+              "    dword dwTxtFileNo: %08x\n"
+              "    dword dwUnitId: %08x\n"
+              "    dword dwMode: %08x\n"
+              "    void* pUnitData: %16jx\n"
+              "    dword dwAct: %08x\n"
+              "    dword _pad1: %08x\n"
+              "    Act* pAct: %16jx\n"
+              "    dword dwSeed[2]: %08x, %08x\n"
+              "    dword _dunno1[2]: %08x, %08x\n"
+              "    Path* pPath: %16jx\n"
+              "    dword _dunno2[18]: 08x\n"
+              "    void* pStats: %16jx\n"
+              "    void* pInventory: %16jx\n"
+              "    dword _dunno3[11]: 08x\n"
+              "    word xPos: %08x\n"
+              "    word yPos: %08x\n"
+              "    dword _dunno4[14]: 08x\n"
+              "    void* pSkills: %16jx\n"
+              "    dword _dunno5[20]: 08x\n"
+              "    UnitAny* pNext: %16jx\n"
+              "    void*    pRoomNext: %16jx\n"
+              /* "    dword _dunno6[5]: 08x\n" */
+              /* "    dword dwPlayerClass: %08x\n" */
+              /* "    dword _dunno7[11]: 08x\n" */
+              /* "    word _pad2: %04x\n" */
+              /* "    word wIsCorpse: %04x\n" */
+              "}",
+              ptr->dwType,
+              ptr->dwTxtFileNo,
+              ptr->dwUnitId,
+              ptr->dwMode,
+              (ptr_t)ptr->pPlayerData,
+              ptr->dwAct,
+              ptr->_pad1,
+              (ptr_t)ptr->pAct,
+              ptr->dwSeed[0], ptr->dwSeed[1],
+              ptr->_dunno1[0], ptr->_dunno1[1],
+              (ptr_t)ptr->pPath,
+              /* ptr->_dunno2[18], */
+              (ptr_t)ptr->pStats,
+              (ptr_t)ptr->pInventory,
+              /* ptr->_dunno3[11], */
+              ptr->xPos,
+              ptr->yPos,
+              /* ptr->_dunno4[14], */
+              (ptr_t)ptr->pSkills,
+              /* ptr->_dunno5[20], */
+              (ptr_t)ptr->pNext,
+              (ptr_t)ptr->pRoomNext);
+              /* /\* ptr->_dunno6[5], *\/ */
+              /* ptr->dwPlayerClass, */
+              /* /\* ptr->_dunno7[11], *\/ */
+              /* ptr->_pad2, */
+              /* ptr->wIsCorpse); */
 ////////////////////////////////////////////////////////////////////////////////
 
 static bool is_valid_player_name_str(const char *b, size_t len)
@@ -420,15 +481,16 @@ inline bool is_valid_Path(Path *ptr)
 {
     return IS_ALIGNED(ptr)
         && is_valid_ptr((ptr_t)ptr->pRoom1)
-        && (!ptr->pTargetUnit || is_valid_ptr((ptr_t)ptr->pRoomUnk))
-        && is_valid_ptr((ptr_t)ptr->pUnit)
-        && (!ptr->pTargetUnit || is_valid_ptr((ptr_t)ptr->pTargetUnit));
+        /* && (!ptr->pRoomUnk || is_valid_ptr((ptr_t)ptr->pRoomUnk)) */
+        /* && (!ptr->pUnit || is_valid_ptr((ptr_t)ptr->pUnit)) */
+        /* && (!ptr->pTargetUnit || is_valid_ptr((ptr_t)ptr->pTargetUnit)); */
+        ;
 }
 
 inline bool is_valid_Act(Act *ptr)
 {
-    return IS_ALIGNED(ptr)
-        && is_valid_ptr((ptr_t)ptr->pDunno);
+    return IS_ALIGNED(ptr);
+        /* && is_valid_ptr((ptr_t)ptr->pDunno); */
         /* && is_valid_ptr((ptr_t)ptr->pRoom1) */
         /* && (!ptr->pMisc || is_valid_ptr((ptr_t)ptr->pMisc)) */
         /* && ptr->dwAct < 5; */
@@ -456,9 +518,25 @@ inline bool is_valid_PlayerData(PlayerData *ptr)
 
 inline bool is_valid_Player(Player *ptr)
 {
+    log_UnitAny(ptr);                          /* DEBUG */
+    LOG_WARNING("is_valid_stack_ptr((ptr_t)ptr->pPlayerData): %d", is_valid_stack_ptr((ptr_t)ptr->pPlayerData) );
+    LOG_WARNING("is_valid_ptr((ptr_t)ptr->pAct): %d", is_valid_ptr((ptr_t)ptr->pAct) );
+    LOG_WARNING("is_valid_ptr((ptr_t)ptr->pPath): %d", is_valid_ptr((ptr_t)ptr->pPath) );
+    LOG_WARNING("tr->dwAct < 5;: %d", ptr->dwAct < 5);
     return IS_ALIGNED(ptr)
         && is_valid_stack_ptr((ptr_t)ptr->pPlayerData)
-        && is_valid_ptr((ptr_t)ptr->pAct)
-        && is_valid_ptr((ptr_t)ptr->pPath)
-        && ptr->dwAct < 5;
+        && (!ptr->pAct || is_valid_ptr((ptr_t)ptr->pAct))
+        && is_valid_ptr((ptr_t)ptr->pPath);
+        /* && ptr->dwAct < 5; */
+}
+
+inline bool is_valid_UnitAny(UnitAny *ptr)
+{
+    return IS_ALIGNED(ptr)
+        /* && ptr->dwType <= 5 */
+        /* && (is_valid_stack_ptr((ptr_t)ptr->pPlayerData) || ptr->dwType) */
+        /*     && ptr->dwAct < 5; */
+        /* && is_valid_ptr((ptr_t)ptr->pAct) */
+        /* && is_valid_ptr((ptr_t)ptr->pPath) */
+        ;
 }

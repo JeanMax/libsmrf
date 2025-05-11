@@ -33,15 +33,18 @@
 # define CLR_RESET   "\033[0m"
 #endif
 
+// TODO: add timestamp to log
+// TODO: don't spam
+
 #ifdef NDEBUG
 # define LOG_INFO(str, ...) \
-    printf(CLR_BLUE "[INFO]: " CLR_RESET str "\n", ##__VA_ARGS__)
+    printf(CLR_BLUE "[INFO]: " CLR_RESET str "\n", ##__VA_ARGS__), fflush(stdout)
 # define LOG_DEBUG(str, ...) \
     fprintf(stderr, CLR_MAGENTA "[DEBUG]: " CLR_RESET str "\n", ##__VA_ARGS__)
 # define LOG_WARNING(str, ...) \
     fprintf(stderr, CLR_YELLOW "[WARNING]: " CLR_RESET str "\n", ##__VA_ARGS__)
 #else
-# define LOG_INFO(str, ...) printf(str "\n", ##__VA_ARGS__)
+# define LOG_INFO(str, ...) printf(str "\n", ##__VA_ARGS__), fflush(stdout)
 # define LOG_DEBUG(str, ...) do {} while (0)
 # define LOG_WARNING(str, ...) do {} while (0)
 #endif

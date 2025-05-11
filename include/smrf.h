@@ -39,12 +39,17 @@
     } while (0)
 
 #define ADD_LINK(first, last, newby) do {       \
-         if (!(first)) {                        \
-             (first) = (newby);                 \
-         } else {                               \
-             (last)->pNext = (newby);           \
-         }                                      \
-         (last) = (newby);                      \
+        if (!(first)) {                         \
+            (first) = (newby);                  \
+        } else {                                \
+            (last)->pNext = (newby);            \
+        }                                       \
+        (last) = (newby);                       \
+    } while (0)
+
+#define PUSH_LINK(head, newby) do {             \
+        (newby)->pNext = (head);                \
+        (head) = (newby);                       \
     } while (0)
 
 #define LAST_LINK(first, last) do {             \
@@ -55,6 +60,22 @@
             }                                   \
         }                                       \
     } while (0)
+
+
+
+typedef  struct PtrList  PtrList;
+struct PtrList {
+    ptr_t ptr;
+    PtrList *pNext;
+};
+
+
+typedef  struct PlayerList  PlayerList;
+struct PlayerList {
+    Player player;
+    ptr_t player_data_addr;
+    PlayerList *pNext;
+};
 
 
 typedef  struct PlayerContent  PlayerContent;

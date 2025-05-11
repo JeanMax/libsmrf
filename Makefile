@@ -52,7 +52,7 @@ CPPFLAGS =
 ##
 
 # compilation/linking flags for the differents public rules
-WFLAGS = -Wextra -Wall  # warnings
+WFLAGS = -std=c18 -Wextra -Wall  # warnings
 RCFLAGS = $(WFLAGS) -O2  # release
 DCFLAGS = $(WFLAGS) -g -Og -DNDEBUG  # debug
 SCFLAGS = $(DCFLAGS) -fsanitize=address,undefined  # sanitize

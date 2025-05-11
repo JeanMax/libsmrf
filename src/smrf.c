@@ -2,8 +2,8 @@
 
 #define MAX_PLAYER_DATA 0x1000
 
-Level *g_levels[MAX_AREA] = {0};
-
+Level      *g_levels[MAX_AREA] = {0};
+PlayerList *g_maybe_player = NULL;
 
 //TODO: add enum for callback return
 
@@ -47,15 +47,23 @@ inline static bool search_player_callback(byte *buf, size_t buf_len, ptr_t addre
 
     while (buf_len >= sizeof(Player)) {
         player = (Player *)b;
+        int i = 0;
         for (p = player_data_addr; *p; p++) {
+            i++;
             if ((ptr_t)player->pPlayerData == *p && is_valid_Player(player)
                 /*&& player->dwUnitId == 1 && !player->dwTxtFileNo*/) {
                 ptr_t here = address + (ptr_t)(b - buf);
-                LOG_INFO("found Player ptr at %16jx", here); /* DEBUG */
+                LOG_INFO("found Player ptr at %16jx [data %d]", here, i); /* DEBUG */
                 log_Player(player);                          /* DEBUG */
-                *(ptr_t *)data = here;
-                memcpy(((ptr_t *)data) + 1, b, sizeof(Player));
-                return FALSE;
+                /* *(ptr_t *)data = here; */
+                /* memcpy(((ptr_t *)data) + 1, b, sizeof(Player)); */
+                /* return FALSE; */
+
+                PlayerList *pl;
+                MALLOC(pl, sizeof(PlayerList));
+                memcpy(&pl->player, b, sizeof(Player));
+                pl->player_data_addr = here;
+                PUSH_LINK(g_maybe_player, pl);
             }
         }
         b += sizeof(ptr_t);
@@ -66,6 +74,15 @@ inline static bool search_player_callback(byte *buf, size_t buf_len, ptr_t addre
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+static void free_maybe_player(PlayerList *pl)
+{
+    if (!pl) {
+        return;
+    }
+    free_maybe_player(pl->pNext);
+    FREE(pl);
+}
 
 static void free_preset(PresetUnit *preset)
 {
@@ -205,6 +222,33 @@ static PresetUnit *parse_preset_list(pid_t pid, ptr_t pu_addr, PresetUnit *pu_fi
     return pu_first;
 }
 
+/* static void find_ptr(pid_t pid, byte *b, size_t size, size_t how_deep) */
+/* { */
+/* 	byte *ptr = b; */
+/* 	UnitAny u1; */
+
+/* 	while ((size_t)(ptr - b) < size) { */
+/* 		if (is_valid_ptr(*(ptr_t *)ptr)) { */
+/* 			LOG_DEBUG("VALID: offset: %jx, ", (size_t)(ptr - b)); */
+/*             if (memread(pid, *(ptr_t *)ptr, sizeof(UnitAny), */
+/* 						find_UnitAny_callback, &u1)) { */
+/* 				/\* if (how_deep < 42) { *\/ */
+/* 				/\* if ((size_t)(ptr - b) == 0x150) { *\/ */
+/* 				if ((size_t)(ptr - b) == 0x158) { */
+/* 					LOG_DEBUG("WOOPWOOP: offset: %jx, ", (size_t)(ptr - b)); */
+/* 					log_UnitAny(&u1); */
+/* 					LOG_WARNING("RECURSING: offset: %jx, ", (size_t)&u1.pNext - (size_t)&u1); */
+/* 					find_ptr(pid, (byte *)&u1, sizeof(UnitAny), how_deep + 1); */
+/* 				} */
+/* 			} */
+/* 		} else if (!*(ptr_t *)ptr) { */
+/* 			LOG_DEBUG("NULL:  offset: %jx, ", (size_t)(ptr - b)); */
+/* 		} */
+/* 		ptr += sizeof(ptr_t); */
+/* 	} */
+/* } */
+/* DEBUG */
+
 static Room1 *parse_room1_list(pid_t pid, ptr_t r1_addr, Room1 *r1_first)
 {
     Room1 r1;
@@ -221,21 +265,27 @@ static Room1 *parse_room1_list(pid_t pid, ptr_t r1_addr, Room1 *r1_first)
         /* i++;              /\* DEBUG *\/ */
         /* log_Room1(&r1); */
         /* DEBUG */
+
         /* ptr_t unit_addr = (ptr_t)r1.pUnitFirst; */
         /* if (!is_valid_ptr(unit_addr)) { */
-        /*     LOG_WARNING("Invalid unit addr :/"); */
+		/* 	if (unit_addr) { */
+		/* 		LOG_WARNING("Invalid unit addr :/"); */
+		/* 	} */
         /* } else { */
         /*     Player u1; */
-        /*     if (!memread(pid, unit_addr, sizeof(Player), */
-        /*                  find_Player_callback, &u1)) { */
+        /*     if (!memread(pid, unit_addr, sizeof(UnitAny), */
+        /*                  find_UnitAny_callback, &u1)) { */
         /*         LOG_WARNING("Can't find unit ):"); */
-        /*     } else /\* if (u1.dwType == 1) *\/ { //monster */
-        /*         log_Player(&u1); */
+        /*     } else { */
+		/* 		/\* if (u1.dwType == 1) //monster *\/ */
+		/* 		log_Player(&u1); */
+		/* 		find_ptr(pid, (byte *)&u1, sizeof(Player), 0); */
         /*     } */
 
 
         /*     /\* LOG_WARNING("invalid pUnitFirst"); *\/ */
         /* } */
+
         /* DEBUG */
         /* LOG_DEBUG("(%x, %x) *", r1.dwXStart, r1.dwYStart); */
 
@@ -379,17 +429,66 @@ static bool update_player(GameState *game, Player *player)
     LOG_INFO("player_data found: %d", i); /* DEBUG */
 /* #endif */
 
-    if (!memreadall(pid, FALSE, search_player_callback, &player_data_addr)) {
-        LOG_ERROR("Can't find Player ptr");
+    //TODO: pass g_maybe_player
+    free_maybe_player(g_maybe_player);
+    g_maybe_player = NULL;
+    memreadall(pid, FALSE, search_player_callback, &player_data_addr);
+    if (!g_maybe_player) {
+        LOG_ERROR("Can't find any Player ptr");
+        return FALSE;
+    }
+
+    Act act;
+    Path path;
+    PlayerList *pl;
+    for (pl = g_maybe_player; pl; pl = pl->pNext) {
+
+        if (pl->player.pAct && !memread(pid, (ptr_t)pl->player.pAct, sizeof(Act),
+                     find_Act_callback, &act)) {
+            continue;
+        }
+        if (!memread(pid, (ptr_t)pl->player.pPath, sizeof(Path),
+                     find_Path_callback, &path)) {
+
+            if (is_valid_ptr((ptr_t)pl->player.dwSeed[0]) && memread(pid, (ptr_t)pl->player.dwSeed[0], sizeof(Path),
+                               find_Path_callback, &path)) {
+                LOG_INFO("Found path: seed 0");
+                break;
+            }
+            if (is_valid_ptr((ptr_t)pl->player.dwSeed[1]) && memread(pid, (ptr_t)pl->player.dwSeed[1], sizeof(Path),
+                               find_Path_callback, &path)) {
+                LOG_INFO("Found path: seed 1");
+                break;
+            }
+
+            if (is_valid_ptr((ptr_t)pl->player._dunno1[0]) && memread(pid, (ptr_t)pl->player._dunno1[0], sizeof(Path),
+                               find_Path_callback, &path)) {
+                LOG_INFO("Found path: dunno 0");
+                break;
+            }
+            if (is_valid_ptr((ptr_t)pl->player._dunno1[1]) && memread(pid, (ptr_t)pl->player._dunno1[1], sizeof(Path),
+                               find_Path_callback, &path)) {
+                LOG_INFO("Found path: dunno 1");
+                break;
+            }
+
+            continue;
+        }
+        /* log_Act(&act); */
+        /* log_Path(&path); */
+        break;
+    }
+    if (!pl) {
+        LOG_ERROR("Can't find any valid Player");
         return FALSE;
     }
 
     /* pthread_mutex_lock(&game->mutex); */
     game->_pid = pid;
-    game->_player_addr = *(ptr_t *)player_data_addr;
+    game->_player_addr = pl->player_data_addr;
     /* pthread_mutex_unlock(&game->mutex); */
 
-    memcpy(player, ((ptr_t *)player_data_addr + 1), sizeof(Player));
+    memcpy(player, &pl->player, sizeof(Player));
     log_Player(player);
     LOG_INFO("found PlayerData ptr at %16jx", (ptr_t)player->pPlayerData); /* DEBUG */
     return TRUE;
@@ -412,24 +511,73 @@ bool update_game_state(GameState *game)
         destroy_game_state(game);
         return FALSE;
     }
-    /* log_PlayerData(&tmp.player_data); */
+    log_PlayerData(&tmp.player_data);
 
     if (!memread(game->_pid, (ptr_t)player.pAct, sizeof(Act),
                  find_Act_callback, &tmp.act)) {
         //TODO: handle this the smart way
+		// -> don't go to the 1st player of the list :/
         LOG_ERROR("Can't find act");
 		memset(&tmp.act, 0, sizeof(Act));
         /* return FALSE; */
     }
-    /* log_Act(&tmp.act); */
+    log_Act(&tmp.act);
 
     if (!memread(game->_pid, (ptr_t)player.pPath, sizeof(Path),
                  find_Path_callback, &tmp.path)) {
         //TODO: handle this the smart way
+		// -> don't go to the 1st player of the list :/
         LOG_ERROR("Can't find path");
         return FALSE;
     }
+    log_Path(&tmp.path);
+
+
+    /* if (memread(game->_pid, (ptr_t)player.pAct, sizeof(Act), */
+    /*              find_Act_callback, &tmp.act)) { */
+    /*     LOG_INFO("Found act: basic"); */
+    /* } else if (memread(game->_pid, (ptr_t)player.dwSeed[0], sizeof(Act), */
+    /*                    find_Act_callback, &tmp.act)) { */
+    /*     LOG_INFO("Found act: seed 0"); */
+    /* } else if (memread(game->_pid, (ptr_t)player.dwSeed[1], sizeof(Act), */
+    /*                    find_Act_callback, &tmp.act)) { */
+    /*     LOG_INFO("Found act: seed 1"); */
+    /* } else if (memread(game->_pid, (ptr_t)player._dunno1[0], sizeof(Act), */
+    /*                    find_Act_callback, &tmp.act)) { */
+    /*     LOG_INFO("Found act: dunno 0"); */
+    /* } else if (memread(game->_pid, (ptr_t)player._dunno1[0], sizeof(Act), */
+    /*                    find_Act_callback, &tmp.act)) { */
+    /*     LOG_INFO("Found act: dunno 1"); */
+    /* } else { */
+    /*     LOG_ERROR("Can't find act"); */
+	/* 	memset(&tmp.act, 0, sizeof(Act)); */
+    /* } */
+    /* log_Act(&tmp.act); */
+
+
+
+    /* if (memread(game->_pid, (ptr_t)player.pPath, sizeof(Path), */
+    /*              find_Path_callback, &tmp.path)) { */
+    /*     LOG_INFO("Found path: basic"); */
+    /* } else if (memread(game->_pid, (ptr_t)player.dwSeed[0], sizeof(Path), */
+    /*                    find_Path_callback, &tmp.path)) { */
+    /*     LOG_INFO("Found path: seed 0"); */
+    /* } else if (memread(game->_pid, (ptr_t)player.dwSeed[1], sizeof(Path), */
+    /*                    find_Path_callback, &tmp.path)) { */
+    /*     LOG_INFO("Found path: seed 1"); */
+    /* } else if (memread(game->_pid, (ptr_t)player._dunno1[0], sizeof(Path), */
+    /*                    find_Path_callback, &tmp.path)) { */
+    /*     LOG_INFO("Found path: dunno 0"); */
+    /* } else if (memread(game->_pid, (ptr_t)player._dunno1[0], sizeof(Path), */
+    /*                    find_Path_callback, &tmp.path)) { */
+    /*     LOG_INFO("Found path: dunno 1"); */
+    /* } else { */
+    /*     LOG_ERROR("Can't find path"); */
+    /*     return FALSE; */
+    /* } */
     /* log_Path(&tmp.path); */
+
+
 
     if (!memread(game->_pid, (ptr_t)tmp.path.pRoom1, sizeof(Room1),
                  find_Room1_callback, &tmp.room1)) {

@@ -142,8 +142,9 @@ struct Path {
     dword _1[2];          // 0x08
     word xTarget;         // 0x10
     word yTarget;         // 0x12
-    dword _2[2];          // 0x14
-    dword _pad1;
+    Room1* pRoom1_bis;        // 0x14
+    /* dword _2[2];          // 0x14 */
+    /* dword _pad1; */
     Room1* pRoom1;        // 0x1C
     Room1* pRoomUnk;      // 0x20
     dword _3[3];          // 0x24
@@ -219,63 +220,41 @@ typedef  struct UnitAny  Player;
 struct UnitAny {
     dword dwType;      // 0x00
     dword dwTxtFileNo; // 0x04
-    dword _1;          // 0x08
-    dword dwUnitId;    // 0x0C
-    dword dwMode;      // 0x10
-    dword _pad1;
+    dword dwUnitId;          // 0x08
+    dword dwMode;    // 0x0C
     union {
         PlayerData* pPlayerData;
         void* pItemData;
         void* pMonsterData;
         void* pObjectData;
         // TileData *pTileData doesn't appear to exist anymore
-    };               // 0x14
+    };               // 0x10
     dword dwAct;     // 0x18
-    dword _pad2;
-    Act* pAct;       // 0x1C
-    dword dwSeed[2]; // 0x20
-    dword _2;        // 0x28
-    dword _pad3;
+    dword _pad1;     // 0x1C
+    Act* pAct;       // 0x20
+    dword dwSeed[2]; // 0x28
+    dword _dunno1[2];// 0x30
     union {
         Path* pPath;
         void* pItemPath;
         void* pObjectPath;
-    };                        // 0x2C
-    /* dword _3[5];              // 0x30 */
-    /* dword dwGfxFrame;         // 0x44 */
-    /* dword dwFrameRemain;      // 0x48 */
-    /* word wFrameRate;          // 0x4C */
-    /* word _4;                  // 0x4E */
-    /* byte* pGfxUnk;            // 0x50 */
-    /* dword* pGfxInfo;          // 0x54 */
-    /* dword _5;                 // 0x58 */
-    /* void* pStats;             // 0x5C */
-    /* void* pInventory;         // 0x60 */
-    /* void* ptLight;            // 0x64 */
-    /* dword dwStartLightRadius; // 0x68 */
-    /* word nPl2ShiftIdx;        // 0x6C */
-    /* word nUpdateType;         // 0x6E */
-    /* UnitAny* pUpdateUnit;     // 0x70 - Used when updating unit. */
-    /* dword* pQuestRecord;      // 0x74 */
-    /* dword bSparklyChest;      // 0x78 bool */
-    /* dword* pTimerArgs;        // 0x7C */
-    /* dword dwSoundSync;        // 0x80 */
-    /* dword _6[2];              // 0x84 */
-    /* word wX;                  // 0x8C */
-    /* word wY;                  // 0x8E */
-    /* dword _7;                 // 0x90 */
-    /* dword dwOwnerType;        // 0x94 */
-    /* dword dwOwnerId;          // 0x98 */
-    /* dword _8[2];              // 0x9C */
-    /* void* pOMsg;              // 0xA4 */
-    /* void* pInfo;              // 0xA8 */
-    /* dword _9[6];              // 0xAC */
-    /* dword dwFlags;            // 0xC4 */
-    /* dword dwFlags2;           // 0xC8 */
-    /* dword _10[5];             // 0xCC */
-    /* UnitAny* pChangedNext;    // 0xE0 */
-    /* UnitAny* pListNext;       // 0xE4 -> 0xD8 */
-    /* UnitAny* pNext;       // 0xE8 */
+    };                        // 0x38
+    dword _dunno2[18];        // 0x40
+    void* pStats;             // 0x88
+    void* pInventory;         // 0x90
+    dword _dunno3[11];        // 0x98
+    word xPos;                // 0xc4
+    word yPos;                // 0xc6
+    dword _dunno4[14];        // 0xc8
+    void* pSkills;            // 0x100
+    dword _dunno5[20];        // 0x108
+    UnitAny* pNext;           // 0x150
+    void*    pRoomNext;       // 0x158
+    /* dword _dunno6[5];         // 0x160 */
+    /* dword dwPlayerClass;      // 0x174 */
+    /* dword _dunno7[11];        // 0x178 */
+    /* word _pad2;               // 0x1a4 */
+    /* word wIsCorpse;           // 0x1a6 */
 };
 
 
@@ -289,6 +268,7 @@ void log_Act(Act *ptr);
 void log_ActMisc(ActMisc *ptr);
 void log_PlayerData(PlayerData *ptr);
 void log_Player(Player *ptr);
+void log_UnitAny(UnitAny *ptr);
 
 bool is_valid_Level(Level *ptr);
 bool is_valid_Room2(Room2 *ptr);
@@ -300,6 +280,7 @@ bool is_valid_Act(Act *ptr);
 bool is_valid_ActMisc(ActMisc *ptr);
 bool is_valid_PlayerData(PlayerData *ptr);
 bool is_valid_Player(Player *ptr);
+bool is_valid_UnitAny(UnitAny *ptr);
 
 #define DEF_STRUCT_CPY_CALLBACK(STRUCT) \
     inline static bool find_##STRUCT##_callback(byte *buf, size_t buf_len, ptr_t address, void *data) \
@@ -324,5 +305,6 @@ DEF_STRUCT_CPY_CALLBACK(Act)
 DEF_STRUCT_CPY_CALLBACK(ActMisc)
 DEF_STRUCT_CPY_CALLBACK(PlayerData)
 DEF_STRUCT_CPY_CALLBACK(Player)
+DEF_STRUCT_CPY_CALLBACK(UnitAny)
 
 #endif
