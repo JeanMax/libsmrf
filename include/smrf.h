@@ -99,7 +99,7 @@ struct PlayerContent {
 
 typedef  struct GameState  GameState;
 struct GameState {
-	char status[MAX_STATUS_LEN];
+    char status[MAX_STATUS_LEN];
     Player player;
     Level *level;
     ptr_t _player_addr; //TODO: internal, hide

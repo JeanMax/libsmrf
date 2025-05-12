@@ -519,9 +519,12 @@ inline bool is_valid_PlayerData(PlayerData *ptr)
 inline bool is_valid_Player(Player *ptr)
 {
     log_UnitAny(ptr);                          /* DEBUG */
-    LOG_WARNING("is_valid_stack_ptr((ptr_t)ptr->pPlayerData): %d", is_valid_stack_ptr((ptr_t)ptr->pPlayerData) );
-    LOG_WARNING("is_valid_ptr((ptr_t)ptr->pAct): %d", is_valid_ptr((ptr_t)ptr->pAct) );
-    LOG_WARNING("is_valid_ptr((ptr_t)ptr->pPath): %d", is_valid_ptr((ptr_t)ptr->pPath) );
+    LOG_WARNING("is_valid_stack_ptr((ptr_t)ptr->pPlayerData): %d",
+                is_valid_stack_ptr((ptr_t)ptr->pPlayerData) );
+    LOG_WARNING("is_valid_ptr((ptr_t)ptr->pAct): %d",
+                is_valid_ptr((ptr_t)ptr->pAct) );
+    LOG_WARNING("is_valid_ptr((ptr_t)ptr->pPath): %d",
+                is_valid_ptr((ptr_t)ptr->pPath) );
     LOG_WARNING("tr->dwAct < 5;: %d", ptr->dwAct < 5);
     return IS_ALIGNED(ptr)
         && is_valid_stack_ptr((ptr_t)ptr->pPlayerData)

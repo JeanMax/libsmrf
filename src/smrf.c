@@ -137,55 +137,55 @@ static void free_all_levels(void)
 
 static Room1 *room1_in_list(Room1 *r1, Room1 *r1_list)
 {
-	if (r1) {
-		while (r1_list) {
-			if (r1->dwPosX == r1_list->dwPosX
+    if (r1) {
+        while (r1_list) {
+            if (r1->dwPosX == r1_list->dwPosX
                 && r1->dwPosY == r1_list->dwPosY
                 && r1->dwSizeY == r1_list->dwSizeY
                 && r1->dwSizeY == r1_list->dwSizeY
-				&& r1->dwPosXBig == r1_list->dwPosXBig
+                && r1->dwPosXBig == r1_list->dwPosXBig
                 && r1->dwPosYBig == r1_list->dwPosYBig
                 && r1->dwSizeYBig == r1_list->dwSizeYBig
                 && r1->dwSizeYBig == r1_list->dwSizeYBig) {
-				return r1_list;
-			}
-			r1_list = r1_list->pNext;
-		}
-	}
-	return NULL;
+                return r1_list;
+            }
+            r1_list = r1_list->pNext;
+        }
+    }
+    return NULL;
 }
 
 static Room2 *room2_in_list(Room2 *r2, Room2 *r2_list)
 {
-	if (r2) {
-		while (r2_list) {
-			if (r2->dwPosX == r2_list->dwPosX
+    if (r2) {
+        while (r2_list) {
+            if (r2->dwPosX == r2_list->dwPosX
                 && r2->dwPosY == r2_list->dwPosY
                 && r2->dwSizeY == r2_list->dwSizeY
                 && r2->dwSizeY == r2_list->dwSizeY
                 && r2->dwPresetType == r2_list->dwPresetType) {
-				return r2_list;
-			}
-			r2_list = r2_list->pNext;
-		}
-	}
-	return NULL;
+                return r2_list;
+            }
+            r2_list = r2_list->pNext;
+        }
+    }
+    return NULL;
 }
 
 static PresetUnit *preset_in_list(PresetUnit *pu, PresetUnit *pu_list)
 {
-	if (pu) {
-		while (pu_list) {
-			if (pu->dwPosX == pu_list->dwPosX
+    if (pu) {
+        while (pu_list) {
+            if (pu->dwPosX == pu_list->dwPosX
                 && pu->dwPosY == pu_list->dwPosY
                 && pu->dwType == pu_list->dwType
                 && pu->dwTxtFileNo == pu_list->dwTxtFileNo) {
-				return pu_list;
-			}
-			pu_list = pu_list->pNext;
-		}
-	}
-	return NULL;
+                return pu_list;
+            }
+            pu_list = pu_list->pNext;
+        }
+    }
+    return NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -196,7 +196,7 @@ static PresetUnit *parse_preset_list(pid_t pid, ptr_t pu_addr, PresetUnit *pu_fi
     PresetUnit *pu_prev = NULL, *pu_new;
     /* int i = 0;                  /\* DEBUG *\/ */
 
-	LAST_LINK(pu_first, pu_prev);
+    LAST_LINK(pu_first, pu_prev);
     while (is_valid_ptr(pu_addr)) {
         if (!memread(pid, pu_addr, sizeof(PresetUnit),
                      find_PresetUnit_callback, &pu)) {
@@ -207,12 +207,12 @@ static PresetUnit *parse_preset_list(pid_t pid, ptr_t pu_addr, PresetUnit *pu_fi
         /* log_PresetUnit(&pu); */
         /* LOG_DEBUG("(%x, %x) *", pu.dwPosX, pu.dwPosY); */
 
-		pu_new = preset_in_list(&pu, pu_first);
-		if (!pu_new) {
-			DUPE(pu_new, &pu, sizeof(PresetUnit));
-			pu_new->pNext = NULL;
-			ADD_LINK(pu_first, pu_prev, pu_new);
-		}
+        pu_new = preset_in_list(&pu, pu_first);
+        if (!pu_new) {
+            DUPE(pu_new, &pu, sizeof(PresetUnit));
+            pu_new->pNext = NULL;
+            ADD_LINK(pu_first, pu_prev, pu_new);
+        }
 
         pu_addr = (ptr_t)pu.pNext;
     }
@@ -228,7 +228,7 @@ static Room1 *parse_room1_list(pid_t pid, ptr_t r1_addr, Room1 *r1_first)
     Room1 *r1_prev = NULL, *r1_new;
     /* int i = 0;                  /\* DEBUG *\/ */
 
-	LAST_LINK(r1_first, r1_prev);
+    LAST_LINK(r1_first, r1_prev);
     while (is_valid_ptr(r1_addr)) {
         if (!memread(pid, r1_addr, sizeof(Room1),
                      find_Room1_callback, &r1)) {
@@ -241,18 +241,18 @@ static Room1 *parse_room1_list(pid_t pid, ptr_t r1_addr, Room1 *r1_first)
 
         /* ptr_t unit_addr = (ptr_t)r1.pUnitFirst; */
         /* if (!is_valid_ptr(unit_addr)) { */
-		/* 	if (unit_addr) { */
-		/* 		LOG_WARNING("Invalid unit addr :/"); */
-		/* 	} */
+        /*  if (unit_addr) { */
+        /*      LOG_WARNING("Invalid unit addr :/"); */
+        /*  } */
         /* } else { */
         /*     Player u1; */
         /*     if (!memread(pid, unit_addr, sizeof(UnitAny), */
         /*                  find_UnitAny_callback, &u1)) { */
         /*         LOG_WARNING("Can't find unit ):"); */
         /*     } else { */
-		/* 		/\* if (u1.dwType == 1) //monster *\/ */
-		/* 		log_Player(&u1); */
-		/* 		find_ptr(pid, (byte *)&u1, sizeof(Player), 0); */
+        /*      /\* if (u1.dwType == 1) //monster *\/ */
+        /*      log_Player(&u1); */
+        /*      find_ptr(pid, (byte *)&u1, sizeof(Player), 0); */
         /*     } */
 
 
@@ -263,13 +263,13 @@ static Room1 *parse_room1_list(pid_t pid, ptr_t r1_addr, Room1 *r1_first)
         /* LOG_DEBUG("(%x, %x) *", r1.dwXStart, r1.dwYStart); */
 
 
-		r1_new = room1_in_list(&r1, r1_first);
-		if (!r1_new) {
-			DUPE(r1_new, &r1, sizeof(Room1));
-			r1_new->pNext = NULL;
-			r1_new->Coll = NULL;
-			ADD_LINK(r1_first, r1_prev, r1_new);
-		}
+        r1_new = room1_in_list(&r1, r1_first);
+        if (!r1_new) {
+            DUPE(r1_new, &r1, sizeof(Room1));
+            r1_new->pNext = NULL;
+            r1_new->Coll = NULL;
+            ADD_LINK(r1_first, r1_prev, r1_new);
+        }
 
         /* r1_new->Coll = parse_collmap(pid, (ptr_t)r1.Coll); */
 
@@ -287,7 +287,7 @@ static Room2 *parse_room2_list(pid_t pid, ptr_t r2_addr, Room2 *r2_first)
     Room2 *r2_prev = NULL, *r2_new;
     /* int i = 0;                  /\* DEBUG *\/ */
 
-	LAST_LINK(r2_first, r2_prev);
+    LAST_LINK(r2_first, r2_prev);
     while (is_valid_ptr(r2_addr)) {
         if (!memread(pid, r2_addr, sizeof(Room2),
                      find_Room2_callback, &r2)) {
@@ -298,21 +298,21 @@ static Room2 *parse_room2_list(pid_t pid, ptr_t r2_addr, Room2 *r2_first)
         /* log_Room2(&r2); */
         /* LOG_DEBUG("(%x, %x)", r2.dwPosX, r2.dwPosY); */
 
-		r2_new = room2_in_list(&r2, r2_first);
-		if (!r2_new) {
-			DUPE(r2_new, &r2, sizeof(Room2));
-			r2_new->pNext = NULL;
-			r2_new->pRoom1 = NULL;
-			r2_new->pPreset = NULL;
-			ADD_LINK(r2_first, r2_prev, r2_new);
-		}
+        r2_new = room2_in_list(&r2, r2_first);
+        if (!r2_new) {
+            DUPE(r2_new, &r2, sizeof(Room2));
+            r2_new->pNext = NULL;
+            r2_new->pRoom1 = NULL;
+            r2_new->pPreset = NULL;
+            ADD_LINK(r2_first, r2_prev, r2_new);
+        }
 
         r2_new->pRoom1 = parse_room1_list(pid,
-										  (ptr_t)r2.pRoom1,
-										  r2_new->pRoom1);
+                                          (ptr_t)r2.pRoom1,
+                                          r2_new->pRoom1);
         r2_new->pPreset = parse_preset_list(pid,
-											(ptr_t)r2.pPreset,
-											r2_new->pPreset);
+                                            (ptr_t)r2.pPreset,
+                                            r2_new->pPreset);
 
         r2_addr = (ptr_t)r2.pNext;
     }
@@ -342,19 +342,19 @@ static Level *parse_level_list(pid_t pid, ptr_t level_addr)
         if (level_new) { // not new eh
             if (!level_first) { //current lvl
                 level_new->pRoom2First = parse_room2_list(pid,
-														  (ptr_t)level.pRoom2First,
-														  level_new->pRoom2First);
+                                                          (ptr_t)level.pRoom2First,
+                                                          level_new->pRoom2First);
             }
         } else {
             DUPE(level_new, &level, sizeof(Level));
             level_new->pNext = NULL;
             g_levels[level.dwLevelNo] = level_new;
             level_new->pRoom2First = parse_room2_list(pid,
-													  (ptr_t)level.pRoom2First,
-													  NULL);
+                                                      (ptr_t)level.pRoom2First,
+                                                      NULL);
         }
 
-		ADD_LINK(level_first, level_prev, level_new);
+        ADD_LINK(level_first, level_prev, level_new);
         level_addr = (ptr_t)level.pNext;
     }
 
@@ -497,9 +497,9 @@ bool update_game_state(GameState *game)
     if (!memread(game->_pid, (ptr_t)player.pAct, sizeof(Act),
                  find_Act_callback, &tmp.act)) {
         //TODO: handle this the smart way
-		// -> don't go to the 1st player of the list :/
+        // -> don't go to the 1st player of the list :/
         LOG_ERROR("Can't find act");
-		memset(&tmp.act, 0, sizeof(Act));
+        memset(&tmp.act, 0, sizeof(Act));
         /* return FALSE; */
     }
     log_Act(&tmp.act);
@@ -508,7 +508,7 @@ bool update_game_state(GameState *game)
     if (!memread(game->_pid, (ptr_t)player.pPath, sizeof(Path),
                  find_Path_callback, &tmp.path)) {
         //TODO: handle this the smart way
-		// -> don't go to the 1st player of the list :/
+        // -> don't go to the 1st player of the list :/
         LOG_ERROR("Can't find path");
         return FALSE;
     }
@@ -532,7 +532,7 @@ bool update_game_state(GameState *game)
     /*     LOG_INFO("Found act: dunno 1"); */
     /* } else { */
     /*     LOG_ERROR("Can't find act"); */
-	/* 	memset(&tmp.act, 0, sizeof(Act)); */
+    /*  memset(&tmp.act, 0, sizeof(Act)); */
     /* } */
     /* log_Act(&tmp.act); */
 

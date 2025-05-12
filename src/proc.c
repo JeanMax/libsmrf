@@ -255,7 +255,7 @@ bool readmaps(pid_t pid)
             break;
         }
     }
-	g_stack.start >>= 0x10; // just in case he
+    g_stack.start >>= 0x10; // just in case he
 #endif
     LOG_DEBUG("stack: %16jx - %16jx", g_stack.start, g_stack.end); /* DEBUG */
     LOG_DEBUG("%d maps found", i); /* DEBUG */
