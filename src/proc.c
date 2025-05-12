@@ -269,7 +269,7 @@ bool readmaps(pid_t pid)
 pid_t pidof(const char *pname)
 {
 #ifndef _WIN32
-    FILE *comm_file;
+    FILE *cmd_file;
     struct dirent *entry;
     char path[PATH_MAX], read_buf[PAGE_LENGTH];
     pid_t ret = 0;
@@ -283,18 +283,18 @@ pid_t pidof(const char *pname)
     while ((entry = readdir(proc_dir))) {
         strcpy(path, "/proc/");
         strcat(path, entry->d_name);
-        strcat(path, "/comm");
+        strcat(path, "/cmdline");
 
-        comm_file = fopen(path, "r");
-        if (comm_file) {
-            fscanf(comm_file, "%s", read_buf);
-            if (!strcmp(read_buf, pname)) {
+        cmd_file = fopen(path, "r");
+        if (cmd_file) {
+			fgets(read_buf, PAGE_LENGTH - 1, cmd_file);
+            if (strstr(read_buf, pname)) {  // TODO: this is extra inclusive
                 ret = atoi(entry->d_name);
-                fclose(comm_file);
+                fclose(cmd_file);
                 closedir(proc_dir);
                 return ret;
             }
-            fclose(comm_file);
+            fclose(cmd_file);
         }
     }
 
