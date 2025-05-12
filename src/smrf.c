@@ -222,33 +222,6 @@ static PresetUnit *parse_preset_list(pid_t pid, ptr_t pu_addr, PresetUnit *pu_fi
     return pu_first;
 }
 
-/* static void find_ptr(pid_t pid, byte *b, size_t size, size_t how_deep) */
-/* { */
-/* 	byte *ptr = b; */
-/* 	UnitAny u1; */
-
-/* 	while ((size_t)(ptr - b) < size) { */
-/* 		if (is_valid_ptr(*(ptr_t *)ptr)) { */
-/* 			LOG_DEBUG("VALID: offset: %jx, ", (size_t)(ptr - b)); */
-/*             if (memread(pid, *(ptr_t *)ptr, sizeof(UnitAny), */
-/* 						find_UnitAny_callback, &u1)) { */
-/* 				/\* if (how_deep < 42) { *\/ */
-/* 				/\* if ((size_t)(ptr - b) == 0x150) { *\/ */
-/* 				if ((size_t)(ptr - b) == 0x158) { */
-/* 					LOG_DEBUG("WOOPWOOP: offset: %jx, ", (size_t)(ptr - b)); */
-/* 					log_UnitAny(&u1); */
-/* 					LOG_WARNING("RECURSING: offset: %jx, ", (size_t)&u1.pNext - (size_t)&u1); */
-/* 					find_ptr(pid, (byte *)&u1, sizeof(UnitAny), how_deep + 1); */
-/* 				} */
-/* 			} */
-/* 		} else if (!*(ptr_t *)ptr) { */
-/* 			LOG_DEBUG("NULL:  offset: %jx, ", (size_t)(ptr - b)); */
-/* 		} */
-/* 		ptr += sizeof(ptr_t); */
-/* 	} */
-/* } */
-/* DEBUG */
-
 static Room1 *parse_room1_list(pid_t pid, ptr_t r1_addr, Room1 *r1_first)
 {
     Room1 r1;
@@ -395,17 +368,20 @@ static Level *parse_level_list(pid_t pid, ptr_t level_addr)
 static bool update_player(GameState *game, Player *player)
 {
     pid_t pid = pidof("D2R.exe");
+    UPDATE_STATUS(game, "Searching for D2R.exe...");
     if (!pid) {
         LOG_ERROR("Can't find D2R.exe");
         return FALSE;
     }
 
+    UPDATE_STATUS(game, "Reading D2R memory...");
     if (!readmaps(pid)) {
         LOG_ERROR("Can't read maps");
         return FALSE;
     }
 
     if (pid == game->_pid && game->_player_addr) {
+        UPDATE_STATUS(game, "Updating Player...");
         if (memread(pid, (ptr_t)game->_player_addr, sizeof(Player),
                     find_Player_callback, player)) {
             return TRUE;
@@ -415,6 +391,7 @@ static bool update_player(GameState *game, Player *player)
         }
     }
 
+    UPDATE_STATUS(game, "Searching for PlayerData structs...");
     static ptr_t player_data_addr[MAX_PLAYER_DATA] = {0}; //TODO: ugly
     memset(&player_data_addr, 0, sizeof(player_data_addr));
     memreadall(pid, TRUE, search_player_data_callback, &player_data_addr);
@@ -430,6 +407,7 @@ static bool update_player(GameState *game, Player *player)
 /* #endif */
 
     //TODO: pass g_maybe_player
+    UPDATE_STATUS(game, "Searching for Player structs...");
     free_maybe_player(g_maybe_player);
     g_maybe_player = NULL;
     memreadall(pid, FALSE, search_player_callback, &player_data_addr);
@@ -441,6 +419,7 @@ static bool update_player(GameState *game, Player *player)
     Act act;
     Path path;
     PlayerList *pl;
+    UPDATE_STATUS(game, "Validating Player...");
     for (pl = g_maybe_player; pl; pl = pl->pNext) {
 
         if (pl->player.pAct && !memread(pid, (ptr_t)pl->player.pAct, sizeof(Act),
@@ -505,6 +484,7 @@ bool update_game_state(GameState *game)
         return FALSE;
     }
 
+    UPDATE_STATUS(game, "Updating PlayerData...");
     if (!memread(game->_pid, (ptr_t)player.pPlayerData, sizeof(PlayerData),
                  find_PlayerData_callback, &tmp.player_data)) {
         LOG_ERROR("Can't find playerData");
@@ -513,6 +493,7 @@ bool update_game_state(GameState *game)
     }
     log_PlayerData(&tmp.player_data);
 
+    UPDATE_STATUS(game, "Updating Act...");
     if (!memread(game->_pid, (ptr_t)player.pAct, sizeof(Act),
                  find_Act_callback, &tmp.act)) {
         //TODO: handle this the smart way
@@ -523,6 +504,7 @@ bool update_game_state(GameState *game)
     }
     log_Act(&tmp.act);
 
+    UPDATE_STATUS(game, "Updating Path...");
     if (!memread(game->_pid, (ptr_t)player.pPath, sizeof(Path),
                  find_Path_callback, &tmp.path)) {
         //TODO: handle this the smart way
@@ -579,6 +561,7 @@ bool update_game_state(GameState *game)
 
 
 
+    UPDATE_STATUS(game, "Updating Room1...");
     if (!memread(game->_pid, (ptr_t)tmp.path.pRoom1, sizeof(Room1),
                  find_Room1_callback, &tmp.room1)) {
         LOG_ERROR("Can't find room1");
@@ -586,6 +569,7 @@ bool update_game_state(GameState *game)
     }
     /* log_Room1(&tmp.room1); */
 
+    UPDATE_STATUS(game, "Updating Room2...");
     if (!memread(game->_pid, (ptr_t)tmp.room1.pRoom2, sizeof(Room2),
                  find_Room2_callback, &tmp.room2)) {
         LOG_ERROR("Can't find room2");
@@ -624,12 +608,14 @@ bool update_game_state(GameState *game)
 
     /* DEBUG */
 
+    strcpy(game->status, "Fresh.");
     return TRUE;
 }
 
 void init_game_state(GameState *game)
 {
     memset(game, 0, sizeof(GameState));
+    strcpy(game->status, "Loading...");
     pthread_mutex_init(&game->mutex, NULL);
 }
 

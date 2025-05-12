@@ -62,6 +62,14 @@
     } while (0)
 
 
+// TODO: optimize lock use
+#define UPDATE_STATUS(game, statux) do {        \
+        pthread_mutex_lock(&game->mutex);       \
+        strcpy(game->status, statux);           \
+        pthread_mutex_unlock(&game->mutex);     \
+    } while (0)
+
+
 
 typedef  struct PtrList  PtrList;
 struct PtrList {
@@ -87,8 +95,11 @@ struct PlayerContent {
     Room2 room2;
 };
 
+#define MAX_STATUS_LEN 32
+
 typedef  struct GameState  GameState;
 struct GameState {
+	char status[MAX_STATUS_LEN];
     Player player;
     Level *level;
     ptr_t _player_addr; //TODO: internal, hide
