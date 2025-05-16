@@ -4,6 +4,7 @@
 
 Level      *g_levels[MAX_AREA] = {0};
 PlayerList *g_maybe_player = NULL;
+char       *g_player_name_setting = NULL;
 
 //TODO: add enum for callback return
 
@@ -13,7 +14,9 @@ inline static bool search_player_data_callback(byte *buf, size_t buf_len, ptr_t 
     PlayerData *player_data;
     while (buf_len >= sizeof(PlayerData)) {
         player_data = (PlayerData *)b;
-        if (is_valid_PlayerData(player_data)) {
+        if (is_valid_PlayerData(player_data)
+            && (!g_player_name_setting || !*g_player_name_setting
+                || !strcmp(player_data->szName, g_player_name_setting))) {
             ptr_t here = address + (ptr_t)(b - buf);
 #ifdef NDEBUG
             LOG_DEBUG("Valid player_data! %16jx", here);
@@ -391,7 +394,7 @@ static bool update_player(GameState *game, Player *player)
         }
     }
 
-    UPDATE_STATUS(game, "Searching for PlayerData structs...");
+    UPDATE_STATUS(game, "Out of game...");
     static ptr_t player_data_addr[MAX_PLAYER_DATA] = {0}; //TODO: ugly
     memset(&player_data_addr, 0, sizeof(player_data_addr));
     memreadall(pid, TRUE, search_player_data_callback, &player_data_addr);
@@ -407,7 +410,7 @@ static bool update_player(GameState *game, Player *player)
 /* #endif */
 
     //TODO: pass g_maybe_player
-    UPDATE_STATUS(game, "Searching for Player structs...");
+    UPDATE_STATUS(game, "In Game...");
     free_maybe_player(g_maybe_player);
     g_maybe_player = NULL;
     memreadall(pid, FALSE, search_player_callback, &player_data_addr);
@@ -416,45 +419,25 @@ static bool update_player(GameState *game, Player *player)
         return FALSE;
     }
 
-    Act act;
+    /* Act act; */
     Path path;
     PlayerList *pl;
     UPDATE_STATUS(game, "Validating Player...");
     for (pl = g_maybe_player; pl; pl = pl->pNext) {
-
-        if (pl->player.pAct && !memread(pid, (ptr_t)pl->player.pAct, sizeof(Act),
-                     find_Act_callback, &act)) {
-            continue;
-        }
-        if (!memread(pid, (ptr_t)pl->player.pPath, sizeof(Path),
-                     find_Path_callback, &path)) {
-
-            if (is_valid_ptr((ptr_t)pl->player.dwSeed[0]) && memread(pid, (ptr_t)pl->player.dwSeed[0], sizeof(Path),
-                               find_Path_callback, &path)) {
-                LOG_INFO("Found path: seed 0");
-                break;
-            }
-            if (is_valid_ptr((ptr_t)pl->player.dwSeed[1]) && memread(pid, (ptr_t)pl->player.dwSeed[1], sizeof(Path),
-                               find_Path_callback, &path)) {
-                LOG_INFO("Found path: seed 1");
-                break;
-            }
-
-            if (is_valid_ptr((ptr_t)pl->player._dunno1[0]) && memread(pid, (ptr_t)pl->player._dunno1[0], sizeof(Path),
-                               find_Path_callback, &path)) {
-                LOG_INFO("Found path: dunno 0");
-                break;
-            }
-            if (is_valid_ptr((ptr_t)pl->player._dunno1[1]) && memread(pid, (ptr_t)pl->player._dunno1[1], sizeof(Path),
-                               find_Path_callback, &path)) {
-                LOG_INFO("Found path: dunno 1");
-                break;
-            }
-
-            continue;
-        }
+        /* if (!pl->player.pAct */
+        /*     || !memread(pid, (ptr_t)pl->player.pAct, sizeof(Act), */
+        /*                 find_Act_callback, &act)) { */
+        /*     continue; */
+        /* } */
         /* log_Act(&act); */
+
+        if (!pl->player.pPath
+            || !memread(pid, (ptr_t)pl->player.pPath, sizeof(Path),
+                        find_Path_callback, &path)) {
+            continue;
+        }
         /* log_Path(&path); */
+
         break;
     }
     if (!pl) {
@@ -493,16 +476,16 @@ bool update_game_state(GameState *game)
     }
     log_PlayerData(&tmp.player_data);
 
-    UPDATE_STATUS(game, "Updating Act...");
-    if (!memread(game->_pid, (ptr_t)player.pAct, sizeof(Act),
-                 find_Act_callback, &tmp.act)) {
-        //TODO: handle this the smart way
-        // -> don't go to the 1st player of the list :/
-        LOG_ERROR("Can't find act");
-        memset(&tmp.act, 0, sizeof(Act));
-        /* return FALSE; */
-    }
-    log_Act(&tmp.act);
+    /* UPDATE_STATUS(game, "Updating Act..."); */
+    /* if (!memread(game->_pid, (ptr_t)player.pAct, sizeof(Act), */
+    /*              find_Act_callback, &tmp.act)) { */
+    /*     //TODO: handle this the smart way */
+    /*     // -> don't go to the 1st player of the list :/ */
+    /*     LOG_ERROR("Can't find act"); */
+    /*     memset(&tmp.act, 0, sizeof(Act)); */
+    /*     /\* return FALSE; *\/ */
+    /* } */
+    /* log_Act(&tmp.act); */
 
     UPDATE_STATUS(game, "Updating Path...");
     if (!memread(game->_pid, (ptr_t)player.pPath, sizeof(Path),
@@ -584,7 +567,7 @@ bool update_game_state(GameState *game)
     memcpy(&pc, &tmp, sizeof(PlayerContent));
     memcpy(&game->player, &player, sizeof(Player));
     game->player.pPlayerData = &pc.player_data;
-    game->player.pAct = &pc.act;
+    /* game->player.pAct = &pc.act; */
     game->player.pPath = &pc.path;
     game->player.pPath->pRoom1 = &pc.room1;
     game->player.pPath->pRoom1->pRoom2 = &pc.room2;
@@ -615,6 +598,7 @@ bool update_game_state(GameState *game)
 void init_game_state(GameState *game)
 {
     memset(game, 0, sizeof(GameState));
+    g_player_name_setting = game->player_name_setting;
     strcpy(game->status, "Loading...");
     pthread_mutex_init(&game->mutex, NULL);
 }
@@ -626,5 +610,6 @@ void destroy_game_state(GameState *game)
     game->level = NULL;
     pthread_mutex_unlock(&game->mutex);
     pthread_mutex_destroy(&game->mutex);
-    memset(game, 0, sizeof(GameState));
+    memset((char *)game + PLAYER_DATA_NAME_MAX,
+           0, sizeof(GameState) - PLAYER_DATA_NAME_MAX);
 }

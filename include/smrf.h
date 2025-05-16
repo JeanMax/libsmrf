@@ -95,11 +95,12 @@ struct PlayerContent {
     Room2 room2;
 };
 
-#define MAX_STATUS_LEN 32
+#define STATUS_LEN_MAX 32
 
 typedef  struct GameState  GameState;
 struct GameState {
-    char status[MAX_STATUS_LEN];
+    char player_name_setting[PLAYER_DATA_NAME_MAX];
+    char status[STATUS_LEN_MAX];
     Player player;
     Level *level;
     ptr_t _player_addr; //TODO: internal, hide
