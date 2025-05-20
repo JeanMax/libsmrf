@@ -2,6 +2,9 @@
 #define _LOG_H
 
 #include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <unistd.h>
 
 // windows users are color blind or something, I don't know
 #ifdef _WIN32
@@ -33,28 +36,29 @@
 # define CLR_RESET   "\033[0m"
 #endif
 
-// TODO: add timestamp to log
-// TODO: don't spam
+#define MAX_LOG_LEN 4096
+
 
 #ifdef NDEBUG
 # define LOG_INFO(str, ...) \
-    printf(CLR_BLUE "[INFO]: " CLR_RESET str "\n", ##__VA_ARGS__), fflush(stdout)
+    print_log(STDOUT_FILENO, CLR_BLUE "[INFO]: " CLR_RESET str "\n", ##__VA_ARGS__)
 # define LOG_DEBUG(str, ...) \
-    fprintf(stderr, CLR_MAGENTA "[DEBUG]: " CLR_RESET str "\n", ##__VA_ARGS__)
+    print_log(STDERR_FILENO, CLR_MAGENTA "[DEBUG]: " CLR_RESET str "\n", ##__VA_ARGS__)
 # define LOG_WARNING(str, ...) \
-    fprintf(stderr, CLR_YELLOW "[WARNING]: " CLR_RESET str "\n", ##__VA_ARGS__)
+    print_log(STDERR_FILENO, CLR_YELLOW "[WARNING]: " CLR_RESET str "\n", ##__VA_ARGS__)
 #else
-# define LOG_INFO(str, ...) printf(str "\n", ##__VA_ARGS__), fflush(stdout)
+# define LOG_INFO(str, ...) print_log(STDOUT_FILENO, str "\n", ##__VA_ARGS__)
 # define LOG_DEBUG(str, ...) do {} while (0)
 # define LOG_WARNING(str, ...) do {} while (0)
 #endif
 #define LOG_ERROR(str, ...) \
-    fprintf(stderr, CLR_RED "[ERROR]: " CLR_RESET str "\n", ##__VA_ARGS__)
+    print_log(STDERR_FILENO, CLR_RED "[ERROR]: " CLR_RESET str "\n", ##__VA_ARGS__)
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 #define AT CLR_WHITE __FILE__ ":" TOSTRING(__LINE__) CLR_RESET
 
 void hex_dump(void *ptr, size_t len);
+void print_log(int fd, const char *log_format, ...);
 
 #endif

@@ -28,3 +28,37 @@ void hex_dump(void *ptr, size_t len)  // stolen from motoko <3
 		fprintf(stderr, "\n");
 	}
 }
+
+
+void print_log(int fd, const char *log_format, ...)
+{
+    static char prev_msg[MAX_LOG_LEN];  // race-condition incoming
+    char msg[MAX_LOG_LEN];
+    va_list args;
+    va_start(args, log_format);
+    int msg_len = vsnprintf(msg, MAX_LOG_LEN, log_format, args);
+    va_end(args);
+
+#ifdef NDEBUG
+    if (msg_len > MAX_LOG_LEN) {
+        fprintf(stderr,
+                CLR_YELLOW "[WARNING]: " CLR_RESET
+                "log message too long (%d), truncating\n",
+                msg_len);
+    }
+#endif
+    if (msg_len < 0) {
+        msg[0] = '\0';
+    }
+
+    if (!strcmp(msg, prev_msg)) {
+        return; // spam
+    }
+    strcpy(prev_msg, msg);
+    // TODO: add timestamp to log
+
+    write(fd, msg, msg_len);
+    if (fd == STDOUT_FILENO) {
+        fflush(stdout);
+    }
+}
