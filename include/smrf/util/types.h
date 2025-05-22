@@ -25,6 +25,6 @@ typedef int      bool;
 # define FALSE 0
 #endif
 
-#define IS_ALIGNED(ptr) !((ptr_t)(ptr) % sizeof(dword))
+#define IS_ALIGNED(ptr) !((ptr_t)(ptr) % sizeof(ptr_t))
 
 #endif

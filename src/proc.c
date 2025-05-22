@@ -14,7 +14,6 @@
 
 #define MAX_MAPS     0x4000
 static MapAddress g_maps_range[MAX_MAPS] = {0};  //TODO: this is ugly
-MapAddress g_stack = {0};
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -105,7 +104,7 @@ int memread(pid_t pid, ptr_t start_address, size_t length,
     return ret;
 }
 
-bool memreadall(pid_t pid, bool stack_only, t_read_callback *on_page_read, void *data)
+bool memreadall(pid_t pid, bool quick, t_read_callback *on_page_read, void *data)
 {
     int i;
     for (i = 0; i < MAX_MAPS && g_maps_range[i].start; i++) {}
@@ -113,8 +112,9 @@ bool memreadall(pid_t pid, bool stack_only, t_read_callback *on_page_read, void 
     /* for (int i = 0; i < MAX_MAPS && g_maps_range[i].start; i++) { */
         ptr_t start = g_maps_range[i].start;
         size_t length = g_maps_range[i].end - g_maps_range[i].start;
-        /* LOG_WARNING("map at %16jx, size: %16jx", start, length); /\* DEBUG *\/ */
-        if (stack_only && !is_valid_stack_ptr(start)) {
+        LOG_INFO("map at %16jx, size: %16jx", start, length); /* DEBUG */
+        if (quick && !is_valid_ptr__quick(start)) {
+            LOG_DEBUG("quick skip: %16jx", start); /* DEBUG */
             continue;
         }
         if (memread(pid, start, length, on_page_read, data) == 2) {
@@ -162,29 +162,35 @@ static bool is_rw_memory(const char *memory_info_str)
 
 static bool is_bullshit_memory(const char *memory_info_str)
 {
-    static char *forbidden_kw[] = {
-        "nvidia",
-        "wine",
-        "pulse",
-        ".so",
-        ".dll",
-        "deleted",
-        NULL
-    };
-
-    for (char **kw = forbidden_kw; *kw; kw++) {
-        if (strstr(memory_info_str, *kw)) {
-            return TRUE;
-        }
+    char *desc = strrchr(memory_info_str, ' ');
+    if (!desc) {
+        return TRUE;  // shouldn't happen
     }
-    return FALSE;
+
+    while (*desc && isspace(*desc)) {
+        desc++;
+    }
+    if (!*desc) {
+        return FALSE;  // empty desc in info (high addresses, not sure what is it)
+    }
+
+    // it seems you don't even need heap
+    if (!strcmp(desc, "[heap]\n")) {
+        return FALSE;
+    }
+
+    // it seems you don't even need stack
+    if (!strcmp(desc, "[stack]\n")) {
+        return FALSE;
+    }
+
+    return TRUE;
 }
 #endif
 
 bool readmaps(pid_t pid)
 {
     int i = 0;
-    g_stack.end = 0;
 #ifndef _WIN32
     char path[PATH_MAX], read_buf[PAGE_LENGTH];
     bzero(&g_maps_range, sizeof(g_maps_range));
@@ -199,11 +205,6 @@ bool readmaps(pid_t pid)
     ptr_t end_address;
     while (fgets(read_buf, PAGE_LENGTH, maps_file)) {
         sscanf(read_buf, "%16jx-%16jx\n", &start_address, &end_address);
-        if (strstr(read_buf, "[stack]")) {
-            g_stack.start = start_address;
-            g_stack.end = MAX(g_stack.end, end_address);
-            continue;
-        }
         if (is_rw_memory(read_buf) && !is_bullshit_memory(read_buf)) {
             if (i == MAX_MAPS) {
                 LOG_ERROR("Too many mappings, abort.");
@@ -211,10 +212,8 @@ bool readmaps(pid_t pid)
             }
             g_maps_range[i].start = start_address;
             g_maps_range[i].end = end_address;
-            g_stack.end = MAX(g_stack.end, end_address);
             i++;
         }
-        g_stack.start = g_maps_range[0].start; /* DEBUG */
     }
     fclose(maps_file);
 #else
@@ -243,21 +242,11 @@ bool readmaps(pid_t pid)
             }
             g_maps_range[i].start = ptr;
             g_maps_range[i].end = ptr + info.RegionSize;
-            g_stack.end = MAX(g_stack.end, g_maps_range[i].end);
             i++;
         }
     }
     CloseHandle(process);
-    g_stack.start = addr_min;
-    for (BYTE off = 1; g_stack.end >> off; off++) {
-        if (g_stack.end >> off == 0x7f) {
-            g_stack.start = g_stack.end >> off << off;
-            break;
-        }
-    }
-    g_stack.start >>= 0x10; // just in case he
 #endif
-    LOG_DEBUG("stack: %16jx - %16jx", g_stack.start, g_stack.end); /* DEBUG */
     LOG_DEBUG("%d maps found", i); /* DEBUG */
     g_maps_range[i].start = 0;
     g_maps_range[i].end = 0;
