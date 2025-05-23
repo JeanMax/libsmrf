@@ -20,9 +20,7 @@ inline static bool is_valid_name(const char *name)
 
 inline static bool search_player_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
-#ifdef NDEBUG
-    static int i = 0;
-#endif
+    static int i = 0;           /* DEBUG */
     byte *b = buf;
     Player *player;
     PlayerList **maybe_player_list = (PlayerList **)data;
@@ -31,13 +29,14 @@ inline static bool search_player_callback(byte *buf, size_t buf_len, ptr_t addre
         player = (Player *)b;
         if (is_valid_Player(player)) {
             ptr_t here = address + (ptr_t)(b - buf);
-            LOG_DEBUG("found maybe-Player ptr at %16jx [%d]", here, i++); /* DEBUG */
+            LOG_INFO("found maybe-Player ptr at %16jx [%d]", here, i); /* DEBUG */
             log_Player(player);                          /* DEBUG */
 
             PlayerList *pl;
             MALLOC(pl, sizeof(PlayerList));
             memcpy(&pl->player, b, sizeof(Player));
             pl->player_addr = here;
+            pl->idx = i++;      /* DEBUG */
             PUSH_LINK(*maybe_player_list, pl);
         }
         b += sizeof(ptr_t);
@@ -171,8 +170,7 @@ static bool update_player(GameState *game, Player *player)
     UPDATE_STATUS(game, "In Game...");
     PlayerList *pl;
     UPDATE_STATUS(game, "Validating Player...");
-    int i = 0;
-    for (pl = maybe_player_list; pl; pl = pl->pNext, i++) {
+    for (pl = maybe_player_list; pl; pl = pl->pNext) {
         if (deep_validate_Player(pid, &pl->player)) {
             LOG_DEBUG("YAY");
             /* continue;               /\* DEBUG *\/ */
@@ -193,7 +191,7 @@ static bool update_player(GameState *game, Player *player)
 
     memcpy(player, &pl->player, sizeof(Player));
     log_Player(player);
-    LOG_INFO("Woop woop! Found Player ptr at %16jx [%d]", (ptr_t)pl->player_addr, i); /* DEBUG */
+    LOG_INFO("Woop woop! Found Player ptr at %16jx [%d]", (ptr_t)pl->player_addr, pl->idx); /* DEBUG */
     return TRUE;
 }
 

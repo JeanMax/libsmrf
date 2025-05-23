@@ -113,28 +113,26 @@ int memread(pid_t pid, ptr_t start_address, size_t length,
 
 bool memreadall(pid_t pid, bool quick, t_read_callback *on_page_read, void *data)
 {
-    int i;
-    for (i = 0; i < MAX_MAPS && g_maps_range[i].start; i++) {}
-    for (i--; i >= 0; i--) {
-    /* for (int i = 0; i < MAX_MAPS && g_maps_range[i].start; i++) { */
+    for (int i = 0; i < MAX_MAPS && g_maps_range[i].start; i++) {
         ptr_t start = g_maps_range[i].start;
         size_t length = g_maps_range[i].end - g_maps_range[i].start;
-        LOG_INFO("map at %16jx, size: %16jx", start, length); /* DEBUG */
+        LOG_INFO("map at %12jx - %12jx,     size: %8jx",
+                 start, g_maps_range[i].end, length); /* DEBUG */
         if (quick && !is_valid_ptr__quick(start)) {
-            LOG_DEBUG("quick skip: %16jx", start); /* DEBUG */
+            LOG_DEBUG("quick skip: %12jx", start); /* DEBUG */
             continue;
         }
         if (memread(pid, start, length, on_page_read, data) == 2) {
-/* #ifdef NDEBUG */
+#ifdef NDEBUG
             fprintf(stderr, "\n");   /* DEBUG */
-/* #endif */
+#endif
             return TRUE;
         }
-/* #ifdef NDEBUG */
+#ifdef NDEBUG
         if (i && !(i % 10)) {
             fprintf(stderr, ".");   /* DEBUG */
         }
-/* #endif */
+#endif
     }
     return FALSE;
 }

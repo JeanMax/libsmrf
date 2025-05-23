@@ -29,6 +29,7 @@ typedef  struct PlayerList  PlayerList;
 struct PlayerList {
     Player player;
     ptr_t player_addr;
+    int  idx;                   /* DEBUG */
     PlayerList *pNext;
 };
 
