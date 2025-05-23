@@ -219,7 +219,7 @@ bool update_game_state(GameState *game)
     /* if (!memread(game->_pid, (ptr_t)player.pAct, sizeof(Act), */
     /*              find_Act_callback, &tmp.act)) { */
     /*     LOG_ERROR("Can't find act"); */
-    /*     bzero(&tmp.act, sizeof(Act)); */
+    /*     memset(&tmp.act, 0, sizeof(Act)); */
     /*     /\* return FALSE; *\/ */
     /* } */
     /* log_Act(&tmp.act); */
@@ -269,7 +269,7 @@ bool update_game_state(GameState *game)
 
 void init_game_state(GameState *game)
 {
-    bzero(game, sizeof(GameState));
+    memset(game, 0, sizeof(GameState));
     g_player_name_setting = game->player_name_setting;
     strcpy(game->status, "Loading...");
     pthread_mutex_init(&game->mutex, NULL);

@@ -11,7 +11,6 @@
 
 #include <ctype.h> // isspace
 #include <stdio.h> // fseek
-#include <strings.h> // bzero
 
 
 #define PAGE_LENGTH 0x1000
@@ -198,7 +197,7 @@ bool readmaps(pid_t pid)
     int i = 0;
 #ifndef _WIN32
     char path[PATH_MAX], read_buf[PAGE_LENGTH];
-    bzero(&g_maps_range, sizeof(g_maps_range));
+    memset(&g_maps_range, 0, sizeof(g_maps_range));
 
     sprintf(path, "/proc/%d/maps", pid);
     FILE *maps_file = fopen(path, "r");
