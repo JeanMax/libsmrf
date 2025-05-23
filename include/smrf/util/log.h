@@ -38,7 +38,7 @@
 
 #define MAX_LOG_LEN 4096
 
-
+//TODO: ISO C99 requires at least one argument for the ‘...’ in a variadic macro
 #ifdef NDEBUG
 # define LOG_INFO(str, ...) \
     print_log(STDOUT_FILENO, CLR_BLUE "[INFO]: " CLR_RESET str "\n", ##__VA_ARGS__)

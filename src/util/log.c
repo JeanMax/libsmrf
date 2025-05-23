@@ -57,7 +57,7 @@ void print_log(int fd, const char *log_format, ...)
     strcpy(prev_msg, msg);
     // TODO: add timestamp to log
 
-    write(fd, msg, msg_len);
+    write(fd, msg, (size_t)msg_len);
     if (fd == STDOUT_FILENO) {
         fflush(stdout);
     }

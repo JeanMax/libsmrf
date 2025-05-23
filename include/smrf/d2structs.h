@@ -142,6 +142,7 @@ struct Path {
     dword _1[2];          // 0x08
     word xTarget;         // 0x10
     word yTarget;         // 0x12
+    dword _pad;
     Room1* pRoom1_bis;        // 0x14
     /* dword _2[2];          // 0x14 */
     /* dword _pad1; */
@@ -183,6 +184,7 @@ struct ActMisc {
     dword _pad;
     Act* pAct;
     dword _3[3];
+    dword _pad2;
     Level* pLevelFirst;
     /* dword _debug[256]; */
 };
