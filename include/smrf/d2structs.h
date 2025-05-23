@@ -1,9 +1,8 @@
 #ifndef _D2STRUCTS_H
 #define _D2STRUCTS_H
 
-#include <ctype.h>
-
-#include "proc.h"  // is_valid_ptr
+#include "util/log.h"
+#include "util/types.h"
 
 // these Room1 Room2 naming are so confusing ):
 typedef  struct Room1  RoomSmall;

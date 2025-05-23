@@ -11,55 +11,9 @@
 
 #include <pthread.h>
 
-#include "smrf/d2sdk.h"
 #include "smrf/d2structs.h"
-#include "smrf/proc.h"
 
-#define MIN(a, b) ((a) > (b) ? (b) : (a))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define ABS(x)    ((x) > 0   ? (x) : -(x))
-
-#define FREE(p) do {                              \
-         if ((p)) {                               \
-             free((p));                           \
-             (p) = NULL;                          \
-         }                                        \
-     } while (0)
-
-#define MALLOC(dst, size) do {                                          \
-         if (!((dst) = malloc((size)))) {                               \
-             LOG_ERROR(AT ": malloc(%zu) failed, that sucks", (size));  \
-             exit(EXIT_FAILURE);                                        \
-         }                                                              \
-     } while (0)
-
-#define DUPE(dst, src, size) do {               \
-        MALLOC((dst), (size));                  \
-        memcpy((dst), (src), (size));           \
-    } while (0)
-
-#define ADD_LINK(first, last, newby) do {       \
-        if (!(first)) {                         \
-            (first) = (newby);                  \
-        } else {                                \
-            (last)->pNext = (newby);            \
-        }                                       \
-        (last) = (newby);                       \
-    } while (0)
-
-#define PUSH_LINK(head, newby) do {             \
-        (newby)->pNext = (head);                \
-        (head) = (newby);                       \
-    } while (0)
-
-#define LAST_LINK(first, last) do {             \
-        if ((first)) {                          \
-            (last) = (first);                   \
-            while ((last)->pNext) {             \
-                (last) = (last)->pNext;         \
-            }                                   \
-        }                                       \
-    } while (0)
+#include "smrf/d2sdk.h"  // for convenience when using the lib
 
 
 // TODO: optimize lock use
@@ -69,13 +23,6 @@
         pthread_mutex_unlock(&game->mutex);     \
     } while (0)
 
-
-
-typedef  struct PtrList  PtrList;
-struct PtrList {
-    ptr_t ptr;
-    PtrList *pNext;
-};
 
 
 typedef  struct PlayerList  PlayerList;

@@ -5,7 +5,6 @@
 #include <unistd.h> // geteuid
 
 #include "util/types.h"
-#include "util/log.h"
 
 
 typedef  struct MapAddress  MapAddress;

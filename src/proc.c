@@ -1,4 +1,6 @@
-#include "smrf.h"
+#include "proc.h"
+
+#include "util/log.h"
 
 #ifndef _WIN32
 # include <dirent.h>
@@ -6,6 +8,11 @@
 # include <windows.h>
 # include <tlhelp32.h>
 #endif
+
+#include <ctype.h> // isspace
+#include <stdio.h> // fseek
+#include <strings.h> // bzero
+
 
 #define PAGE_LENGTH 0x1000
 #ifndef PATH_MAX
@@ -56,7 +63,7 @@ int memread(pid_t pid, ptr_t start_address, size_t length,
         }
         exit(EXIT_FAILURE);
     }
-    fseeko(mem_file, (long)start_address, SEEK_SET);
+    fseek(mem_file, (long)start_address, SEEK_SET);
 #else
     HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
                                  0, pid);

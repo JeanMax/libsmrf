@@ -1,5 +1,8 @@
 #include "d2structs.h"
 
+#include "proc.h"  // is_valid_ptr
+#include <ctype.h>  // isupper/islower
+
 void log_Level(Level *ptr)
 {
     (void)ptr;
@@ -402,6 +405,8 @@ void log_UnitAny(UnitAny *ptr)
               /* /\* ptr->_dunno7[11], *\/ */
               /* ptr->_pad2, */
               /* ptr->wIsCorpse); */
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 inline bool is_valid_player_name_str(const char *b, size_t len)
@@ -530,6 +535,21 @@ inline bool is_valid_ActMisc(ActMisc *ptr)
 
 inline bool is_valid_PlayerData(PlayerData *ptr)
 {
+    /* log_PlayerData(ptr);     /\* DEBUG *\/ */
+    /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pNormalQuest): %d", */
+    /*          is_valid_ptr__quick((ptr_t)ptr->pNormalQuest)); */
+    /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pNightmareQuest): %d", */
+    /*          is_valid_ptr__quick((ptr_t)ptr->pNightmareQuest) ); */
+    /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pHellQuest): %d", */
+    /*          is_valid_ptr__quick((ptr_t)ptr->pHellWaypoint)); */
+    /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pNormalWaypoint): %d", */
+    /*          is_valid_ptr__quick((ptr_t)ptr->pNormalWaypoint)); */
+    /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pNightmareWaypoint): %d", */
+    /*          is_valid_ptr__quick((ptr_t)ptr->pNightmareWaypoint)); */
+    /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pHellWaypoint): %d", */
+    /*          is_valid_ptr__quick((ptr_t)ptr->pHellWaypoint)); */
+    /* LOG_WARNING("is_valid_player_name_str(ptr->szName, PLAYER_DATA_NAME_MAX): %d", */
+    /*          is_valid_player_name_str(ptr->szName, PLAYER_DATA_NAME_MAX)); */
     return IS_ALIGNED(ptr)
         && is_valid_ptr__quick((ptr_t)ptr->pNormalQuest)
         && is_valid_ptr__quick((ptr_t)ptr->pNightmareQuest)

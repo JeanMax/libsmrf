@@ -20,7 +20,7 @@
 PROJECT = libsmrf$(OS).a
 
 # file-names of the sources
-SRC_NAME = smrf.c  proc.c  d2structs.c  d2sdk.c  util/log.c
+SRC_NAME = smrf.c  proc.c  parse.c  d2structs.c  d2sdk.c  util/log.c
 
 # name of the example to make
 PROJECT_EXAMPLE = smrfexample
@@ -77,7 +77,7 @@ RM = rm -f
 RMDIR = rmdir
 MKDIR = mkdir -p
 # CC = gcc  # $(shell clang --version >/dev/null 2>&1 && echo clang || echo gcc)
-MAKE ?= make -j$(shell nproc 2>/dev/null || echo 1)
+MAKE = make -j
 SUB_MAKE = make -C
 
 # try to be cross-platform

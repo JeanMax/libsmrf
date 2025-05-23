@@ -27,4 +27,9 @@ typedef int      bool;
 
 #define IS_ALIGNED(ptr) !((ptr_t)(ptr) % sizeof(ptr_t))
 
+#define MIN(a, b) ((a) > (b) ? (b) : (a))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define ABS(x)    ((x) > 0   ? (x) : -(x))
+
+
 #endif
