@@ -12,7 +12,7 @@ void log_Level(Level *ptr)
               "    dword dwPosY: %08x\n"
               "    dword dwSizeX: %08x\n"
               "    dword dwSizeY: %08x\n"
-              "    dword _3[96]: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
+              "    dword _3[16]: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08 %08x %08 %08x %08 %08x %08x\n"
               "    Level* pNext: %16jx\n"
               "    dword _4: %08x %08x %08x %08x\n"
               "    ActMisc* pMisc: %16jx\n"
@@ -31,7 +31,7 @@ void log_Level(Level *ptr)
               ptr->dwPosY,
               ptr->dwSizeX,
               ptr->dwSizeY,
-              ptr->_3[0], ptr->_3[1], ptr->_3[2], ptr->_3[3], ptr->_3[4], ptr->_3[5], ptr->_3[6], ptr->_3[7], ptr->_3[8], ptr->_3[9], ptr->_3[10], ptr->_3[11], ptr->_3[12], ptr->_3[13], ptr->_3[14], ptr->_3[15], ptr->_3[16], ptr->_3[17], ptr->_3[18], ptr->_3[19], ptr->_3[20], ptr->_3[21], ptr->_3[22], ptr->_3[23], ptr->_3[24], ptr->_3[25], ptr->_3[26], ptr->_3[27], ptr->_3[28], ptr->_3[29], ptr->_3[30], ptr->_3[31], ptr->_3[32], ptr->_3[33], ptr->_3[34], ptr->_3[35], ptr->_3[36], ptr->_3[37], ptr->_3[38], ptr->_3[39], ptr->_3[40], ptr->_3[41], ptr->_3[42], ptr->_3[43], ptr->_3[44], ptr->_3[45], ptr->_3[46], ptr->_3[47], ptr->_3[48], ptr->_3[49], ptr->_3[50], ptr->_3[51], ptr->_3[52], ptr->_3[53], ptr->_3[54], ptr->_3[55], ptr->_3[56], ptr->_3[57], ptr->_3[58], ptr->_3[59], ptr->_3[60], ptr->_3[61], ptr->_3[62], ptr->_3[63], ptr->_3[64], ptr->_3[65], ptr->_3[66], ptr->_3[67], ptr->_3[68], ptr->_3[69], ptr->_3[70], ptr->_3[71], ptr->_3[72], ptr->_3[73], ptr->_3[74], ptr->_3[75], ptr->_3[76], ptr->_3[77], ptr->_3[78], ptr->_3[79], ptr->_3[80], ptr->_3[81], ptr->_3[82], ptr->_3[83], ptr->_3[84], ptr->_3[85], ptr->_3[86], ptr->_3[87], ptr->_3[88], ptr->_3[89], ptr->_3[90], ptr->_3[91], ptr->_3[92], ptr->_3[93], ptr->_3[94], ptr->_3[95],
+              ptr->_3[0], ptr->_3[1], ptr->_3[2], ptr->_3[3], ptr->_3[4], ptr->_3[5], ptr->_3[6], ptr->_3[7], ptr->_3[8], ptr->_3[9], ptr->_3[10], ptr->_3[11], ptr->_3[12], ptr->_3[13], ptr->_3[14], ptr->_3[15],
               (ptr_t)ptr->pNext,
               ptr->_4[0], ptr->_4[1], ptr->_4[2], ptr->_4[3],
               (ptr_t)ptr->pMisc,
@@ -212,14 +212,14 @@ void log_Path(Path *ptr)
               "    Room1* pRoom1_bis: %16jx\n"
               "    Room1* pRoom1: %16jx\n"
               "    Room1* pRoomUnk: %16jx\n"
-              "    dword _3[3]: %08x %08x %08x\n"
+              "    dword _3[4]: %08x %08x %08x %08x\n"
               "    UnitAny* pUnit: %16jx\n"
               "    dword dwFlags: %08x\n"
               "    dword _4: %08x\n"
               "    dword dwPathType: %08x\n"
               "    dword dwPrevPathType: %08x\n"
               "    dword dwUnitSize: %08x\n"
-              "    dword _5[4]: %08x %08x %08x %08x\n"
+              "    dword _5[5]: %08x %08x %08x %08x %08x\n"
               "    UnitAny* pTargetUnit: %16jx\n"
               "    dword dwTargetType: %08x\n"
               "    dword dwTargetId: %08x\n"
@@ -236,14 +236,14 @@ void log_Path(Path *ptr)
               (ptr_t)ptr->pRoom1_bis,
               (ptr_t)ptr->pRoom1,
               (ptr_t)ptr->pRoomUnk,
-              ptr->_3[0], ptr->_3[1], ptr->_3[2],
+              ptr->_3[0], ptr->_3[1], ptr->_3[2], ptr->_3[3],
               (ptr_t)ptr->pUnit,
               ptr->dwFlags,
               ptr->_4,
               ptr->dwPathType,
               ptr->dwPrevPathType,
               ptr->dwUnitSize,
-              ptr->_5[0], ptr->_5[1], ptr->_5[2], ptr->_5[3],
+              ptr->_5[0], ptr->_5[1], ptr->_5[2], ptr->_5[3], ptr->_5[4],
               (ptr_t)ptr->pTargetUnit,
               ptr->dwTargetType,
               ptr->dwTargetId,
@@ -404,7 +404,7 @@ void log_UnitAny(UnitAny *ptr)
               /* ptr->wIsCorpse); */
 ////////////////////////////////////////////////////////////////////////////////
 
-static bool is_valid_player_name_str(const char *b, size_t len)
+inline bool is_valid_player_name_str(const char *b, size_t len)
 {
     const char *start = b;
     while ((size_t)(b - start) < len) {
@@ -428,11 +428,35 @@ static bool is_valid_player_name_str(const char *b, size_t len)
 
 inline bool is_valid_Level(Level *ptr)
 {
+    static dword zero[86] = {0};
+    log_Level(ptr);                          /* DEBUG */
+#ifdef NDEBUG
+    if (memcmp(ptr->_zero, zero, sizeof(dword) * 80)) {
+        LOG_WARNING("not zero'ed");
+        LOG_WARNING("dword _zero[80]: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n",
+                    ptr->_zero[0], ptr->_zero[1], ptr->_zero[2], ptr->_zero[3], ptr->_zero[4], ptr->_zero[5], ptr->_zero[6], ptr->_zero[7], ptr->_zero[8], ptr->_zero[9], ptr->_zero[10], ptr->_zero[11], ptr->_zero[12], ptr->_zero[13], ptr->_zero[14], ptr->_zero[15], ptr->_zero[16], ptr->_zero[17], ptr->_zero[18], ptr->_zero[19], ptr->_zero[20], ptr->_zero[21], ptr->_zero[22], ptr->_zero[23], ptr->_zero[24], ptr->_zero[25], ptr->_zero[26], ptr->_zero[27], ptr->_zero[28], ptr->_zero[29], ptr->_zero[30], ptr->_zero[31], ptr->_zero[32], ptr->_zero[33], ptr->_zero[34], ptr->_zero[35], ptr->_zero[36], ptr->_zero[37], ptr->_zero[38], ptr->_zero[39], ptr->_zero[40], ptr->_zero[41], ptr->_zero[42], ptr->_zero[43], ptr->_zero[44], ptr->_zero[45], ptr->_zero[46], ptr->_zero[47], ptr->_zero[48], ptr->_zero[49], ptr->_zero[50], ptr->_zero[51], ptr->_zero[52], ptr->_zero[53], ptr->_zero[54], ptr->_zero[55], ptr->_zero[56], ptr->_zero[57], ptr->_zero[58], ptr->_zero[59], ptr->_zero[60], ptr->_zero[61], ptr->_zero[62], ptr->_zero[63], ptr->_zero[64], ptr->_zero[65], ptr->_zero[66], ptr->_zero[67], ptr->_zero[68], ptr->_zero[69], ptr->_zero[70], ptr->_zero[71], ptr->_zero[72], ptr->_zero[73], ptr->_zero[74], ptr->_zero[75], ptr->_zero[76], ptr->_zero[77], ptr->_zero[78], ptr->_zero[79]);
+    }
+#endif
+    LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pRoom2First): %d",
+                !ptr->pRoom2First || is_valid_ptr__quick((ptr_t)ptr->pRoom2First) );
+    /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pDunno): %d", */
+    /*             is_valid_ptr__quick((ptr_t)ptr->pDunno) ); */
+    LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pNext): %d",
+                !ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext) );
+    LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pMisc): %d",
+                !ptr->pMisc || is_valid_ptr__quick((ptr_t)ptr->pMisc) );
     return IS_ALIGNED(ptr)
-        && (!ptr->pRoom2First || is_valid_ptr((ptr_t)ptr->pRoom2First))
-        /* && is_valid_ptr((ptr_t)ptr->pDunno) */
-        && (!ptr->pNext || is_valid_ptr((ptr_t)ptr->pNext));
-        /* && (!ptr->pMisc || is_valid_ptr((ptr_t)ptr->pMisc)); */
+        && ptr->dwPosX <= 0xffff
+        && ptr->dwPosY <= 0xffff
+        && ptr->dwSizeX <= 0xff
+        && ptr->dwSizeY <= 0xff
+        /* && ptr->dwLevelNo <= 137  // it can get weird */
+        && ptr->dwRoomEntries <= 0xf
+        && (!ptr->pRoom2First || is_valid_ptr__quick((ptr_t)ptr->pRoom2First))
+        /* && is_valid_ptr__quick((ptr_t)ptr->pDunno) */
+        && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
+        /* && (!ptr->pMisc || is_valid_ptr__quick((ptr_t)ptr->pMisc)) */
+        && !memcmp(ptr->_zero, zero, sizeof(dword) * 80);
 }
 
 inline bool is_valid_Room2(Room2 *ptr)
@@ -507,37 +531,45 @@ inline bool is_valid_ActMisc(ActMisc *ptr)
 inline bool is_valid_PlayerData(PlayerData *ptr)
 {
     return IS_ALIGNED(ptr)
-        && is_valid_stack_ptr((ptr_t)ptr->pNormalQuest)
-        && is_valid_stack_ptr((ptr_t)ptr->pNightmareQuest)
-        && is_valid_stack_ptr((ptr_t)ptr->pHellQuest)
-        && is_valid_stack_ptr((ptr_t)ptr->pNormalWaypoint)
-        && is_valid_stack_ptr((ptr_t)ptr->pNightmareWaypoint)
-        && is_valid_stack_ptr((ptr_t)ptr->pHellWaypoint)
-        && is_valid_player_name_str(ptr->szName, PLAYER_DATA_NAME_MAX);
+        && is_valid_ptr__quick((ptr_t)ptr->pNormalQuest)
+        && is_valid_ptr__quick((ptr_t)ptr->pNightmareQuest)
+        && is_valid_ptr__quick((ptr_t)ptr->pHellQuest)
+        && is_valid_ptr__quick((ptr_t)ptr->pNormalWaypoint)
+        && is_valid_ptr__quick((ptr_t)ptr->pNightmareWaypoint)
+        && is_valid_ptr__quick((ptr_t)ptr->pHellWaypoint);
 }
 
 inline bool is_valid_Player(Player *ptr)
 {
-    log_UnitAny(ptr);                          /* DEBUG */
-    LOG_WARNING("is_valid_stack_ptr((ptr_t)ptr->pPlayerData): %d",
-                is_valid_stack_ptr((ptr_t)ptr->pPlayerData) );
-    LOG_WARNING("is_valid_ptr((ptr_t)ptr->pAct): %d",
-                is_valid_ptr((ptr_t)ptr->pAct) );
-    LOG_WARNING("is_valid_ptr((ptr_t)ptr->pPath): %d",
-                is_valid_ptr((ptr_t)ptr->pPath) );
-    LOG_WARNING("tr->dwAct < 5;: %d", ptr->dwAct < 5);
+    /* log_UnitAny(ptr);                          /\* DEBUG *\/ */
+    /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pPlayerData): %d", */
+    /*             is_valid_ptr__quick((ptr_t)ptr->pPlayerData) ); */
+    /* LOG_WARNING("is_valid_ptr((ptr_t)ptr->pAct): %d", */
+    /*             is_valid_ptr((ptr_t)ptr->pAct) ); */
+    /* LOG_WARNING("is_valid_ptr((ptr_t)ptr->pPath): %d", */
+    /*             is_valid_ptr((ptr_t)ptr->pPath) ); */
+    /* LOG_WARNING("tr->dwAct < 5: %d", ptr->dwAct < 5); */
     return IS_ALIGNED(ptr)
-        && is_valid_stack_ptr((ptr_t)ptr->pPlayerData)
-        && (!ptr->pAct || is_valid_ptr((ptr_t)ptr->pAct))
-        && is_valid_ptr((ptr_t)ptr->pPath);
-        /* && ptr->dwAct < 5; */
+        && ptr->dwType == 0
+        && ptr->dwTxtFileNo == 1
+        /* && ptr->xPos <= 0xffff */
+        /* && ptr->yPos <= 0xffff */
+        && ptr->dwAct < 5
+        && is_valid_ptr__quick((ptr_t)ptr->pPlayerData)
+        && is_valid_ptr__quick((ptr_t)ptr->pStats)
+        && is_valid_ptr__quick((ptr_t)ptr->pInventory)
+        && is_valid_ptr__quick((ptr_t)ptr->pSkills)
+        && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
+        && (!ptr->pRoomNext || is_valid_ptr__quick((ptr_t)ptr->pRoomNext))
+        && (!ptr->pAct || is_valid_ptr__quick((ptr_t)ptr->pAct))
+        && is_valid_ptr__quick((ptr_t)ptr->pPath);
 }
 
 inline bool is_valid_UnitAny(UnitAny *ptr)
 {
     return IS_ALIGNED(ptr)
         /* && ptr->dwType <= 5 */
-        /* && (is_valid_stack_ptr((ptr_t)ptr->pPlayerData) || ptr->dwType) */
+        /* && (is_valid_ptr__quick((ptr_t)ptr->pPlayerData) || ptr->dwType) */
         /*     && ptr->dwAct < 5; */
         /* && is_valid_ptr((ptr_t)ptr->pAct) */
         /* && is_valid_ptr((ptr_t)ptr->pPath) */

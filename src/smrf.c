@@ -3,71 +3,39 @@
 #define MAX_PLAYER_DATA 0x1000
 
 Level      *g_levels[MAX_AREA] = {0};
-PlayerList *g_maybe_player = NULL;
 char       *g_player_name_setting = NULL;
 
 //TODO: add enum for callback return
 
-inline static bool search_player_data_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
+inline static bool is_valid_name(const char *name)
 {
-    byte *b = buf;
-    PlayerData *player_data;
-    while (buf_len >= sizeof(PlayerData)) {
-        player_data = (PlayerData *)b;
-        if (is_valid_PlayerData(player_data)
-            && (!g_player_name_setting || !*g_player_name_setting
-                || !strcmp(player_data->szName, g_player_name_setting))) {
-            ptr_t here = address + (ptr_t)(b - buf);
-#ifdef NDEBUG
-            LOG_DEBUG("Valid player_data! %16jx", here);
-            log_PlayerData(player_data);
-#endif
-            ptr_t *addr_list = (ptr_t *)data;
-            for (int i = 0; *addr_list; addr_list++, i++) {
-                if (i == MAX_PLAYER_DATA) {
-                    LOG_ERROR("Too many PlayerData found, abort.");
-                    exit(EXIT_FAILURE);
-                }
-            }
-            *addr_list = here;
-            /* return 2; */
-            /* return FALSE; */
-        }
-        b += sizeof(ptr_t);
-        buf_len -= sizeof(ptr_t);
+    if (!g_player_name_setting || !*g_player_name_setting) {
+        return is_valid_player_name_str(name, PLAYER_DATA_NAME_MAX);
     }
-
-    return TRUE; // keep reading
+    return !strcmp(name, g_player_name_setting);
 }
 
 inline static bool search_player_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
-
+#ifdef NDEBUG
+    static int i = 0;
+#endif
     byte *b = buf;
-    ptr_t *player_data_addr = (ptr_t *)data;
-    ptr_t *p;
     Player *player;
+    PlayerList **maybe_player_list = (PlayerList **)data;
 
     while (buf_len >= sizeof(Player)) {
         player = (Player *)b;
-        int i = 0;
-        for (p = player_data_addr; *p; p++) {
-            i++;
-            if ((ptr_t)player->pPlayerData == *p && is_valid_Player(player)
-                /*&& player->dwUnitId == 1 && !player->dwTxtFileNo*/) {
-                ptr_t here = address + (ptr_t)(b - buf);
-                LOG_INFO("found Player ptr at %16jx [data %d]", here, i); /* DEBUG */
-                log_Player(player);                          /* DEBUG */
-                /* *(ptr_t *)data = here; */
-                /* memcpy(((ptr_t *)data) + 1, b, sizeof(Player)); */
-                /* return FALSE; */
+        if (is_valid_Player(player)) {
+            ptr_t here = address + (ptr_t)(b - buf);
+            LOG_DEBUG("found maybe-Player ptr at %16jx [%d]", here, i++); /* DEBUG */
+            log_Player(player);                          /* DEBUG */
 
-                PlayerList *pl;
-                MALLOC(pl, sizeof(PlayerList));
-                memcpy(&pl->player, b, sizeof(Player));
-                pl->player_data_addr = here;
-                PUSH_LINK(g_maybe_player, pl);
-            }
+            PlayerList *pl;
+            MALLOC(pl, sizeof(PlayerList));
+            memcpy(&pl->player, b, sizeof(Player));
+            pl->player_addr = here;
+            PUSH_LINK(*maybe_player_list, pl);
         }
         b += sizeof(ptr_t);
         buf_len -= sizeof(ptr_t);
@@ -368,10 +336,84 @@ static Level *parse_level_list(pid_t pid, ptr_t level_addr)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+static bool deep_validate_Player(pid_t pid, Player *maybe_player)
+{
+    static PlayerData player_data;
+    /* static Act act; */
+    static Path path;
+    static Room1 room1;
+    static Room2 room2;
+    static Level level;
+
+    if (!maybe_player->pPlayerData
+        || !memread(pid, (ptr_t)maybe_player->pPlayerData, sizeof(PlayerData),
+                    find_PlayerData_callback, &player_data)
+        || !is_valid_name(player_data.szName)) {
+        /* LOG_WARNING("Can't validate PlayerData"); */
+        return FALSE;
+    }
+    log_PlayerData(&player_data);
+    log_Player(maybe_player);                          /* DEBUG */
+    log_UnitAny(maybe_player);                          /* DEBUG */
+
+
+    /* if (!maybe_player->pAct */
+    /*     || !memread(pid, (ptr_t)maybe_player->pAct, sizeof(Act), */
+    /*                 find_Act_callback, &act)) { */
+    /*     LOG_WARNING("Can't validate Act"); */
+    /*     return FALSE; */
+    /* } */
+    /* log_Act(&act); */
+
+    if (!maybe_player->pPath
+        || !memread(pid, (ptr_t)maybe_player->pPath, sizeof(Path),
+                    find_Path_callback, &path)) {
+        LOG_WARNING("Can't validate Path");
+        return FALSE;
+    }
+    /* log_Path(&path); */
+
+    if (!path.pRoom1
+        || !memread(pid, (ptr_t)path.pRoom1, sizeof(Room1),
+                    find_Room1_callback, &room1)) {
+        LOG_WARNING("Can't validate Room1");
+        return FALSE;
+    }
+    log_Room1(&room1);
+
+    if (!room1.pRoom2
+        || !memread(pid, (ptr_t)room1.pRoom2, sizeof(Room2),
+                    find_Room2_callback, &room2)) {
+        LOG_WARNING("Can't validate Room2");
+        return FALSE;
+    }
+    log_Room2(&room2);
+
+    if (!room2.pLevel
+        || !memread(pid, (ptr_t)room2.pLevel, sizeof(Level),
+                    find_Level_callback, &level)) {
+        LOG_WARNING("Can't validate Level");
+        return FALSE;
+    }
+    log_Level(&level);
+
+    if (!level.pRoom2First
+        || !memread(pid, (ptr_t)level.pRoom2First, sizeof(Room2),
+                    find_Room2_callback, &room2)) {
+        LOG_WARNING("Can't validate Room2First");
+        return FALSE;
+    }
+    log_Room2(&room2);
+
+    return TRUE;
+}
+
 static bool update_player(GameState *game, Player *player)
 {
-    pid_t pid = pidof("D2R.exe");
+    static PlayerList *maybe_player_list = NULL;
+
     UPDATE_STATUS(game, "Searching for D2R.exe...");
+    pid_t pid = pidof("D2R.exe");
     if (!pid) {
         LOG_ERROR("Can't find D2R.exe");
         return FALSE;
@@ -395,64 +437,40 @@ static bool update_player(GameState *game, Player *player)
     }
 
     UPDATE_STATUS(game, "Out of game...");
-    static ptr_t player_data_addr[MAX_PLAYER_DATA] = {0}; //TODO: ugly
-    memset(&player_data_addr, 0, sizeof(player_data_addr));
-    memreadall(pid, TRUE, search_player_data_callback, &player_data_addr);
-    if (!*player_data_addr) {
-        LOG_ERROR("Can't find PlayerData ptr");
-        return FALSE;
-    }
-
-/* #ifdef NDEBUG */
-    int i;
-    for (i = 0; i < MAX_PLAYER_DATA && player_data_addr[i]; i++) {}
-    LOG_INFO("player_data found: %d", i); /* DEBUG */
-/* #endif */
-
-    //TODO: pass g_maybe_player
-    UPDATE_STATUS(game, "In Game...");
-    free_maybe_player(g_maybe_player);
-    g_maybe_player = NULL;
-    memreadall(pid, FALSE, search_player_callback, &player_data_addr);
-    if (!g_maybe_player) {
+    free_maybe_player(maybe_player_list);
+    maybe_player_list = NULL;
+    memreadall(pid, FALSE, search_player_callback, &maybe_player_list);
+    if (!maybe_player_list) {
         LOG_ERROR("Can't find any Player ptr");
         return FALSE;
     }
 
-    /* Act act; */
-    Path path;
+    UPDATE_STATUS(game, "In Game...");
     PlayerList *pl;
     UPDATE_STATUS(game, "Validating Player...");
-    for (pl = g_maybe_player; pl; pl = pl->pNext) {
-        /* if (!pl->player.pAct */
-        /*     || !memread(pid, (ptr_t)pl->player.pAct, sizeof(Act), */
-        /*                 find_Act_callback, &act)) { */
-        /*     continue; */
-        /* } */
-        /* log_Act(&act); */
-
-        if (!pl->player.pPath
-            || !memread(pid, (ptr_t)pl->player.pPath, sizeof(Path),
-                        find_Path_callback, &path)) {
-            continue;
+    int i = 0;
+    for (pl = maybe_player_list; pl; pl = pl->pNext, i++) {
+        if (deep_validate_Player(pid, &pl->player)) {
+            LOG_DEBUG("YAY");
+            /* continue;               /\* DEBUG *\/ */
+            /* exit(EXIT_SUCCESS);     /\* DEBUG *\/ */
+            break;
         }
-        /* log_Path(&path); */
-
-        break;
     }
     if (!pl) {
         LOG_ERROR("Can't find any valid Player");
+        /* exit(EXIT_FAILURE);     /\* DEBUG *\/ */
         return FALSE;
     }
 
     /* pthread_mutex_lock(&game->mutex); */
     game->_pid = pid;
-    game->_player_addr = pl->player_data_addr;
+    game->_player_addr = pl->player_addr;
     /* pthread_mutex_unlock(&game->mutex); */
 
     memcpy(player, &pl->player, sizeof(Player));
     log_Player(player);
-    LOG_INFO("found PlayerData ptr at %16jx", (ptr_t)player->pPlayerData); /* DEBUG */
+    LOG_INFO("Woop woop! Found Player ptr at %16jx [%d]", (ptr_t)pl->player_addr, i); /* DEBUG */
     return TRUE;
 }
 

@@ -54,7 +54,8 @@ struct Level {
     dword dwPosY;       // 0x20
     dword dwSizeX;      // 0x24
     dword dwSizeY;      // 0x28
-    dword _3[96];       // 0x2C
+    dword _3[16];       // 0x2C
+    dword _zero[80];       // 0x2C
     Level* pNext;  // 0x1AC
     dword _4[4];           // 0x1B0
     ActMisc* pMisc;     // 0x1B4
@@ -147,16 +148,14 @@ struct Path {
     /* dword _pad1; */
     Room1* pRoom1;        // 0x1C
     Room1* pRoomUnk;      // 0x20
-    dword _3[3];          // 0x24
-    dword _pad2;
+    dword _3[4];          // 0x24
     UnitAny* pUnit;       // 0x30
     dword dwFlags;        // 0x34
     dword _4;             // 0x38
     dword dwPathType;     // 0x3C
     dword dwPrevPathType; // 0x40
     dword dwUnitSize;     // 0x44
-    dword _5[4];          // 0x48
-    dword _pad;
+    dword _5[5];          // 0x48
     UnitAny* pTargetUnit; // 0x58
     dword dwTargetType;   // 0x5C
     dword dwTargetId;     // 0x60
@@ -232,8 +231,8 @@ struct UnitAny {
     dword dwAct;     // 0x18
     dword _pad1;     // 0x1C
     Act* pAct;       // 0x20
-    dword dwSeed[2]; // 0x28
     dword _dunno1[2];// 0x30
+    dword dwSeed[2]; // 0x28
     union {
         Path* pPath;
         void* pItemPath;
@@ -281,6 +280,8 @@ bool is_valid_ActMisc(ActMisc *ptr);
 bool is_valid_PlayerData(PlayerData *ptr);
 bool is_valid_Player(Player *ptr);
 bool is_valid_UnitAny(UnitAny *ptr);
+
+bool is_valid_player_name_str(const char *b, size_t len);
 
 #define DEF_STRUCT_CPY_CALLBACK(STRUCT) \
     inline static bool find_##STRUCT##_callback(byte *buf, size_t buf_len, ptr_t address, void *data) \

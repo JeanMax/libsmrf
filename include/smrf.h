@@ -81,7 +81,7 @@ struct PtrList {
 typedef  struct PlayerList  PlayerList;
 struct PlayerList {
     Player player;
-    ptr_t player_data_addr;
+    ptr_t player_addr;
     PlayerList *pNext;
 };
 
