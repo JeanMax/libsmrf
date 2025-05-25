@@ -1,4 +1,5 @@
 #include "proc.h"
+#include "smrf.h"  // WINDOW_TITLE_MAX
 
 #include "util/log.h"
 
@@ -7,6 +8,7 @@
 #else
 # include <windows.h>
 # include <tlhelp32.h>
+# include <winuser.h>
 #endif
 
 #include <ctype.h> // isspace
@@ -18,9 +20,12 @@
 # define PATH_MAX 0x100
 #endif
 
+#define READ_BUF_LEN 0x100
+
 #define MAX_MAPS     0x4000
 static MapAddress g_maps_range[MAX_MAPS] = {0};  //TODO: this is ugly
 
+static pid_t g_pid = {0};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -47,13 +52,13 @@ byte *memsearch(const void *mem, const void *search, size_t mem_len, size_t sear
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int memread(pid_t pid, ptr_t start_address, size_t length,
+int memread(ptr_t start_address, size_t length,
             t_read_callback *on_page_read, void *data)
 {
 #ifndef _WIN32
     char path[PATH_MAX];
 
-    sprintf(path, "/proc/%d/mem", pid);
+    sprintf(path, "/proc/%d/mem", g_pid);  //TODO: keep that file open?
     FILE *mem_file = fopen(path, "r");
     if (!mem_file) {
         LOG_ERROR("Can't read proc memory");
@@ -65,7 +70,7 @@ int memread(pid_t pid, ptr_t start_address, size_t length,
     fseek(mem_file, (long)start_address, SEEK_SET);
 #else
     HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                                 0, pid);
+                                 0, g_pid);
     if (!process) {
         LOG_ERROR("Can't read proc memory (try again as admin?)");
         exit(EXIT_FAILURE);
@@ -84,7 +89,7 @@ int memread(pid_t pid, ptr_t start_address, size_t length,
         read_len = fread(&read_buf, 1, page_len, mem_file);
 #else
         ReadProcessMemory(process, (void *)address, &read_buf, page_len, &read_len);
-        // Toolhelp32ReadProcessMemory(pid, (void *)address, &read_buf, page_len, &read_len);
+        // Toolhelp32ReadProcessMemory(g_pid, (void *)address, &read_buf, page_len, &read_len);
 #endif
         if (!(callback_ret = on_page_read(read_buf, read_len, address, data))) {
             ret = 2;
@@ -110,7 +115,7 @@ int memread(pid_t pid, ptr_t start_address, size_t length,
     return ret;
 }
 
-bool memreadall(pid_t pid, bool quick, t_read_callback *on_page_read, void *data)
+bool memreadall(bool quick, t_read_callback *on_page_read, void *data)
 {
     for (int i = 0; i < MAX_MAPS && g_maps_range[i].start; i++) {
         ptr_t start = g_maps_range[i].start;
@@ -121,7 +126,7 @@ bool memreadall(pid_t pid, bool quick, t_read_callback *on_page_read, void *data
             LOG_DEBUG("quick skip: %12jx", start); /* DEBUG */
             continue;
         }
-        if (memread(pid, start, length, on_page_read, data) == 2) {
+        if (memread(start, length, on_page_read, data) == 2) {
 #ifdef NDEBUG
             fprintf(stderr, "\n");   /* DEBUG */
 #endif
@@ -192,22 +197,36 @@ static bool is_bullshit_memory(const char *memory_info_str)
 }
 #endif
 
-bool readmaps(pid_t pid)
+pid_t readmaps(const char *win_name, bool refresh_win)
 {
+    if (refresh_win) {
+        g_pid = 0;
+    }
+
+    if (!g_pid) {
+        /* g_pid = pid_of_cmd("D2R.exe"); */
+        g_pid = pid_of_window(win_name);
+    }
+    if (!g_pid) {
+        LOG_ERROR("Can't find D2R window '%s'", win_name);
+        return FALSE;
+    }
+
     int i = 0;
 #ifndef _WIN32
-    char path[PATH_MAX], read_buf[PAGE_LENGTH];
+    char path[PATH_MAX], read_buf[READ_BUF_LEN];
     memset(&g_maps_range, 0, sizeof(g_maps_range));
 
-    sprintf(path, "/proc/%d/maps", pid);
+    sprintf(path, "/proc/%d/maps", g_pid);
     FILE *maps_file = fopen(path, "r");
     if (!maps_file) {
+        g_pid = 0;
         return FALSE;
     }
 
     ptr_t start_address;
     ptr_t end_address;
-    while (fgets(read_buf, PAGE_LENGTH, maps_file)) {
+    while (fgets(read_buf, READ_BUF_LEN, maps_file)) {
         sscanf(read_buf, "%16jx-%16jx\n", &start_address, &end_address);
         if (is_rw_memory(read_buf) && !is_bullshit_memory(read_buf)) {
             if (i == MAX_MAPS) {
@@ -222,8 +241,9 @@ bool readmaps(pid_t pid)
     fclose(maps_file);
 #else
     HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                                 0, pid);
+                                 0, g_pid);
     if (!process) {
+        g_pid = 0;
         return FALSE;
     }
 
@@ -254,17 +274,17 @@ bool readmaps(pid_t pid)
     /* LOG_DEBUG("%d maps found", i); /\* DEBUG *\/ */
     g_maps_range[i].start = 0;
     g_maps_range[i].end = 0;
-    return i ? TRUE : FALSE;
+    return i ? g_pid : FALSE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-pid_t pidof(const char *pname)
+pid_t pid_of_cmd(const char *cmd_name)
 {
 #ifndef _WIN32
     FILE *cmd_file;
     struct dirent *entry;
-    char path[PATH_MAX], read_buf[PAGE_LENGTH];
+    char path[PATH_MAX], read_buf[READ_BUF_LEN];
     pid_t ret = 0;
 
     DIR *proc_dir = opendir("/proc/");
@@ -280,8 +300,8 @@ pid_t pidof(const char *pname)
 
         cmd_file = fopen(path, "r");
         if (cmd_file) {
-			fgets(read_buf, PAGE_LENGTH - 1, cmd_file);
-            if (strstr(read_buf, pname)) {  // TODO: this is extra inclusive
+			if (fgets(read_buf, READ_BUF_LEN - 1, cmd_file)
+                    && strstr(read_buf, cmd_name)) {  // TODO: this is extra inclusive
                 ret = atoi(entry->d_name);
                 fclose(cmd_file);
                 closedir(proc_dir);
@@ -306,7 +326,7 @@ pid_t pidof(const char *pname)
         return 0;
     }
     do {
-        if (!strcmp(pname, processInfo.szExeFile)) {
+        if (!strcmp(cmd_name, processInfo.szExeFile)) {
             CloseHandle(processesSnapshot);
             return processInfo.th32ProcessID;
         }
@@ -314,5 +334,52 @@ pid_t pidof(const char *pname)
 
     CloseHandle(processesSnapshot);
     return 0;
+#endif
+}
+
+#ifdef _WIN32
+static pid_t g_temp_pid = {0};
+static bool CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lparam)
+{
+    char buffer[WINDOW_TITLE_MAX];
+    int written = GetWindowTextA(hwnd, buffer, WINDOW_TITLE_MAX);
+    if (written && strstr(buffer, (char *)lparam) != NULL) {
+        DWORD pid = 0;
+        GetWindowThreadProcessId(hwnd, &pid);
+        g_temp_pid = pid;
+        return FALSE;
+    }
+
+    return TRUE;
+}
+#else
+#define PID_COOKIE "/tmp/smrf.pid"
+#endif
+
+pid_t pid_of_window(const char *win_name)
+{
+#ifndef _WIN32
+    char buf[WINDOW_TITLE_MAX];
+    pid_t pid = 0;
+
+    snprintf(buf, WINDOW_TITLE_MAX,
+             "wmctrl -lp | grep -m1 '%s' | cut -d' ' -f4 > " PID_COOKIE,
+             win_name);  // I'm sorry I'm fucking lazy
+
+    if (!system(buf)) {
+        FILE *cookie = fopen(PID_COOKIE, "r");
+        if (cookie) {
+            if (fgets(buf, WINDOW_TITLE_MAX, cookie)) {
+                pid = atoi(buf);
+            }
+            fclose(cookie);
+        }
+    }
+    system("rm -f " PID_COOKIE);
+    return pid;
+#else
+    g_temp_pid = 0;
+    EnumWindows(EnumWindowsProc, (ptr_t)win_name);
+    return g_temp_pid;
 #endif
 }

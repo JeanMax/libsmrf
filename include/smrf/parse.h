@@ -12,11 +12,10 @@ struct UnitWithAddr {
     ptr_t unit_addr;
 };
 
-extern Htable *g_unit_table;
 extern Level  *g_levels[MAX_AREA];
 
 void free_all_levels(void);
-Level *parse_level_list(pid_t pid, ptr_t level_addr);
+Level *parse_level_list(ptr_t level_addr);
 
 
 #endif

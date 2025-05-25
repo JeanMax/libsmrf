@@ -46,7 +46,7 @@ void *hget(Htable *table, size_t key);
 
 /*
 ** apply f to each node
-** if f returns TRUE, stop iterating and return the current node
+** if f returns TRUE, stop iterating and return the current node .value
 ** otherwise returns NULL
 */
 typedef bool iter_callback(void *node_value, void *data);

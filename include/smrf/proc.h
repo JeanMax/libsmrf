@@ -6,7 +6,6 @@
 
 #include "util/types.h"
 
-
 typedef  struct MapAddress  MapAddress;
 struct MapAddress {
     ptr_t start;
@@ -25,10 +24,12 @@ typedef bool t_read_callback(byte *buf, size_t buf_len, ptr_t address, void *dat
 bool is_valid_ptr(ptr_t ptr);
 
 byte *memsearch(const void *mem, const void *search, size_t mem_len, size_t search_len);
-int memread(pid_t pid, ptr_t start_address, size_t length,
+int memread(ptr_t start_address, size_t length,
             t_read_callback *on_page_read, void *data);
-bool memreadall(pid_t pid, bool quick, t_read_callback *on_page_read, void *data);
-bool readmaps(pid_t pid);
-pid_t pidof(const char *pname);
+bool memreadall(bool quick, t_read_callback *on_page_read, void *data);
+pid_t readmaps(const char *win_name, bool refresh_win);  //TODO: rename
+
+pid_t pid_of_cmd(const char *cmd_name);
+pid_t pid_of_window(const char *win_name);
 
 #endif

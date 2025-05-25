@@ -282,8 +282,6 @@ bool is_valid_PlayerData(PlayerData *ptr);
 bool is_valid_Player(Player *ptr);
 bool is_valid_UnitAny(UnitAny *ptr);
 
-bool is_valid_player_name_str(const char *b, size_t len);
-
 #define DEF_STRUCT_CPY_CALLBACK(STRUCT) \
     inline static bool find_##STRUCT##_callback(byte *buf, size_t buf_len, ptr_t address, void *data) \
     {                                                                       \

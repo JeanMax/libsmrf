@@ -23,12 +23,11 @@ extern Htable *g_unit_table;  //TODO: berk
     } while (0)
 
 
-
 typedef  struct PlayerList  PlayerList;
 struct PlayerList {
     Player player;
     ptr_t player_addr;
-    int  idx;                   /* DEBUG */
+    long  idx;                   /* DEBUG */
     PlayerList *pNext;
 };
 
@@ -43,17 +42,16 @@ struct PlayerContent {
 };
 
 
-#define STATUS_LEN_MAX 32
+#define WINDOW_TITLE_MAX 256
+#define STATUS_MAX 32
 
 typedef  struct GameState  GameState;
 struct GameState {
-    char player_name_setting[PLAYER_DATA_NAME_MAX];  // need to be 1st
-    char status[STATUS_LEN_MAX];
+    char window_title_setting[WINDOW_TITLE_MAX];  // need to be 1st
+    char status[STATUS_MAX];
     Level *level;
     Player player;
     ptr_t _player_addr; //TODO: internal, hide
-    pid_t _pid; //TODO: internal, hide
-    byte _pad[4];
     pthread_mutex_t mutex;
     Level **all_levels; // Level *all_levels[MAX_AREA]
 };

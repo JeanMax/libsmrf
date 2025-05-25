@@ -409,7 +409,7 @@ void log_UnitAny(UnitAny *ptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-inline bool is_valid_player_name_str(const char *b, size_t len)
+static inline bool is_valid_player_name_str(const char *b, size_t len)
 {
     const char *start = b;
     while ((size_t)(b - start) < len) {
@@ -519,6 +519,7 @@ inline bool is_valid_Path(Path *ptr)
 
 inline bool is_valid_Act(Act *ptr)
 {
+    log_Act(ptr); /* DEBUG */
     return IS_ALIGNED(ptr);
         /* && is_valid_ptr((ptr_t)ptr->pDunno); */
         /* && is_valid_ptr((ptr_t)ptr->pRoom1) */
@@ -557,7 +558,8 @@ inline bool is_valid_PlayerData(PlayerData *ptr)
         && is_valid_ptr__quick((ptr_t)ptr->pHellQuest)
         && is_valid_ptr__quick((ptr_t)ptr->pNormalWaypoint)
         && is_valid_ptr__quick((ptr_t)ptr->pNightmareWaypoint)
-        && is_valid_ptr__quick((ptr_t)ptr->pHellWaypoint);
+        && is_valid_ptr__quick((ptr_t)ptr->pHellWaypoint)
+        && is_valid_player_name_str(ptr->szName, PLAYER_DATA_NAME_MAX);
 }
 
 inline bool is_valid_Player(Player *ptr)

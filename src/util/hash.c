@@ -91,11 +91,9 @@ static void     resize_table(Htable *table)
 
 static bool     add_node(Htable *table, size_t key, void *value)
 {
-    Hnode **bucket_spot;
-    Hnode  *node;
+    Hnode **bucket_spot = table->bucket + key % table->bucket_size;
+    Hnode  *node = *bucket_spot;
 
-    bucket_spot = table->bucket + key % table->bucket_size;
-    node = *bucket_spot;
     while (node) {
         if (key == node->key) {
             LOG_WARNING("hset: key [%d] already exists in Htable (overwrite)",
@@ -120,7 +118,7 @@ void            hset(Htable *table, size_t key, void *value)
     if (add_node(table, key, value)) {
         table->length++;
     }
-    if (table->length > table->bucket_size * BUCKET_RESIZE_TRIGGER) {
+    if (table->length > (size_t)((double)table->bucket_size * BUCKET_RESIZE_TRIGGER)) {
         resize_table(table);
     }
 }
@@ -129,9 +127,8 @@ void            hset(Htable *table, size_t key, void *value)
 
 void           *hget(Htable *table, size_t key)
 {
-    Hnode *node;
+    Hnode *node = *(table->bucket + key % table->bucket_size);
 
-    node = *(table->bucket + key % table->bucket_size);
     while (node) {
         if (key == node->key) {
             return node->value;
@@ -145,19 +142,17 @@ void           *hget(Htable *table, size_t key)
 
 void           *hiter(Htable *table, iter_callback f, void *callback_data)
 {
-    Hnode **bucket;
-    size_t  bucket_size;
+    Hnode **bucket = table->bucket;
+    size_t size = table->bucket_size;
     Hnode *node;
     Hnode *next;
 
-    bucket = table->bucket;
-    bucket_size = table->bucket_size;
-    while (bucket_size--) {
+    while (size--) {
         node = *bucket;
         while (node) {
             next = node->next;  // in case f calls hdel on node :|
             if (f(node->value, callback_data)) {
-                return node;
+                return node->value;
             }
             node = next;
         }
@@ -177,13 +172,10 @@ static inline void free_node(Htable *table, Hnode *node)
 
 void            hdel(Htable *table, size_t key)
 {
-    Hnode *node;
-    Hnode *prev;
-    Hnode **first;
+    Hnode **first = table->bucket + key % table->bucket_size;
+    Hnode *node = *first;
+    Hnode *prev = NULL;
 
-    first = table->bucket + key % table->bucket_size;
-    node = *first;
-    prev = NULL;
     while (node) {
         if (key == node->key) {
             if (prev) {
@@ -201,8 +193,9 @@ void            hdel(Htable *table, size_t key)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static inline void free_list(Htable *table, Hnode *node)
+static inline void free_list(Htable *table, Hnode **node_addr)
 {
+    Hnode *node = *node_addr;
     Hnode *next;
 
     while (node) {
@@ -210,17 +203,17 @@ static inline void free_list(Htable *table, Hnode *node)
         free_node(table, node);
         node = next;
     }
+    *node_addr = NULL;
 }
 
 void            hdelall(Htable *table)
 {
-    Hnode **bucket;
+    Hnode **bucket = table->bucket;
     size_t  size = table->bucket_size;
 
-    bucket = table->bucket;
     while (size--) {
         if (*bucket) {
-            free_list(table, *bucket);
+            free_list(table, bucket);
         }
         bucket++;
     }
@@ -230,7 +223,9 @@ void            hdelall(Htable *table)
 
 void            hfree(Htable **table_addr)
 {
-    hdelall(*table_addr);
-    FREE((*table_addr)->bucket);
-    FREE(*table_addr);
+    if (*table_addr) {
+        hdelall(*table_addr);
+        FREE((*table_addr)->bucket);
+        FREE(*table_addr);
+    }
 }

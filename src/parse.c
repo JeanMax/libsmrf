@@ -117,13 +117,13 @@ static PresetUnit *preset_in_list(PresetUnit *pu, PresetUnit *pu_list)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static UnitAny *store_unit(pid_t pid, ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
+static UnitAny *store_unit(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
 {
     static UnitAny u;
     static Path path;
     /* static Act act; */
 
-    if (!memread(pid, u_addr, sizeof(UnitAny),
+    if (!memread(u_addr, sizeof(UnitAny),
                  find_UnitAny_callback, &u)) {
         LOG_WARNING("Can't update unit");
         return NULL;
@@ -143,7 +143,7 @@ static UnitAny *store_unit(pid_t pid, ptr_t u_addr, UnitAny **u_last, UnitAny **
     }
 
     /* if (!u.pAct || !is_valid_ptr((ptr_t)u.pAct) */
-    /*     || !memread(pid, (ptr_t)u.pAct, sizeof(Act), */
+    /*     || !memread((ptr_t)u.pAct, sizeof(Act), */
     /*                 find_Act_callback, &act)) { */
     /*     LOG_WARNING("Can't update unit's Act");  //TODO: this fails a lot */
     /*     /\* log_Act(&act);    /\\* DEBUG *\\/ *\/ */
@@ -153,7 +153,7 @@ static UnitAny *store_unit(pid_t pid, ptr_t u_addr, UnitAny **u_last, UnitAny **
     /* DUPE(u.pAct, &act, sizeof(Act)); */
 
     if (!u.pPath || !is_valid_ptr((ptr_t)u.pPath)
-        || !memread(pid, (ptr_t)u.pPath, sizeof(Path),
+        || !memread((ptr_t)u.pPath, sizeof(Path),
                     find_Path_callback, &path)) {
         LOG_WARNING("Can't update unit's Path");  //TODO: this fails a lot
         /* log_Path(&path);    /\* DEBUG *\/ */
@@ -173,18 +173,18 @@ static UnitAny *store_unit(pid_t pid, ptr_t u_addr, UnitAny **u_last, UnitAny **
     return ret;
 }
 
-static UnitAny *parse_unit_list(pid_t pid, ptr_t u_addr)
+static UnitAny *parse_unit_list(ptr_t u_addr)
 {
     UnitAny *u_last = NULL, *u_first = NULL;
 
     while (is_valid_ptr(u_addr)) {
-        u_addr = (ptr_t)store_unit(pid, u_addr, &u_first, &u_last);
+        u_addr = (ptr_t)(void *)store_unit(u_addr, &u_first, &u_last);
     }
 
     return u_first;
 }
 
-static PresetUnit *parse_preset_list(pid_t pid, ptr_t pu_addr, PresetUnit *pu_first)
+static PresetUnit *parse_preset_list(ptr_t pu_addr, PresetUnit *pu_first)
 {
     PresetUnit pu;
     PresetUnit *pu_prev = NULL, *pu_new;
@@ -192,7 +192,7 @@ static PresetUnit *parse_preset_list(pid_t pid, ptr_t pu_addr, PresetUnit *pu_fi
 
     LAST_LINK(pu_first, pu_prev);
     while (is_valid_ptr(pu_addr)) {
-        if (!memread(pid, pu_addr, sizeof(PresetUnit),
+        if (!memread(pu_addr, sizeof(PresetUnit),
                      find_PresetUnit_callback, &pu)) {
             LOG_WARNING("Can't find preset");
             break;
@@ -216,7 +216,7 @@ static PresetUnit *parse_preset_list(pid_t pid, ptr_t pu_addr, PresetUnit *pu_fi
     return pu_first;
 }
 
-static Room1 *parse_room1_list(pid_t pid, ptr_t r1_addr, Room1 *r1_first)
+static Room1 *parse_room1_list(ptr_t r1_addr, Room1 *r1_first)
 {
     Room1 r1;
     Room1 *r1_prev = NULL, *r1_new;
@@ -224,7 +224,7 @@ static Room1 *parse_room1_list(pid_t pid, ptr_t r1_addr, Room1 *r1_first)
 
     LAST_LINK(r1_first, r1_prev);
     while (is_valid_ptr(r1_addr)) {
-        if (!memread(pid, r1_addr, sizeof(Room1),
+        if (!memread(r1_addr, sizeof(Room1),
                      find_Room1_callback, &r1)) {
             LOG_WARNING("Can't find room1");
             break;
@@ -242,9 +242,9 @@ static Room1 *parse_room1_list(pid_t pid, ptr_t r1_addr, Room1 *r1_first)
             ADD_LINK(r1_first, r1_prev, r1_new);
         }
 
-        r1_new->pUnitFirst = parse_unit_list(pid, (ptr_t)r1.pUnitFirst);
+        r1_new->pUnitFirst = parse_unit_list((ptr_t)r1.pUnitFirst);
 
-        /* r1_new->Coll = parse_collmap(pid, (ptr_t)r1.Coll); */
+        /* r1_new->Coll = parse_collmap((ptr_t)r1.Coll); */
 
         r1_addr = (ptr_t)r1.pNext;
     }
@@ -254,7 +254,7 @@ static Room1 *parse_room1_list(pid_t pid, ptr_t r1_addr, Room1 *r1_first)
     return r1_first;
 }
 
-static Room2 *parse_room2_list(pid_t pid, ptr_t r2_addr, Room2 *r2_first)
+static Room2 *parse_room2_list(ptr_t r2_addr, Room2 *r2_first)
 {
     Room2 r2;
     Room2 *r2_prev = NULL, *r2_new;
@@ -262,7 +262,7 @@ static Room2 *parse_room2_list(pid_t pid, ptr_t r2_addr, Room2 *r2_first)
 
     LAST_LINK(r2_first, r2_prev);
     while (is_valid_ptr(r2_addr)) {
-        if (!memread(pid, r2_addr, sizeof(Room2),
+        if (!memread(r2_addr, sizeof(Room2),
                      find_Room2_callback, &r2)) {
             LOG_WARNING("Can't find room2");
             break;
@@ -280,11 +280,9 @@ static Room2 *parse_room2_list(pid_t pid, ptr_t r2_addr, Room2 *r2_first)
             ADD_LINK(r2_first, r2_prev, r2_new);
         }
 
-        r2_new->pRoom1 = parse_room1_list(pid,
-                                          (ptr_t)r2.pRoom1,
+        r2_new->pRoom1 = parse_room1_list((ptr_t)r2.pRoom1,
                                           r2_new->pRoom1);
-        r2_new->pPreset = parse_preset_list(pid,
-                                            (ptr_t)r2.pPreset,
+        r2_new->pPreset = parse_preset_list((ptr_t)r2.pPreset,
                                             r2_new->pPreset);
 
         r2_addr = (ptr_t)r2.pNext;
@@ -295,14 +293,14 @@ static Room2 *parse_room2_list(pid_t pid, ptr_t r2_addr, Room2 *r2_first)
     return r2_first;
 }
 
-Level *parse_level_list(pid_t pid, ptr_t level_addr)
+Level *parse_level_list(ptr_t level_addr)
 {
     Level level;
     Level *level_first = NULL, *level_prev, *level_new;
     /* int i = 0;                  /\* DEBUG *\/ */
 
     while (is_valid_ptr(level_addr)) {
-        if (!memread(pid, level_addr, sizeof(Level),
+        if (!memread(level_addr, sizeof(Level),
                      find_Level_callback, &level)) {
             LOG_WARNING("Can't find level");
             break;
@@ -314,16 +312,15 @@ Level *parse_level_list(pid_t pid, ptr_t level_addr)
         level_new = g_levels[level.dwLevelNo];
         if (level_new) { // not new eh
             if (!level_first) { //current lvl
-                level_new->pRoom2First = parse_room2_list(pid,
-                                                          (ptr_t)level.pRoom2First,
+                level_new->pRoom2First = parse_room2_list((ptr_t)level.pRoom2First,
                                                           level_new->pRoom2First);
             }
+            //TODO: else???? parse too no?
         } else {
             DUPE(level_new, &level, sizeof(Level));
             level_new->pNext = NULL;
             g_levels[level.dwLevelNo] = level_new;
-            level_new->pRoom2First = parse_room2_list(pid,
-                                                      (ptr_t)level.pRoom2First,
+            level_new->pRoom2First = parse_room2_list((ptr_t)level.pRoom2First,
                                                       NULL);
         }
 

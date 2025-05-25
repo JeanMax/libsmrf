@@ -6,19 +6,54 @@
 #include "smrf/util/list.h"
 #include "smrf/util/log.h"
 
+#define DEFAULT_D2R_WINDOW_TITLE "Diablo II: Resurrected"
 
-char       *g_player_name_setting = NULL;  //TODO: remove, probably useless now
-
-//TODO: add enum for callback return
-
-inline static bool is_valid_name(const char *name)
+static void unit_deleter(size_t unused_key, void *node_value)
 {
-    if (!g_player_name_setting || !*g_player_name_setting) {
-        return is_valid_player_name_str(name, PLAYER_DATA_NAME_MAX);
+    UnitWithAddr *uwa = node_value;
+    (void)unused_key;
+
+    /* if (uwa->unit.pAct) { */
+    /*     FREE(uwa->unit.pAct); */
+    /* } */
+    if (uwa->unit.pPath) {
+        FREE(uwa->unit.pPath);
     }
-    return !strcmp(name, g_player_name_setting);
+    FREE(uwa);
 }
 
+void init_game_state(GameState *game)
+{
+    memset(game, 0, sizeof(GameState));
+    UPDATE_STATUS(game, "Loading...");
+    g_unit_table = hnew(0, unit_deleter);
+    pthread_mutex_init(&game->mutex, NULL);
+}
+
+void destroy_game_state(GameState *game)
+{
+    pthread_mutex_lock(&game->mutex);
+    free_all_levels();
+    hfree(&g_unit_table);
+    memset(game, 0, sizeof(GameState));
+    pthread_mutex_unlock(&game->mutex);
+    pthread_mutex_destroy(&game->mutex);
+}
+
+static void reset_game_state(GameState *game)
+{
+    pthread_mutex_lock(&game->mutex);
+    free_all_levels();
+    hdelall(g_unit_table);
+    memset((char *)game + PLAYER_DATA_NAME_MAX,
+           0, sizeof(GameState) - PLAYER_DATA_NAME_MAX);
+    /* UPDATE_STATUS(game, "Reset..."); */
+    pthread_mutex_unlock(&game->mutex);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//TODO: add enum for callback return
 inline static bool search_player_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
     static int i = 0;           /* DEBUG */
@@ -49,7 +84,8 @@ inline static bool search_player_callback(byte *buf, size_t buf_len, ptr_t addre
 
 static void free_maybe_player(PlayerList *ptr)
 {
-    PlayerList *prev = NULL;
+    PlayerList *prev;
+
     while (ptr) {
         prev = ptr;
         ptr = ptr->pNext;
@@ -61,7 +97,7 @@ static void free_maybe_player(PlayerList *ptr)
 
 static bool update_unit_callback(void *node_value, void *data)
 {
-    GameState *game = data;
+    (void)data;
     UnitWithAddr *uwa = node_value;
 
     /* if (uwa->unit.dwType == 0 && uwa->unit.dwTxtFileNo == 0x1) { */
@@ -73,7 +109,7 @@ static bool update_unit_callback(void *node_value, void *data)
     static UnitAny u;
     UnitAny *next;
 
-    if (!memread(game->_pid, uwa->unit_addr, sizeof(UnitAny),
+    if (!memread(uwa->unit_addr, sizeof(UnitAny),
                  find_UnitAny_callback, &u)) {
         LOG_WARNING("Can't refresh unit");
         hdel(g_unit_table, uwa->unit.dwUnitId);
@@ -83,7 +119,7 @@ static bool update_unit_callback(void *node_value, void *data)
     next = uwa->unit.pNext;
 
     /* if (u.pAct && is_valid_ptr((ptr_t)u.pAct)) { */
-    /*     if (!memread(game->_pid, (ptr_t)u.pAct, sizeof(Act), */
+    /*     if (!memread((ptr_t)u.pAct, sizeof(Act), */
     /*                  find_Act_callback, &act)) {  //TODO: this fails a lot */
     /*         LOG_WARNING("Can't resfresh unit's Act, removing from Htable"); */
     /*         hdel(g_unit_table, uwa->unit.dwUnitId); */
@@ -96,7 +132,7 @@ static bool update_unit_callback(void *node_value, void *data)
     /* } */
 
     if (u.pPath && is_valid_ptr((ptr_t)u.pPath)) {
-        if (!memread(game->_pid, (ptr_t)u.pPath, sizeof(Path),
+        if (!memread((ptr_t)u.pPath, sizeof(Path),
                      find_Path_callback, &path)) {  //TODO: this fails a lot
             LOG_WARNING("Can't resfresh unit's Path, removing from Htable");
             hdel(g_unit_table, uwa->unit.dwUnitId);
@@ -114,24 +150,11 @@ static bool update_unit_callback(void *node_value, void *data)
     return FALSE;
 }
 
-static void unit_deleter(size_t unused_key, void *node_value)
-{
-    UnitWithAddr *uwa = node_value;
-    (void)unused_key;
-
-    /* if (uwa->unit.pAct) { */
-    /*     FREE(uwa->unit.pAct); */
-    /* } */
-    if (uwa->unit.pPath) {
-        FREE(uwa->unit.pPath);
-    }
-    FREE(uwa);
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
-static bool deep_validate_Player(pid_t pid, Player *maybe_player)
+static bool deep_validate_Player(Player *maybe_player)
 {
+    //TODO: this is done twice, it's stupid
     static PlayerData player_data;
     /* static Act act; */
     static Path path;
@@ -140,9 +163,8 @@ static bool deep_validate_Player(pid_t pid, Player *maybe_player)
     static Level level;
 
     if (!maybe_player->pPlayerData
-        || !memread(pid, (ptr_t)maybe_player->pPlayerData, sizeof(PlayerData),
-                    find_PlayerData_callback, &player_data)
-        || !is_valid_name(player_data.szName)) {
+        || !memread((ptr_t)maybe_player->pPlayerData, sizeof(PlayerData),
+                    find_PlayerData_callback, &player_data)) {
         /* LOG_WARNING("Can't validate PlayerData"); */
         return FALSE;
     }
@@ -152,7 +174,7 @@ static bool deep_validate_Player(pid_t pid, Player *maybe_player)
 
 
     /* if (!maybe_player->pAct */
-    /*     || !memread(pid, (ptr_t)maybe_player->pAct, sizeof(Act), */
+    /*     || !memread((ptr_t)maybe_player->pAct, sizeof(Act), */
     /*                 find_Act_callback, &act)) { */
     /*     LOG_WARNING("Can't validate Act"); */
     /*     return FALSE; */
@@ -160,15 +182,15 @@ static bool deep_validate_Player(pid_t pid, Player *maybe_player)
     /* log_Act(&act); */
 
     if (!maybe_player->pPath
-        || !memread(pid, (ptr_t)maybe_player->pPath, sizeof(Path),
+        || !memread((ptr_t)maybe_player->pPath, sizeof(Path),
                     find_Path_callback, &path)) {
         LOG_WARNING("Can't validate Path");
         return FALSE;
     }
-    /* log_Path(&path); */
+    log_Path(&path);
 
     if (!path.pRoom1
-        || !memread(pid, (ptr_t)path.pRoom1, sizeof(Room1),
+        || !memread((ptr_t)path.pRoom1, sizeof(Room1),
                     find_Room1_callback, &room1)) {
         LOG_WARNING("Can't validate Room1");
         return FALSE;
@@ -176,7 +198,7 @@ static bool deep_validate_Player(pid_t pid, Player *maybe_player)
     log_Room1(&room1);
 
     if (!room1.pRoom2
-        || !memread(pid, (ptr_t)room1.pRoom2, sizeof(Room2),
+        || !memread((ptr_t)room1.pRoom2, sizeof(Room2),
                     find_Room2_callback, &room2)) {
         LOG_WARNING("Can't validate Room2");
         return FALSE;
@@ -184,7 +206,7 @@ static bool deep_validate_Player(pid_t pid, Player *maybe_player)
     log_Room2(&room2);
 
     if (!room2.pLevel
-        || !memread(pid, (ptr_t)room2.pLevel, sizeof(Level),
+        || !memread((ptr_t)room2.pLevel, sizeof(Level),
                     find_Level_callback, &level)) {
         LOG_WARNING("Can't validate Level");
         return FALSE;
@@ -192,7 +214,7 @@ static bool deep_validate_Player(pid_t pid, Player *maybe_player)
     log_Level(&level);
 
     if (!level.pRoom2First
-        || !memread(pid, (ptr_t)level.pRoom2First, sizeof(Room2),
+        || !memread((ptr_t)level.pRoom2First, sizeof(Room2),
                     find_Room2_callback, &room2)) {
         LOG_WARNING("Can't validate Room2First");
         return FALSE;
@@ -202,48 +224,34 @@ static bool deep_validate_Player(pid_t pid, Player *maybe_player)
     return TRUE;
 }
 
-static bool update_player(GameState *game, Player *player)
+static bool update_player(GameState *game, Player *player, bool need_full_search)
 {
     static PlayerList *maybe_player_list = NULL;
 
-    UPDATE_STATUS(game, "Searching for D2R.exe...");
-    pid_t pid = pidof("D2R.exe");
-    if (!pid) {
-        LOG_ERROR("Can't find D2R.exe");
-        return FALSE;
-    }
-
-    UPDATE_STATUS(game, "Reading D2R memory...");
-    if (!readmaps(pid)) {
-        LOG_ERROR("Can't read maps");
-        return FALSE;
-    }
-
-    if (pid == game->_pid && game->_player_addr) {
+    if (!need_full_search && game->_player_addr) {
         UPDATE_STATUS(game, "Updating Player...");
-        if (memread(pid, (ptr_t)game->_player_addr, sizeof(Player),
-                    find_Player_callback, player)) {
-            return TRUE;
-        } else {
+        if (!memread((ptr_t)game->_player_addr, sizeof(Player),
+                     find_Player_callback, player)) {
             LOG_ERROR("Can't refresh player");
-            return FALSE;       /* DEBUG */
+            return FALSE;
         }
+        return TRUE;
     }
 
     UPDATE_STATUS(game, "Out of game...");
     free_maybe_player(maybe_player_list);
     maybe_player_list = NULL;
-    memreadall(pid, FALSE, search_player_callback, &maybe_player_list);
+    memreadall(FALSE, search_player_callback, &maybe_player_list);
     if (!maybe_player_list) {
         LOG_ERROR("Can't find any Player ptr");
         return FALSE;
     }
 
-    UPDATE_STATUS(game, "In Game...");
+    UPDATE_STATUS(game, "In Game...");  // TODO: move that before
     PlayerList *pl;
     UPDATE_STATUS(game, "Validating Player...");
     for (pl = maybe_player_list; pl; pl = pl->pNext) {
-        if (deep_validate_Player(pid, &pl->player)) {
+        if (deep_validate_Player(&pl->player)) {
             LOG_DEBUG("YAY");
             /* continue;               /\* DEBUG *\/ */
             /* exit(EXIT_SUCCESS);     /\* DEBUG *\/ */
@@ -257,8 +265,7 @@ static bool update_player(GameState *game, Player *player)
     }
 
     /* pthread_mutex_lock(&game->mutex); */
-    game->_pid = pid;
-    game->_player_addr = pl->player_addr;
+    game->_player_addr = pl->player_addr;  //TODO: remove from GameState
     /* pthread_mutex_unlock(&game->mutex); */
 
     memcpy(player, &pl->player, sizeof(Player));
@@ -268,28 +275,61 @@ static bool update_player(GameState *game, Player *player)
     return TRUE;
 }
 
+static bool update_game_window(GameState *game, bool *need_full_search)
+{
+    static pid_t prev_pid = 0;
+    static bool need_pid_refresh = TRUE;
+    static char prev_title_name[WINDOW_TITLE_MAX] = {0};
+
+    if (strcmp(prev_title_name, game->window_title_setting)) {
+        need_pid_refresh = TRUE;
+        strcpy(prev_title_name, game->window_title_setting);
+    }
+
+    UPDATE_STATUS(game, "Searching for D2R...");
+    pid_t pid = readmaps(*game->window_title_setting ?
+                         game->window_title_setting : DEFAULT_D2R_WINDOW_TITLE,
+                         need_pid_refresh);
+    if (!pid) {
+        need_pid_refresh = TRUE;
+        LOG_ERROR("Can't read maps");
+        return FALSE;
+    }
+    need_pid_refresh = FALSE;
+
+    if (prev_pid != pid) {
+        prev_pid = pid;
+        LOG_WARNING("D2R pid changed");
+        *need_full_search = TRUE;
+    }
+
+    return TRUE;
+}
+
 bool update_game_state(GameState *game)
 {
     static PlayerContent pc = {0};
     static PlayerContent tmp = {0};
     static Player player = {0};
 
-    if (!update_player(game, &player)) {
-        destroy_game_state(game);
+    bool need_full_search = FALSE;
+    if (!update_game_window(game, &need_full_search)
+        || !update_player(game, &player, need_full_search)) {
+        reset_game_state(game);
         return FALSE;
     }
 
     UPDATE_STATUS(game, "Updating Game...");
-    if (!memread(game->_pid, (ptr_t)player.pPlayerData, sizeof(PlayerData),
+    if (!memread((ptr_t)player.pPlayerData, sizeof(PlayerData),
                  find_PlayerData_callback, &tmp.player_data)) {
         LOG_ERROR("Can't find playerData");
-        destroy_game_state(game);
+        reset_game_state(game);
         return FALSE;
     }
     log_PlayerData(&tmp.player_data);
 
     /* UPDATE_STATUS(game, "Updating Act..."); */
-    /* if (!memread(game->_pid, (ptr_t)player.pAct, sizeof(Act), */
+    /* if (!memread((ptr_t)player.pAct, sizeof(Act), */
     /*              find_Act_callback, &tmp.act)) { */
     /*     LOG_ERROR("Can't find act"); */
     /*     memset(&tmp.act, 0, sizeof(Act)); */
@@ -297,21 +337,21 @@ bool update_game_state(GameState *game)
     /* } */
     /* log_Act(&tmp.act); */
 
-    if (!memread(game->_pid, (ptr_t)player.pPath, sizeof(Path),
+    if (!memread((ptr_t)player.pPath, sizeof(Path),
                  find_Path_callback, &tmp.path)) {
         LOG_ERROR("Can't find path");
         return FALSE;
     }
     log_Path(&tmp.path);
 
-    if (!memread(game->_pid, (ptr_t)tmp.path.pRoom1, sizeof(Room1),
+    if (!memread((ptr_t)tmp.path.pRoom1, sizeof(Room1),
                  find_Room1_callback, &tmp.room1)) {
         LOG_ERROR("Can't find room1");
         return FALSE;
     }
     /* log_Room1(&tmp.room1); */
 
-    if (!memread(game->_pid, (ptr_t)tmp.room1.pRoom2, sizeof(Room2),
+    if (!memread((ptr_t)tmp.room1.pRoom2, sizeof(Room2),
                  find_Room2_callback, &tmp.room2)) {
         LOG_ERROR("Can't find room2");
         return FALSE;
@@ -320,11 +360,13 @@ bool update_game_state(GameState *game)
 
     pthread_mutex_lock(&game->mutex);
     UPDATE_STATUS(game, "Updating Units...");
-    hiter(g_unit_table, update_unit_callback, game);
+    LOG_DEBUG("before: %d units in table", g_unit_table->length);
+    hiter(g_unit_table, update_unit_callback, NULL);
+    LOG_DEBUG("after: %d units in table", g_unit_table->length);
 
     game->all_levels = g_levels;
     UPDATE_STATUS(game, "Updating Map...");
-    game->level = parse_level_list(game->_pid, (ptr_t)tmp.room2.pLevel);
+    game->level = parse_level_list((ptr_t)tmp.room2.pLevel);
     tmp.room2.pLevel = game->level;
     memcpy(&pc, &tmp, sizeof(PlayerContent));
     memcpy(&game->player, &player, sizeof(Player));
@@ -337,25 +379,4 @@ bool update_game_state(GameState *game)
     pthread_mutex_unlock(&game->mutex);
 
     return TRUE;
-}
-
-void init_game_state(GameState *game)
-{
-    memset(game, 0, sizeof(GameState));
-    g_player_name_setting = game->player_name_setting;
-    UPDATE_STATUS(game, "Loading...");
-    g_unit_table = hnew(0, unit_deleter);
-    pthread_mutex_init(&game->mutex, NULL);
-}
-
-void destroy_game_state(GameState *game)
-{
-    pthread_mutex_lock(&game->mutex);
-    free_all_levels();
-    game->level = NULL;
-    hdelall(g_unit_table);
-    pthread_mutex_unlock(&game->mutex);
-    pthread_mutex_destroy(&game->mutex);
-    memset((char *)game + PLAYER_DATA_NAME_MAX,
-           0, sizeof(GameState) - PLAYER_DATA_NAME_MAX);
 }
