@@ -15,7 +15,7 @@ void log_Level(Level *ptr)
               "    dword dwPosY: %08x\n"
               "    dword dwSizeX: %08x\n"
               "    dword dwSizeY: %08x\n"
-              "    dword _3[16]: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08 %08x %08 %08x %08 %08x %08x\n"
+              "    dword _3[16]: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
               "    Level* pNext: %16jx\n"
               "    dword _4: %08x %08x %08x %08x\n"
               "    ActMisc* pMisc: %16jx\n"
@@ -508,6 +508,7 @@ inline bool is_valid_PresetUnit(PresetUnit *ptr)
 
 inline bool is_valid_Path(Path *ptr)
 {
+    /* log_Path(ptr); /\* DEBUG *\/ */
     return IS_ALIGNED(ptr)
         && is_valid_ptr((ptr_t)ptr->pRoom1)
         /* && (!ptr->pRoomUnk || is_valid_ptr((ptr_t)ptr->pRoomUnk)) */

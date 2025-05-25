@@ -140,7 +140,7 @@ bool memreadall(pid_t pid, bool quick, t_read_callback *on_page_read, void *data
 
 inline bool is_valid_ptr(ptr_t ptr)
 {
-    if (!IS_ALIGNED(ptr)) {
+    if (!ptr || !IS_ALIGNED(ptr)) {
         return FALSE;
     }
 

@@ -59,6 +59,77 @@ static void free_maybe_player(PlayerList *ptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+static bool update_unit_callback(void *node_value, void *data)
+{
+    GameState *game = data;
+    UnitWithAddr *uwa = node_value;
+
+    /* if (uwa->unit.dwType == 0 && uwa->unit.dwTxtFileNo == 0x1) { */
+    /*     return FALSE; */
+    /* } */
+
+    /* static Act act; */
+    static Path path;
+    static UnitAny u;
+    UnitAny *next;
+
+    if (!memread(game->_pid, uwa->unit_addr, sizeof(UnitAny),
+                 find_UnitAny_callback, &u)) {
+        LOG_WARNING("Can't refresh unit");
+        hdel(g_unit_table, uwa->unit.dwUnitId);
+        return FALSE;
+    }
+    /* log_UnitAny(&u); */
+    next = uwa->unit.pNext;
+
+    /* if (u.pAct && is_valid_ptr((ptr_t)u.pAct)) { */
+    /*     if (!memread(game->_pid, (ptr_t)u.pAct, sizeof(Act), */
+    /*                  find_Act_callback, &act)) {  //TODO: this fails a lot */
+    /*         LOG_WARNING("Can't resfresh unit's Act, removing from Htable"); */
+    /*         hdel(g_unit_table, uwa->unit.dwUnitId); */
+    /*         return FALSE; */
+    /*     } */
+    /*     DUPE(u.pAct, &act, sizeof(Act)); */
+    /* } */
+    /* if (uwa->unit.pAct) { */
+    /*     FREE(uwa->unit.pAct); */
+    /* } */
+
+    if (u.pPath && is_valid_ptr((ptr_t)u.pPath)) {
+        if (!memread(game->_pid, (ptr_t)u.pPath, sizeof(Path),
+                     find_Path_callback, &path)) {  //TODO: this fails a lot
+            LOG_WARNING("Can't resfresh unit's Path, removing from Htable");
+            hdel(g_unit_table, uwa->unit.dwUnitId);
+            return FALSE;
+        }
+        DUPE(u.pPath, &path, sizeof(Path));
+    }
+    if (uwa->unit.pPath) {
+        FREE(uwa->unit.pPath);
+    }
+
+    memcpy(&uwa->unit, &u, sizeof(UnitAny));
+    uwa->unit.pNext = next;
+
+    return FALSE;
+}
+
+static void unit_deleter(size_t unused_key, void *node_value)
+{
+    UnitWithAddr *uwa = node_value;
+    (void)unused_key;
+
+    /* if (uwa->unit.pAct) { */
+    /*     FREE(uwa->unit.pAct); */
+    /* } */
+    if (uwa->unit.pPath) {
+        FREE(uwa->unit.pPath);
+    }
+    FREE(uwa);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 static bool deep_validate_Player(pid_t pid, Player *maybe_player)
 {
     static PlayerData player_data;
@@ -192,7 +263,8 @@ static bool update_player(GameState *game, Player *player)
 
     memcpy(player, &pl->player, sizeof(Player));
     log_Player(player);
-    LOG_INFO("Woop woop! Found Player ptr at %16jx [%d]", (ptr_t)pl->player_addr, pl->idx); /* DEBUG */
+    LOG_INFO("Woop woop! Found Player ptr at %16jx [%d]",
+             (ptr_t)pl->player_addr, pl->idx); /* DEBUG */
     return TRUE;
 }
 
@@ -207,7 +279,7 @@ bool update_game_state(GameState *game)
         return FALSE;
     }
 
-    UPDATE_STATUS(game, "Updating PlayerData...");
+    UPDATE_STATUS(game, "Updating Game...");
     if (!memread(game->_pid, (ptr_t)player.pPlayerData, sizeof(PlayerData),
                  find_PlayerData_callback, &tmp.player_data)) {
         LOG_ERROR("Can't find playerData");
@@ -225,17 +297,13 @@ bool update_game_state(GameState *game)
     /* } */
     /* log_Act(&tmp.act); */
 
-    UPDATE_STATUS(game, "Updating Path...");
     if (!memread(game->_pid, (ptr_t)player.pPath, sizeof(Path),
                  find_Path_callback, &tmp.path)) {
-        //TODO: handle this the smart way
-        // -> don't go to the 1st player of the list :/
         LOG_ERROR("Can't find path");
         return FALSE;
     }
     log_Path(&tmp.path);
 
-    UPDATE_STATUS(game, "Updating Room1...");
     if (!memread(game->_pid, (ptr_t)tmp.path.pRoom1, sizeof(Room1),
                  find_Room1_callback, &tmp.room1)) {
         LOG_ERROR("Can't find room1");
@@ -243,7 +311,6 @@ bool update_game_state(GameState *game)
     }
     /* log_Room1(&tmp.room1); */
 
-    UPDATE_STATUS(game, "Updating Room2...");
     if (!memread(game->_pid, (ptr_t)tmp.room1.pRoom2, sizeof(Room2),
                  find_Room2_callback, &tmp.room2)) {
         LOG_ERROR("Can't find room2");
@@ -252,7 +319,11 @@ bool update_game_state(GameState *game)
     /* log_Room2(&tmp.room2); */
 
     pthread_mutex_lock(&game->mutex);
+    UPDATE_STATUS(game, "Updating Units...");
+    hiter(g_unit_table, update_unit_callback, game);
+
     game->all_levels = g_levels;
+    UPDATE_STATUS(game, "Updating Map...");
     game->level = parse_level_list(game->_pid, (ptr_t)tmp.room2.pLevel);
     tmp.room2.pLevel = game->level;
     memcpy(&pc, &tmp, sizeof(PlayerContent));
@@ -262,7 +333,7 @@ bool update_game_state(GameState *game)
     game->player.pPath = &pc.path;
     game->player.pPath->pRoom1 = &pc.room1;
     game->player.pPath->pRoom1->pRoom2 = &pc.room2;
-    strcpy(game->status, "Fresh.");
+    UPDATE_STATUS(game, "Fresh.");
     pthread_mutex_unlock(&game->mutex);
 
     return TRUE;
@@ -272,7 +343,8 @@ void init_game_state(GameState *game)
 {
     memset(game, 0, sizeof(GameState));
     g_player_name_setting = game->player_name_setting;
-    strcpy(game->status, "Loading...");
+    UPDATE_STATUS(game, "Loading...");
+    g_unit_table = hnew(0, unit_deleter);
     pthread_mutex_init(&game->mutex, NULL);
 }
 
@@ -281,6 +353,7 @@ void destroy_game_state(GameState *game)
     pthread_mutex_lock(&game->mutex);
     free_all_levels();
     game->level = NULL;
+    hdelall(g_unit_table);
     pthread_mutex_unlock(&game->mutex);
     pthread_mutex_destroy(&game->mutex);
     memset((char *)game + PLAYER_DATA_NAME_MAX,

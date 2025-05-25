@@ -44,13 +44,13 @@ static bool main_loop(bool loop)
         successful_update = update_game_state(&game);
         if (successful_update) {
             LOG_INFO("{"
-                     "\"seed\": %d, "
+                     /* "\"seed\": %d, " */
                      "\"x\": %d, "
                      "\"y\": %d, "
                      "\"area_name\": \"%s\", "
                      "\"area\": %d"
                      "}",
-                     game.player.pAct->dwMapSeed,
+                     /* game.player.pAct->dwMapSeed, */
                      game.player.pPath->xPos,
                      game.player.pPath->yPos,
                      AREAS[game.level->dwLevelNo],

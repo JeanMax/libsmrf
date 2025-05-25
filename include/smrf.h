@@ -12,15 +12,14 @@
 #include <pthread.h>
 
 #include "smrf/d2structs.h"
+#include "smrf/util/hash.h"
 
 #include "smrf/d2sdk.h"  // for convenience when using the lib
 
+extern Htable *g_unit_table;  //TODO: berk
 
-// TODO: optimize lock use
 #define UPDATE_STATUS(game, statux) do {        \
-        pthread_mutex_lock(&game->mutex);       \
         strcpy(game->status, statux);           \
-        pthread_mutex_unlock(&game->mutex);     \
     } while (0)
 
 
@@ -43,14 +42,15 @@ struct PlayerContent {
     Room2 room2;
 };
 
+
 #define STATUS_LEN_MAX 32
 
 typedef  struct GameState  GameState;
 struct GameState {
-    char player_name_setting[PLAYER_DATA_NAME_MAX];
+    char player_name_setting[PLAYER_DATA_NAME_MAX];  // need to be 1st
     char status[STATUS_LEN_MAX];
-    Player player;
     Level *level;
+    Player player;
     ptr_t _player_addr; //TODO: internal, hide
     pid_t _pid; //TODO: internal, hide
     byte _pad[4];
