@@ -1,5 +1,5 @@
-#ifndef _TYPES_h
-#define _TYPES_h
+#ifndef _TYPES_H
+#define _TYPES_H
 
 #include <stdlib.h> // size_t
 #include <sys/types.h> // pid_t

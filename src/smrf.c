@@ -2,6 +2,7 @@
 
 #include "smrf/parse.h"
 #include "smrf/proc.h"
+#include "smrf/util/malloc.h"
 #include "smrf/util/list.h"
 #include "smrf/util/log.h"
 

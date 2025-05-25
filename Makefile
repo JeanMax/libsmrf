@@ -20,7 +20,8 @@
 PROJECT = libsmrf$(OS).a
 
 # file-names of the sources
-SRC_NAME = smrf.c  proc.c  parse.c  d2structs.c  d2sdk.c  util/log.c
+SRC_NAME = smrf.c  proc.c  parse.c  d2structs.c  d2sdk.c  \
+           util/log.c  util/hash.c
 
 # name of the example to make
 PROJECT_EXAMPLE = smrfexample

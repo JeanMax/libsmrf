@@ -2,6 +2,7 @@
 
 #include "proc.h"  // is_valid_ptr / memread
 #include "util/list.h"
+#include "util/malloc.h"
 
 
 Level      *g_levels[MAX_AREA] = {0};
