@@ -136,6 +136,10 @@ static UnitAny *store_unit(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
         return ret;
     }
 
+    if (u.dwType == 1 && u.wIsCorpse == 0x1) {  // remove dead monsters
+        return ret;
+    }
+
     UnitWithAddr *uwa = hget(g_unit_table, u.dwUnitId);
     if (uwa) {
         LOG_DEBUG("Won't update unit %x", u.dwUnitId);

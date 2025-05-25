@@ -373,10 +373,11 @@ void log_UnitAny(UnitAny *ptr)
               "    UnitAny* pNext: %16jx\n"
               "    void*    pRoomNext: %16jx\n"
               /* "    dword _dunno6[5]: 08x\n" */
-              /* "    dword dwPlayerClass: %08x\n" */
+              "    dword dwPlayerClass: %08x\n"
               /* "    dword _dunno7[11]: 08x\n" */
-              /* "    word _pad2: %04x\n" */
-              /* "    word wIsCorpse: %04x\n" */
+              "    word _pad2: %04x\n"
+              "    byte wIsCorpse: %02x\n"
+              "    byte _pad3: %02x\n"
               "}",
               ptr->dwType,
               ptr->dwTxtFileNo,

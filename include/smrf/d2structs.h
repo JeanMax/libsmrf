@@ -250,11 +250,12 @@ struct UnitAny {
     dword _dunno5[20];        // 0x108
     UnitAny* pNext;           // 0x150
     void*    pRoomNext;       // 0x158
-    /* dword _dunno6[5];         // 0x160 */
-    /* dword dwPlayerClass;      // 0x174 */
-    /* dword _dunno7[11];        // 0x178 */
-    /* word _pad2;               // 0x1a4 */
-    /* word wIsCorpse;           // 0x1a6 */
+    dword _dunno6[5];         // 0x160
+    dword dwPlayerClass;      // 0x174
+    dword _dunno7[11];        // 0x178
+    word _pad2;            // 0x1a4
+    byte wIsCorpse;           // 0x1ae
+    byte _pad3;           // 0x1af
 };
 
 

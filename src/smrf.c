@@ -116,6 +116,12 @@ static bool update_unit_callback(void *node_value, void *data)
         return FALSE;
     }
     /* log_UnitAny(&u); */
+
+    if (u.dwType == 1 && u.wIsCorpse == 0x1) {  // remove dead monsters
+        hdel(g_unit_table, uwa->unit.dwUnitId);
+        return FALSE;
+    }
+
     next = uwa->unit.pNext;
 
     /* if (u.pAct && is_valid_ptr((ptr_t)u.pAct)) { */
