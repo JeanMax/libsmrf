@@ -1,6 +1,7 @@
 #ifndef _D2STRUCTS_H
 #define _D2STRUCTS_H
 
+#include "d2sdk.h"
 #include "util/log.h"
 #include "util/types.h"
 
@@ -216,16 +217,28 @@ struct PlayerData {
 };
 
 
+typedef  struct MonsterData  MonsterData;
+struct MonsterData {
+    void *pDunno;  // same ptr accross different monsters
+    byte _1[4];
+    dword dwOwnerId;
+    byte _2[8];
+    word wIsUnique;
+    byte fType;
+    byte _pad[5];
+};
+
 typedef  struct UnitAny  Player;
+typedef  struct UnitAny  Monster;
 struct UnitAny {
-    dword dwType;      // 0x00
+    dword dwType;      // enum UnitType
     dword dwTxtFileNo; // 0x04
     dword dwUnitId;          // 0x08
     dword dwMode;    // 0x0C
     union {
         PlayerData* pPlayerData;
+        MonsterData *pMonsterData;
         void* pItemData;
-        void* pMonsterData;
         void* pObjectData;
         // TileData *pTileData doesn't appear to exist anymore
     };               // 0x10
@@ -235,7 +248,7 @@ struct UnitAny {
     dword _dunno1[2];// 0x30
     dword dwSeed[2]; // 0x28
     union {
-        Path* pPath;
+        Path* pPath;  // for monster / player / npc
         void* pItemPath;
         void* pObjectPath;
     };                        // 0x38
@@ -267,6 +280,7 @@ void log_PresetUnit(PresetUnit *ptr);
 void log_Path(Path *ptr);
 void log_Act(Act *ptr);
 void log_ActMisc(ActMisc *ptr);
+void log_MonsterData(MonsterData *ptr);
 void log_PlayerData(PlayerData *ptr);
 void log_Player(Player *ptr);
 void log_UnitAny(UnitAny *ptr);
@@ -279,6 +293,7 @@ bool is_valid_PresetUnit(PresetUnit *ptr);
 bool is_valid_Path(Path *ptr);
 bool is_valid_Act(Act *ptr);
 bool is_valid_ActMisc(ActMisc *ptr);
+bool is_valid_MonsterData(MonsterData *ptr);
 bool is_valid_PlayerData(PlayerData *ptr);
 bool is_valid_Player(Player *ptr);
 bool is_valid_UnitAny(UnitAny *ptr);
@@ -305,6 +320,7 @@ DEF_STRUCT_CPY_CALLBACK(Path)
 DEF_STRUCT_CPY_CALLBACK(Act)
 DEF_STRUCT_CPY_CALLBACK(ActMisc)
 DEF_STRUCT_CPY_CALLBACK(PlayerData)
+DEF_STRUCT_CPY_CALLBACK(MonsterData)
 DEF_STRUCT_CPY_CALLBACK(Player)
 DEF_STRUCT_CPY_CALLBACK(UnitAny)
 

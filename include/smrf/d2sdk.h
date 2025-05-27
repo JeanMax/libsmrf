@@ -308,29 +308,66 @@ inline bool is_backward_tile(dword id)
 }
 
 
+enum MonsterFlag {
+    MONSTER_NORMAL = 1 << 0,
+    MONSTER_SUPER = 1 << 1,
+    MONSTER_CHAMP = 1 << 2,
+    MONSTER_BOSS = 1 << 3,
+    MONSTER_MINION = 1 << 4,
+    MONSTER_POSSESSED = 1 << 5,
+    MONSTER_GHOSTLY = 1 << 6,
+    MONSTER_MULTISHOT = 1 << 7,
+    /* MONSTER_SUPER = MONSTER_BOSS | MONSTER_NORMAL, */
+    //TODO: for super, check dwTxtFileNo id match a given list?
+/*     int ids[] = { */
+/*         58, 59, 60, 61, 62, */
+/*         101, 102, 103, 104, 105, */
+/*         278, 279, 280, 281, 282, */
+/*         298, 299, 300, */
+/*         645, 646, 647, */
+/*         662, 663, 664, */
+/*         667, 668, 669, 670, */
+/*         675, 676 */
+/*     }; */
+};
+typedef enum MonsterFlag  MonsterFlag;
+
+//TODO: monster name / id in monstat.txt
+
 #define MAX_AREA 137
 extern const char *AREAS[MAX_AREA];
 
-enum collision_flag {
-    COL_NONE = 0x0000,
-    COL_BLOCKWALK = 0x0001,
-    COL_BLOCKLINEOFSIGHT = 0x0002,
-    COL_WALL = 0x0004,
-    COL_BLOCKPLAYER = 0x0008,
-    COL_ALTERNATETILE = 0x0010,
-    COL_BLANK = 0x0020,
-    COL_MISSILE = 0x0040,
-    COL_PLAYER = 0x0080,
-    COL_NPCLOCATION = 0x0100,
-    COL_ITEM = 0x0200,
-    COL_OBJECT = 0x0400,
-    COL_CLOSEDDOOR = 0x0800,
-    COL_NPCCOLLISION = 0x1000,
-    COL_FRIENDLYNPC = 0x2000,
-    COL_UNKNOWN = 0x4000,
-    COL_DEADBODY = 0x8000, // also portal
-    COL_THICKENEDWALL = 0xfefe,
-    COL_AVOID = 0xffff
+/* enum collision_flag { */
+/*     COL_NONE = 0x0000, */
+/*     COL_BLOCKWALK = 0x0001, */
+/*     COL_BLOCKLINEOFSIGHT = 0x0002, */
+/*     COL_WALL = 0x0004, */
+/*     COL_BLOCKPLAYER = 0x0008, */
+/*     COL_ALTERNATETILE = 0x0010, */
+/*     COL_BLANK = 0x0020, */
+/*     COL_MISSILE = 0x0040, */
+/*     COL_PLAYER = 0x0080, */
+/*     COL_NPCLOCATION = 0x0100, */
+/*     COL_ITEM = 0x0200, */
+/*     COL_OBJECT = 0x0400, */
+/*     COL_CLOSEDDOOR = 0x0800, */
+/*     COL_NPCCOLLISION = 0x1000, */
+/*     COL_FRIENDLYNPC = 0x2000, */
+/*     COL_UNKNOWN = 0x4000, */
+/*     COL_DEADBODY = 0x8000, // also portal */
+/*     COL_THICKENEDWALL = 0xfefe, */
+/*     COL_AVOID = 0xffff */
+/* }; */
+
+enum UnitType {
+    UNIT_PLAYER = 0,
+    UNIT_MONSTER = 1,
+    UNIT_OBJECT = 2,
+    UNIT_MISSILE = 3,
+    UNIT_ITEM = 4,
+    UNIT_TILE = 5,
+    UNIT_MAX = 6
 };
+typedef enum UnitType  UnitType;
 
 #endif

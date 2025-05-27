@@ -65,7 +65,9 @@ int memread(ptr_t start_address, size_t length,
         if (geteuid()) {
             LOG_ERROR("Try again as root!");
         }
-        exit(EXIT_FAILURE);
+        /* exit(EXIT_FAILURE); */
+        g_pid = 0;
+        return 0;
     }
     fseek(mem_file, (long)start_address, SEEK_SET);
 #else
@@ -73,7 +75,9 @@ int memread(ptr_t start_address, size_t length,
                                  0, g_pid);
     if (!process) {
         LOG_ERROR("Can't read proc memory (try again as admin?)");
-        exit(EXIT_FAILURE);
+        /* exit(EXIT_FAILURE); */
+        g_pid = 0;
+        return 0;
     }
 #endif
     static byte read_buf[PAGE_LENGTH];
@@ -122,8 +126,9 @@ bool memreadall(bool quick, t_read_callback *on_page_read, void *data)
         size_t length = g_maps_range[i].end - g_maps_range[i].start;
         LOG_INFO("map at %12jx - %12jx,     size: %8jx",
                  start, g_maps_range[i].end, length); /* DEBUG */
-        if (quick && !is_valid_ptr__quick(start)) {
-            LOG_DEBUG("quick skip: %12jx", start); /* DEBUG */
+        if (quick &&
+            (length >= QUICK_MAX_MAP_LEN || !is_valid_ptr__quick(start))) {
+            LOG_INFO("quick skip: %12jx", start); /* DEBUG */
             continue;
         }
         if (memread(start, length, on_page_read, data) == 2) {

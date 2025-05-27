@@ -8,6 +8,8 @@
 
 #define DEFAULT_D2R_WINDOW_TITLE "Diablo II: Resurrected"
 
+#define MAX_MAYBE_PLAYER 1024
+size_t g_maybe_player_count = 0;
 static void unit_deleter(size_t unused_key, void *node_value)
 {
     UnitWithAddr *uwa = node_value;
@@ -18,6 +20,9 @@ static void unit_deleter(size_t unused_key, void *node_value)
     /* } */
     if (uwa->unit.pPath) {
         FREE(uwa->unit.pPath);
+    }
+    if (uwa->unit.dwType == UNIT_MONSTER && uwa->unit.pMonsterData) {
+        FREE(uwa->unit.pMonsterData);
     }
     FREE(uwa);
 }
@@ -56,7 +61,6 @@ static void reset_game_state(GameState *game)
 //TODO: add enum for callback return
 inline static bool search_player_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
-    static int i = 0;           /* DEBUG */
     byte *b = buf;
     Player *player;
     PlayerList **maybe_player_list = (PlayerList **)data;
@@ -65,15 +69,22 @@ inline static bool search_player_callback(byte *buf, size_t buf_len, ptr_t addre
         player = (Player *)b;
         if (is_valid_Player(player)) {
             ptr_t here = address + (ptr_t)(b - buf);
-            LOG_INFO("found maybe-Player ptr at %16jx [%d]", here, i); /* DEBUG */
+            LOG_INFO("found maybe-Player ptr at %16jx [%d]",
+                     here, ++g_maybe_player_count); /* DEBUG */
             log_Player(player);                          /* DEBUG */
 
             PlayerList *pl;
             MALLOC(pl, sizeof(PlayerList));
             memcpy(&pl->player, b, sizeof(Player));
             pl->player_addr = here;
-            pl->idx = i++;      /* DEBUG */
+            pl->idx = g_maybe_player_count;      /* DEBUG */
             PUSH_LINK(*maybe_player_list, pl);
+
+            if (g_maybe_player_count > MAX_MAYBE_PLAYER) {
+                g_maybe_player_count = 0;
+                LOG_ERROR("Too many Player found, stopping search");
+                return FALSE;  // TODO: might want to reset pid too...
+            }
         }
         b += sizeof(ptr_t);
         buf_len -= sizeof(ptr_t);
@@ -104,10 +115,14 @@ static bool update_unit_callback(void *node_value, void *data)
     /*     return FALSE; */
     /* } */
 
+    static MonsterData mdata;
     /* static Act act; */
     static Path path;
     static UnitAny u;
     UnitAny *next;
+    MonsterData *m;
+    /* Act *a; */
+    Path *p;
 
     if (!memread(uwa->unit_addr, sizeof(UnitAny),
                  find_UnitAny_callback, &u)) {
@@ -117,16 +132,32 @@ static bool update_unit_callback(void *node_value, void *data)
     }
     /* log_UnitAny(&u); */
 
-    if (u.dwType == 1 && u.wIsCorpse == 0x1) {  // remove dead monsters
+    if (!(u.dwUnitId == uwa->unit.dwUnitId
+          && u.dwType == uwa->unit.dwType)) {  // well, shit
+        LOG_WARNING("Wrong unit refresh");
+        hdel(g_unit_table, uwa->unit.dwUnitId);
+        //TODO: store addr and don't read it ever again??
+        return FALSE;
+    }
+
+    if (u.dwType == UNIT_MONSTER && u.wIsCorpse == 1) {  // remove dead monsters
         hdel(g_unit_table, uwa->unit.dwUnitId);
         return FALSE;
     }
 
     next = uwa->unit.pNext;
+    /* a = uwa->unit.pAct; */
+    p = uwa->unit.pPath;
+    m = uwa->unit.pMonsterData;
+    memcpy(&uwa->unit, &u, sizeof(UnitAny));
+    uwa->unit.pNext = next;
+    /* uwa->unit.pAct = a; */
+    uwa->unit.pPath = p;
+    uwa->unit.pMonsterData = m;
 
     /* if (u.pAct && is_valid_ptr((ptr_t)u.pAct)) { */
     /*     if (!memread((ptr_t)u.pAct, sizeof(Act), */
-    /*                  find_Act_callback, &act)) {  //TODO: this fails a lot */
+    /*                  find_Act_callback, &act)) { */
     /*         LOG_WARNING("Can't resfresh unit's Act, removing from Htable"); */
     /*         hdel(g_unit_table, uwa->unit.dwUnitId); */
     /*         return FALSE; */
@@ -136,10 +167,12 @@ static bool update_unit_callback(void *node_value, void *data)
     /* if (uwa->unit.pAct) { */
     /*     FREE(uwa->unit.pAct); */
     /* } */
+    /* uwa->unit.pAct = u.pAct; */
 
-    if (u.pPath && is_valid_ptr((ptr_t)u.pPath)) {
-        if (!memread((ptr_t)u.pPath, sizeof(Path),
-                     find_Path_callback, &path)) {  //TODO: this fails a lot
+    if (u.pPath) {
+        if (!is_valid_ptr((ptr_t)u.pPath)
+            || !memread((ptr_t)u.pPath, sizeof(Path),
+                        find_Path_callback, &path)) {
             LOG_WARNING("Can't resfresh unit's Path, removing from Htable");
             hdel(g_unit_table, uwa->unit.dwUnitId);
             return FALSE;
@@ -149,9 +182,25 @@ static bool update_unit_callback(void *node_value, void *data)
     if (uwa->unit.pPath) {
         FREE(uwa->unit.pPath);
     }
+    uwa->unit.pPath = u.pPath;
 
-    memcpy(&uwa->unit, &u, sizeof(UnitAny));
-    uwa->unit.pNext = next;
+    if (u.dwType == UNIT_MONSTER) {
+        if (u.pMonsterData) {
+            if (!is_valid_ptr((ptr_t)u.pMonsterData)
+                || !memread((ptr_t)u.pMonsterData, sizeof(MonsterData),
+                            find_MonsterData_callback, &mdata)) {
+                LOG_WARNING("Can't resfresh unit's MonsterData, removing from Htable");
+                hdel(g_unit_table, uwa->unit.dwUnitId);
+                return FALSE;
+            }
+            DUPE(u.pMonsterData, &mdata, sizeof(MonsterData));
+        }
+        if (uwa->unit.pMonsterData) {
+            FREE(uwa->unit.pMonsterData);
+        }
+        uwa->unit.pMonsterData = u.pMonsterData;
+
+    }
 
     return FALSE;
 }
@@ -247,7 +296,7 @@ static bool update_player(GameState *game, Player *player, bool need_full_search
     UPDATE_STATUS(game, "Out of game...");
     free_maybe_player(maybe_player_list);
     maybe_player_list = NULL;
-    memreadall(FALSE, search_player_callback, &maybe_player_list);
+    memreadall(TRUE, search_player_callback, &maybe_player_list);
     if (!maybe_player_list) {
         LOG_ERROR("Can't find any Player ptr");
         return FALSE;

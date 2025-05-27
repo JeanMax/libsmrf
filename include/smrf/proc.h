@@ -15,9 +15,9 @@ struct MapAddress {
 
 typedef bool t_read_callback(byte *buf, size_t buf_len, ptr_t address, void *data);
 
-
+#define QUICK_MAX_MAP_LEN 0x8000000
 #define is_valid_ptr__quick(ptr) (IS_ALIGNED(ptr)           \
-                                  && ptr >= 0x100000        \
+                                  && ptr >= 0x1000          \
                                   && ptr <= 0x7fffffffffff)
 
 

@@ -320,6 +320,22 @@ void log_PlayerData(PlayerData *ptr)
               (ptr_t)ptr->pHellWaypoint);
 }
 
+
+void log_MonsterData(MonsterData *ptr)
+{
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "MonsterData" CLR_RESET " {\n"
+              "    void* pDunno: %16jx\n"
+              "    dword _1[18]: %08x %08x %08x %08x %08x %08x %08x %08x %08x "
+              "%08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
+              "    byte fType: %02x\n"
+              "}",
+              ptr->pDunno,
+              ptr->_1[0], ptr->_1[1], ptr->_1[2], ptr->_1[3], ptr->_1[4], ptr->_1[5], ptr->_1[6], ptr->_1[7], ptr->_1[8], ptr->_1[9], ptr->_1[10], ptr->_1[11], ptr->_1[12], ptr->_1[13], ptr->_1[14], ptr->_1[15], ptr->_1[16], ptr->_1[17],
+              ptr->fType);
+    hex_dump(ptr, sizeof(MonsterData));
+}
+
 void log_Player(Player *ptr)
 {
     (void)ptr;
@@ -400,12 +416,13 @@ void log_UnitAny(UnitAny *ptr)
               (ptr_t)ptr->pSkills,
               /* ptr->_dunno5[20], */
               (ptr_t)ptr->pNext,
-              (ptr_t)ptr->pRoomNext);
-              /* /\* ptr->_dunno6[5], *\/ */
-              /* ptr->dwPlayerClass, */
-              /* /\* ptr->_dunno7[11], *\/ */
-              /* ptr->_pad2, */
-              /* ptr->wIsCorpse); */
+              (ptr_t)ptr->pRoomNext,
+              /* ptr->_dunno6[5], */
+              ptr->dwPlayerClass,
+              /* ptr->_dunno7[11], */
+              ptr->_pad2,
+              ptr->wIsCorpse,
+              ptr->_pad2);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -469,22 +486,24 @@ inline bool is_valid_Room2(Room2 *ptr)
 {
     return IS_ALIGNED(ptr)
         /* && is_valid_ptr((ptr_t)ptr->pRoom2Near) */
-        && is_valid_ptr((ptr_t)ptr->pRoomTiles)
+        /* && (!ptr->pRoomTiles || is_valid_ptr((ptr_t)ptr->pRoomTiles)) */
         && is_valid_ptr((ptr_t)ptr->pLevel)
-        && (!ptr->pPreset || is_valid_ptr((ptr_t)ptr->pPreset));
+        && (!ptr->pPreset || is_valid_ptr((ptr_t)ptr->pPreset))
+        && (!ptr->pNext || is_valid_ptr((ptr_t)ptr->pNext))
         ;
 }
 
 inline bool is_valid_Room1(Room1 *ptr)
 {
+    /* log_Room1(ptr);            /\* DEBUG *\/ */
     return IS_ALIGNED(ptr)
-        && (!ptr->pRoomsNear || is_valid_ptr((ptr_t)ptr->pRoomsNear))
+        /* && (!ptr->pRoomsNear || is_valid_ptr((ptr_t)ptr->pRoomsNear)) */
         && (!ptr->pRoom2 || is_valid_ptr((ptr_t)ptr->pRoom2))
-        && (!ptr->pDunno2 || is_valid_ptr((ptr_t)ptr->pDunno2))
+        /* && (!ptr->pDunno2 || is_valid_ptr((ptr_t)ptr->pDunno2)) */
         /* && is_valid_ptr((ptr_t)ptr->pDunno3) */
-        && (!ptr->Coll || is_valid_ptr((ptr_t)ptr->Coll))
-        /* && is_valid_ptr((ptr_t)ptr->pUnitFirst) */
-        /* && is_valid_ptr((ptr_t)ptr->pNext) */
+        /* && (!ptr->Coll || is_valid_ptr((ptr_t)ptr->Coll)) */
+        && (!ptr->pUnitFirst || is_valid_ptr((ptr_t)ptr->pUnitFirst))
+        && (!ptr->pNext || is_valid_ptr((ptr_t)ptr->pNext))
         ;
 }
 
@@ -512,6 +531,8 @@ inline bool is_valid_Path(Path *ptr)
     /* log_Path(ptr); /\* DEBUG *\/ */
     return IS_ALIGNED(ptr)
         && is_valid_ptr((ptr_t)ptr->pRoom1)
+        && ptr->xPos > 0
+        && ptr->yPos > 0
         /* && (!ptr->pRoomUnk || is_valid_ptr((ptr_t)ptr->pRoomUnk)) */
         /* && (!ptr->pUnit || is_valid_ptr((ptr_t)ptr->pUnit)) */
         /* && (!ptr->pTargetUnit || is_valid_ptr((ptr_t)ptr->pTargetUnit)); */
@@ -534,6 +555,12 @@ inline bool is_valid_ActMisc(ActMisc *ptr)
         && is_valid_ptr((ptr_t)ptr->pAct)
         && is_valid_ptr((ptr_t)ptr->pLevelFirst)
         && ptr->dwStaffTombLevel < 12; //TODO
+}
+
+inline bool is_valid_MonsterData(MonsterData *ptr)
+{
+    return IS_ALIGNED(ptr);
+    /* && ptr->fType < TODO; */
 }
 
 inline bool is_valid_PlayerData(PlayerData *ptr)
@@ -574,17 +601,18 @@ inline bool is_valid_Player(Player *ptr)
     /*             is_valid_ptr((ptr_t)ptr->pPath) ); */
     /* LOG_WARNING("tr->dwAct < 5: %d", ptr->dwAct < 5); */
     return IS_ALIGNED(ptr)
-        && ptr->dwType == 0
+        && ptr->dwUnitId != 0
+        && ptr->dwType == UNIT_PLAYER
         && ptr->dwTxtFileNo == 1
-        /* && ptr->xPos <= 0xffff */
-        /* && ptr->yPos <= 0xffff */
+        /* && ptr->xPos > 0 */
+        /* && ptr->yPos > 0 */
         && ptr->dwAct < 5
         && is_valid_ptr__quick((ptr_t)ptr->pPlayerData)
         && is_valid_ptr__quick((ptr_t)ptr->pStats)
         && is_valid_ptr__quick((ptr_t)ptr->pInventory)
         && is_valid_ptr__quick((ptr_t)ptr->pSkills)
         && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
-        && (!ptr->pRoomNext || is_valid_ptr__quick((ptr_t)ptr->pRoomNext))
+        /* && (!ptr->pRoomNext || is_valid_ptr__quick((ptr_t)ptr->pRoomNext)) */
         && (!ptr->pAct || is_valid_ptr__quick((ptr_t)ptr->pAct))
         && is_valid_ptr__quick((ptr_t)ptr->pPath);
 }
@@ -592,10 +620,12 @@ inline bool is_valid_Player(Player *ptr)
 inline bool is_valid_UnitAny(UnitAny *ptr)
 {
     return IS_ALIGNED(ptr)
-        /* && ptr->dwType <= 5 */
-        /* && (is_valid_ptr__quick((ptr_t)ptr->pPlayerData) || ptr->dwType) */
+        && ptr->dwType <= 5
+        && ptr->dwUnitId != 0
+        && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
+        && (!ptr->pPlayerData || is_valid_ptr__quick((ptr_t)ptr->pPlayerData))
         /*     && ptr->dwAct < 5; */
         /* && is_valid_ptr((ptr_t)ptr->pAct) */
-        /* && is_valid_ptr((ptr_t)ptr->pPath) */
+        && is_valid_ptr((ptr_t)ptr->pPath)
         ;
 }

@@ -117,8 +117,9 @@ static PresetUnit *preset_in_list(PresetUnit *pu, PresetUnit *pu_list)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static UnitAny *store_unit(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
+static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
 {
+    static MonsterData mdata;
     static UnitAny u;
     static Path path;
     /* static Act act; */
@@ -132,11 +133,11 @@ static UnitAny *store_unit(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
 
     UnitAny *ret = u.pNext;
 
-    if (u.dwType > 2) {  // filter non player/monster/chest/shrine units
+    if (!(u.dwType == UNIT_MONSTER || u.dwType == UNIT_PLAYER)) {
         return ret;
     }
 
-    if (u.dwType == 1 && u.wIsCorpse == 0x1) {  // remove dead monsters
+    if (u.dwType == UNIT_MONSTER && u.wIsCorpse == 1) {  // remove dead monsters
         return ret;
     }
 
@@ -149,12 +150,11 @@ static UnitAny *store_unit(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
     /* if (!u.pAct || !is_valid_ptr((ptr_t)u.pAct) */
     /*     || !memread((ptr_t)u.pAct, sizeof(Act), */
     /*                 find_Act_callback, &act)) { */
-    /*     LOG_WARNING("Can't update unit's Act");  //TODO: this fails a lot */
+    /*     LOG_WARNING("Can't update unit's Act");  */
     /*     /\* log_Act(&act);    /\\* DEBUG *\\/ *\/ */
     /*     /\* log_UnitAny(&u);    /\\* DEBUG *\\/ *\/ */
     /*     return ret; */
     /* } */
-    /* DUPE(u.pAct, &act, sizeof(Act)); */
 
     if (!u.pPath || !is_valid_ptr((ptr_t)u.pPath)
         || !memread((ptr_t)u.pPath, sizeof(Path),
@@ -164,7 +164,23 @@ static UnitAny *store_unit(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
         /* log_UnitAny(&u);    /\* DEBUG *\/ */
         return ret;
     }
+
+    if (u.dwType == UNIT_MONSTER) {
+        if (!u.pMonsterData || !is_valid_ptr((ptr_t)u.pMonsterData)
+            || !memread((ptr_t)u.pMonsterData, sizeof(MonsterData),
+                        find_MonsterData_callback, &mdata)) {
+            LOG_WARNING("Can't update unit's MonsterData");  //TODO: this fails a lot
+            /* log_MonsterData(&mdata);    /\* DEBUG *\/ */
+            /* log_UnitAny(&u);    /\* DEBUG *\/ */
+            return ret;
+        }
+        DUPE(u.pMonsterData, &mdata, sizeof(MonsterData));
+            log_MonsterData(&mdata);    /* DEBUG */
+            log_UnitAny(&u);    /* DEBUG */
+    }
+
     DUPE(u.pPath, &path, sizeof(Path));
+    /* DUPE(u.pAct, &act, sizeof(Act)); */
 
     MALLOC(uwa, sizeof(UnitWithAddr));
     memcpy(&uwa->unit, &u, sizeof(UnitAny));
@@ -182,7 +198,8 @@ static UnitAny *parse_unit_list(ptr_t u_addr)
     UnitAny *u_last = NULL, *u_first = NULL;
 
     while (is_valid_ptr(u_addr)) {
-        u_addr = (ptr_t)(void *)store_unit(u_addr, &u_first, &u_last);
+        u_addr = (ptr_t)(void *)store_monster_or_player(u_addr,
+                                                        &u_first, &u_last);
     }
 
     return u_first;
