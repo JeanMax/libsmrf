@@ -656,17 +656,16 @@ inline bool is_valid_Player(Player *ptr)
     return IS_ALIGNED(ptr)
         && ptr->dwUnitId != 0
         && ptr->dwType == UNIT_PLAYER
-        /* && ptr->dwTxtFileNo == 1 */
-        /* && ptr->xPos > 0 */
-        /* && ptr->yPos > 0 */
+        && ptr->dwTxtFileNo == 1
+        && !ptr->xPos
+        && !ptr->yPos
         && ptr->dwAct < 5
-        && !ptr->wIsCorpse
         && is_valid_ptr__quick((ptr_t)ptr->pPlayerData)
         && is_valid_ptr__quick((ptr_t)ptr->pStats)
         && is_valid_ptr__quick((ptr_t)ptr->pInventory)
         && is_valid_ptr__quick((ptr_t)ptr->pSkills)
         && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
-        /* && (!ptr->pRoomNext || is_valid_ptr__quick((ptr_t)ptr->pRoomNext)) */
+        && (!ptr->pRoomNext || is_valid_ptr__quick((ptr_t)ptr->pRoomNext))
         && (!ptr->pAct || is_valid_ptr__quick((ptr_t)ptr->pAct))
         && is_valid_ptr__quick((ptr_t)ptr->pPath);
 }
@@ -674,7 +673,7 @@ inline bool is_valid_Player(Player *ptr)
 inline bool is_valid_UnitAny(UnitAny *ptr)
 {
     return IS_ALIGNED(ptr)
-        && ptr->dwType <= 5
+        && ptr->dwType < UNIT_MAX
         && ptr->dwUnitId != 0
         && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
         && (!ptr->pPlayerData || is_valid_ptr__quick((ptr_t)ptr->pPlayerData))
