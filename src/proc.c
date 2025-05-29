@@ -52,7 +52,7 @@ byte *memsearch(const void *mem, const void *search, size_t mem_len, size_t sear
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int memread(ptr_t start_address, size_t length,
+void *memread(ptr_t start_address, size_t length,
             t_read_callback *on_page_read, void *data)
 {
 #ifndef _WIN32
@@ -67,7 +67,7 @@ int memread(ptr_t start_address, size_t length,
         }
         /* exit(EXIT_FAILURE); */
         g_pid = 0;
-        return 0;
+        return NULL;
     }
     fseek(mem_file, (long)start_address, SEEK_SET);
 #else
@@ -77,13 +77,13 @@ int memread(ptr_t start_address, size_t length,
         LOG_ERROR("Can't read proc memory (try again as admin?)");
         /* exit(EXIT_FAILURE); */
         g_pid = 0;
-        return 0;
+        return NULL;
     }
 #endif
     static byte read_buf[PAGE_LENGTH];
     size_t read_len = 0;
     size_t page_len = MIN(PAGE_LENGTH, length);
-    int callback_ret, ret = 0;
+    void *ret = NULL;
 
     for (ptr_t address = start_address;
          address < start_address + length;
@@ -95,17 +95,14 @@ int memread(ptr_t start_address, size_t length,
         ReadProcessMemory(process, (void *)address, &read_buf, page_len, &read_len);
         // Toolhelp32ReadProcessMemory(g_pid, (void *)address, &read_buf, page_len, &read_len);
 #endif
-        if (!(callback_ret = on_page_read(read_buf, read_len, address, data))) {
-            ret = 2;
+        ret = on_page_read(read_buf, read_len, address, data);
+        if (ret) {
             break;
-        }
-        if (callback_ret > 1) {
-            ret = 2; //TODO: enum
         }
         if (read_len < page_len) {
             if (read_len) {
-                LOG_WARNING("something went wrong with memread (read_len: %zu)",
-                            (size_t)read_len);
+                LOG_ERROR("something went wrong with memread (read_len: %zu)",
+                          (size_t)read_len);
             }
             break;
         }
@@ -119,8 +116,10 @@ int memread(ptr_t start_address, size_t length,
     return ret;
 }
 
-bool memreadall(bool quick, t_read_callback *on_page_read, void *data)
+void *memreadall(bool quick, t_read_callback *on_page_read, void *data)
 {
+    void *ret = NULL;
+
     for (int i = 0; i < MAX_MAPS && g_maps_range[i].start; i++) {
         ptr_t start = g_maps_range[i].start;
         size_t length = g_maps_range[i].end - g_maps_range[i].start;
@@ -131,11 +130,12 @@ bool memreadall(bool quick, t_read_callback *on_page_read, void *data)
             LOG_INFO("quick skip: %12jx", start); /* DEBUG */
             continue;
         }
-        if (memread(start, length, on_page_read, data) == 2) {
+        ret = memread(start, length, on_page_read, data);
+        if (ret) {
 #ifdef NDEBUG
             fprintf(stderr, "\n");   /* DEBUG */
 #endif
-            return TRUE;
+            return ret;
         }
 #ifdef NDEBUG
         if (i && !(i % 10)) {
@@ -143,7 +143,8 @@ bool memreadall(bool quick, t_read_callback *on_page_read, void *data)
         }
 #endif
     }
-    return FALSE;
+
+    return ret;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -344,7 +345,7 @@ pid_t pid_of_cmd(const char *cmd_name)
 
 #ifdef _WIN32
 static pid_t g_temp_pid = {0};
-static bool CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lparam)
+static BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lparam)
 {
     char buffer[WINDOW_TITLE_MAX];
     int written = GetWindowTextA(hwnd, buffer, WINDOW_TITLE_MAX);

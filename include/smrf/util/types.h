@@ -16,10 +16,7 @@ typedef uint32_t dword;
 typedef uint64_t qword;
 typedef uint64_t ptr_t;
 
-
-#ifndef __cplusplus
-typedef int      bool;
-#endif
+#include <stdbool.h>
 #ifndef TRUE
 # define TRUE  1
 # define FALSE 0

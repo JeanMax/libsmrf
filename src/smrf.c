@@ -7,9 +7,12 @@
 #include "smrf/util/log.h"
 
 #define DEFAULT_D2R_WINDOW_TITLE "Diablo II: Resurrected"
+#define WINDOW_TITLE_OR_DEFAULT(game) (*game->window_title_setting ? game->window_title_setting : DEFAULT_D2R_WINDOW_TITLE)
 
-#define MAX_MAYBE_PLAYER 1024
+
+#define MAX_MAYBE_PLAYER 0x1000
 size_t g_maybe_player_count = 0;
+
 static void unit_deleter(size_t unused_key, void *node_value)
 {
     UnitWithAddr *uwa = node_value;
@@ -58,8 +61,7 @@ static void reset_game_state(GameState *game)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-//TODO: add enum for callback return
-inline static bool search_player_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
+inline static void *search_player_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
     byte *b = buf;
     Player *player;
@@ -71,7 +73,7 @@ inline static bool search_player_callback(byte *buf, size_t buf_len, ptr_t addre
             ptr_t here = address + (ptr_t)(b - buf);
             LOG_INFO("found maybe-Player ptr at %16jx [%d]",
                      here, ++g_maybe_player_count); /* DEBUG */
-            log_Player(player);                          /* DEBUG */
+            /* log_Player(player);                          /\* DEBUG *\/ */
 
             PlayerList *pl;
             MALLOC(pl, sizeof(PlayerList));
@@ -83,14 +85,14 @@ inline static bool search_player_callback(byte *buf, size_t buf_len, ptr_t addre
             if (g_maybe_player_count > MAX_MAYBE_PLAYER) {
                 g_maybe_player_count = 0;
                 LOG_ERROR("Too many Player found, stopping search");
-                return FALSE;  // TODO: might want to reset pid too...
+                return data;  // stop - TODO: might want to reset pid too...
             }
         }
         b += sizeof(ptr_t);
         buf_len -= sizeof(ptr_t);
     }
 
-    return TRUE; // keep reading
+    return NULL; // keep reading
 }
 
 static void free_maybe_player(PlayerList *ptr)
@@ -210,6 +212,7 @@ static bool update_unit_callback(void *node_value, void *data)
 static bool deep_validate_Player(Player *maybe_player)
 {
     //TODO: this is done twice, it's stupid
+    static Inventory inventory;
     static PlayerData player_data;
     /* static Act act; */
     static Path path;
@@ -224,7 +227,6 @@ static bool deep_validate_Player(Player *maybe_player)
         return FALSE;
     }
     log_PlayerData(&player_data);
-    log_Player(maybe_player);                          /* DEBUG */
     log_UnitAny(maybe_player);                          /* DEBUG */
 
 
@@ -276,7 +278,18 @@ static bool deep_validate_Player(Player *maybe_player)
     }
     log_Room2(&room2);
 
-    return TRUE;
+    if (!maybe_player->pInventory
+        || !memread((ptr_t)maybe_player->pInventory, sizeof(Inventory),
+                    find_Inventory_callback, &inventory)) {
+        LOG_WARNING("Can't validate Inventory");
+        return FALSE;
+    }
+    log_Inventory(&inventory);
+    LOG_DEBUG("main: classic=%d xpac=%d [%s]",
+              inventory.wIsMainClassic, inventory.wIsMainXpac,
+              player_data.szName);
+
+    return inventory.wIsMainXpac || inventory.wIsMainClassic != 1; //classic
 }
 
 static bool update_player(GameState *game, Player *player, bool need_full_search)
@@ -336,15 +349,13 @@ static bool update_game_window(GameState *game, bool *need_full_search)
     static bool need_pid_refresh = TRUE;
     static char prev_title_name[WINDOW_TITLE_MAX] = {0};
 
-    if (strcmp(prev_title_name, game->window_title_setting)) {
+    if (strcmp(prev_title_name, WINDOW_TITLE_OR_DEFAULT(game))) {
         need_pid_refresh = TRUE;
-        strcpy(prev_title_name, game->window_title_setting);
+        strcpy(prev_title_name, WINDOW_TITLE_OR_DEFAULT(game));
     }
 
     UPDATE_STATUS(game, "Searching for D2R...");
-    pid_t pid = readmaps(*game->window_title_setting ?
-                         game->window_title_setting : DEFAULT_D2R_WINDOW_TITLE,
-                         need_pid_refresh);
+    pid_t pid = readmaps(WINDOW_TITLE_OR_DEFAULT(game), need_pid_refresh);
     if (!pid) {
         need_pid_refresh = TRUE;
         LOG_ERROR("Can't read maps");

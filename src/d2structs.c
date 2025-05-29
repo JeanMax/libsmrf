@@ -3,6 +3,47 @@
 #include "proc.h"  // is_valid_ptr
 #include <ctype.h>  // isupper/islower
 
+void log_Inventory(Inventory *ptr)
+{
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "Inventory" CLR_RESET " {\n"
+              "    dword dwSignature: %08x\n"
+              "    dword _pad1: %08x\n"
+              "    UnitAny* pOwner: %16jx\n"
+              "    UnitAny* pFirstItem: %16jx\n"
+              "    UnitAny* pLastItem: %16jx\n"
+              "    void* pInventoryGrid: %16jx\n"
+              "    byte _1[8]: %02x %02x %02x %02x %02x %02x %02x %02x\n"
+              "    word wIsMainClassic: %04x\n"
+              "    byte _2[2]: %02x %02x\n"
+              "    dword dwWeaponId: %08x\n"
+              "    byte _3[8]: %02x %02x %02x %02x %02x %02x %02x %02x\n"
+              "    UnitAny* pCursorItem: %16jx\n"
+              "    dword dwOwnerId: %08x\n"
+              "    dword dwFilledSockets: %08x\n"
+              "    byte _4[32]: %02x %02x %02x %02x %02x %02x %02x %02x %02x "
+              "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x "
+              "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n"
+              "    word wIsMainXpac: %04x\n"
+              "}",
+              ptr->dwSignature,
+              ptr->_pad1,
+              ptr->pOwner,
+              ptr->pFirstItem,
+              ptr->pLastItem,
+              ptr->pInventoryGrid,
+              ptr->_1[0], ptr->_1[1], ptr->_1[2], ptr->_1[3], ptr->_1[4], ptr->_1[5], ptr->_1[6], ptr->_1[7],
+              ptr->wIsMainClassic,
+              ptr->_2[0], ptr->_2[1],
+              ptr->dwWeaponId,
+              ptr->_3[0], ptr->_3[1], ptr->_3[2], ptr->_3[3], ptr->_3[4], ptr->_3[5], ptr->_3[6], ptr->_3[7],
+              ptr->pCursorItem,
+              ptr->dwOwnerId,
+              ptr->dwFilledSockets,
+              ptr->_4[0], ptr->_4[1], ptr->_4[2], ptr->_4[3], ptr->_4[4], ptr->_4[5], ptr->_4[6], ptr->_4[7], ptr->_4[8], ptr->_4[9], ptr->_4[10], ptr->_4[11], ptr->_4[12], ptr->_4[13], ptr->_4[14], ptr->_4[15], ptr->_4[16], ptr->_4[17], ptr->_4[18], ptr->_4[19], ptr->_4[20], ptr->_4[21], ptr->_4[22], ptr->_4[23], ptr->_4[24], ptr->_4[25], ptr->_4[26], ptr->_4[27], ptr->_4[28], ptr->_4[29], ptr->_4[30], ptr->_4[31],
+              ptr->wIsMainXpac);
+}
+
 void log_Level(Level *ptr)
 {
     (void)ptr;
@@ -326,14 +367,19 @@ void log_MonsterData(MonsterData *ptr)
     (void)ptr;
     LOG_DEBUG("struct " CLR_GREEN "MonsterData" CLR_RESET " {\n"
               "    void* pDunno: %16jx\n"
-              "    dword _1[18]: %08x %08x %08x %08x %08x %08x %08x %08x %08x "
-              "%08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
+              "    dword _1[4]: %08x %08x %08x %08x\n"
+              "    dword dwOwnerId: %08x\n"
+              "    dword _2[8]: %08x %08x %08x %08x %08x %08x %08x %08x\n"
+              "    word wIsUnique: %04x\n"
               "    byte fType: %02x\n"
               "}",
               ptr->pDunno,
-              ptr->_1[0], ptr->_1[1], ptr->_1[2], ptr->_1[3], ptr->_1[4], ptr->_1[5], ptr->_1[6], ptr->_1[7], ptr->_1[8], ptr->_1[9], ptr->_1[10], ptr->_1[11], ptr->_1[12], ptr->_1[13], ptr->_1[14], ptr->_1[15], ptr->_1[16], ptr->_1[17],
+              ptr->_1[0], ptr->_1[1], ptr->_1[2], ptr->_1[3],
+              ptr->dwOwnerId,
+              ptr->_2[0], ptr->_2[1], ptr->_2[2], ptr->_2[3], ptr->_2[4], ptr->_2[5], ptr->_2[6], ptr->_2[7],
+              ptr->wIsUnique,
               ptr->fType);
-    hex_dump(ptr, sizeof(MonsterData));
+    /* hex_dump(ptr, sizeof(MonsterData)); */
 }
 
 void log_Player(Player *ptr)
@@ -447,6 +493,12 @@ static inline bool is_valid_player_name_str(const char *b, size_t len)
         b++;
     }
     return *start; // forbid empty string
+}
+
+inline bool is_valid_Inventory(Inventory *ptr)
+{
+    return IS_ALIGNED(ptr);
+    //TODO
 }
 
 inline bool is_valid_Level(Level *ptr)
@@ -587,7 +639,8 @@ inline bool is_valid_PlayerData(PlayerData *ptr)
         && is_valid_ptr__quick((ptr_t)ptr->pNormalWaypoint)
         && is_valid_ptr__quick((ptr_t)ptr->pNightmareWaypoint)
         && is_valid_ptr__quick((ptr_t)ptr->pHellWaypoint)
-        && is_valid_player_name_str(ptr->szName, PLAYER_DATA_NAME_MAX);
+        && is_valid_player_name_str(ptr->szName, PLAYER_DATA_NAME_MAX)
+        ;
 }
 
 inline bool is_valid_Player(Player *ptr)
@@ -603,10 +656,11 @@ inline bool is_valid_Player(Player *ptr)
     return IS_ALIGNED(ptr)
         && ptr->dwUnitId != 0
         && ptr->dwType == UNIT_PLAYER
-        && ptr->dwTxtFileNo == 1
+        /* && ptr->dwTxtFileNo == 1 */
         /* && ptr->xPos > 0 */
         /* && ptr->yPos > 0 */
         && ptr->dwAct < 5
+        && !ptr->wIsCorpse
         && is_valid_ptr__quick((ptr_t)ptr->pPlayerData)
         && is_valid_ptr__quick((ptr_t)ptr->pStats)
         && is_valid_ptr__quick((ptr_t)ptr->pInventory)
