@@ -115,19 +115,6 @@ static PresetUnit *preset_in_list(PresetUnit *pu, PresetUnit *pu_list)
     return NULL;
 }
 
-static Level *level_in_list(Level *lvl, Level *lvl_list)
-{
-    if (lvl) {
-        while (lvl_list) {
-            if (lvl->dwLevelNo == lvl_list->dwLevelNo) {
-                return lvl_list;
-            }
-            lvl_list = lvl_list->pNext;
-        }
-    }
-    return NULL;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
@@ -316,8 +303,9 @@ static Level *parse_level(ptr_t level_addr, ptr_t *next_level_addr)
     Level *level_new;
     Level level;
 
-    if (!memread(level_addr, sizeof(Level),
-                 find_Level_callback, &level)) {
+    if (!is_valid_ptr(level_addr)
+        ||!memread(level_addr, sizeof(Level),
+                   find_Level_callback, &level)) {
         LOG_WARNING("Can't find level");
         *next_level_addr = 0;
         return NULL;
@@ -359,10 +347,10 @@ Level *parse_level_list(ptr_t level_addr)
     do {
         near_level_addr += sizeof(Level);
         level_new = parse_level(near_level_addr, &next_level_addr);
-        if (!level_new) {
+        if (!level_new || level_new->dwLevelNo == 1) { //TODO: enum
             break;
         }
-        if (!level_in_list(level_new, level_first)) {
+        if (g_levels[level_new->dwLevelNo] == level_new) { // freshly duped
             ADD_LINK(level_first, level_prev, level_new);
         }
     } while (is_valid_ptr(next_level_addr));
@@ -372,10 +360,10 @@ Level *parse_level_list(ptr_t level_addr)
     do {
         near_level_addr -= sizeof(Level);
         level_new = parse_level(near_level_addr, &next_level_addr);
-        if (!level_new) {
+        if (!level_new || level_new->dwLevelNo == 1) { //TODO: enum
             break;
         }
-        if (!level_in_list(level_new, level_first)) {
+        if (g_levels[level_new->dwLevelNo] == level_new) { // freshly duped
             ADD_LINK(level_first, level_prev, level_new);
         }
     } while (is_valid_ptr(next_level_addr));

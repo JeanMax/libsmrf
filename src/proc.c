@@ -369,7 +369,7 @@ pid_t pid_of_window(const char *win_name)
     pid_t pid = 0;
 
     snprintf(buf, WINDOW_TITLE_MAX,
-             "wmctrl -lp | grep -m1 '%s' | cut -d' ' -f4 > " PID_COOKIE,
+             "wmctrl -lp | grep -m1 '%s' | cut -d' ' -f4 2>/dev/null > " PID_COOKIE,
              win_name);  // I'm sorry I'm fucking lazy
 
     if (!system(buf)) {
