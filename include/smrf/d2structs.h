@@ -92,7 +92,7 @@ struct Level {
         dword WarpY[9];
     };
     dword dwRoomEntries;
-    byte _pad1[4];
+    byte _pad1[12];
 };
 
 typedef  struct RoomTile  RoomTile;
