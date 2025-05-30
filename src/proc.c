@@ -25,8 +25,29 @@
 #define MAX_MAPS     0x4000
 static MapAddress g_maps_range[MAX_MAPS] = {0};  //TODO: this is ugly
 
-static pid_t g_pid = {0};
+static pid_t g_pid = 0;
+#ifndef _WIN32
+static FILE *g_mem_file = NULL;
+#else
+static HANDLE g_process = NULL;
+#endif
 
+
+static void reset_global_state(void)  // TODO: :|
+{
+    g_pid = 0;
+#ifndef _WIN32
+    if (g_mem_file) {
+        fclose(g_mem_file);
+        g_mem_file = NULL;
+    }
+#else
+    if (g_process) {
+        CloseHandle(g_process);
+        g_process = NULL;
+    }
+#endif
+}
 ////////////////////////////////////////////////////////////////////////////////
 
 byte *memsearch(const void *mem, const void *search, size_t mem_len, size_t search_len)
@@ -56,31 +77,28 @@ void *memread(ptr_t start_address, size_t length,
             t_read_callback *on_page_read, void *data)
 {
 #ifndef _WIN32
-    char path[PATH_MAX];
-
-    sprintf(path, "/proc/%d/mem", g_pid);  //TODO: keep that file open?
-    FILE *mem_file = fopen(path, "r");
-    if (!mem_file) {
-        LOG_ERROR("Can't read proc memory");
-        if (geteuid()) {
-            LOG_ERROR("Try again as root!");
+    if (!g_mem_file) {
+        char path[PATH_MAX];
+        sprintf(path, "/proc/%d/mem", g_pid);
+        g_mem_file = fopen(path, "r");
+        if (!g_mem_file) {
+            LOG_ERROR("Can't read proc memory");
+            reset_global_state();
+            return NULL;
         }
-        /* exit(EXIT_FAILURE); */
-        g_pid = 0;
-        return NULL;
     }
-    fseek(mem_file, (long)start_address, SEEK_SET);
 #else
-    HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                                 0, g_pid);
-    if (!process) {
-        LOG_ERROR("Can't read proc memory (try again as admin?)");
-        /* exit(EXIT_FAILURE); */
-        g_pid = 0;
-        return NULL;
+    if (!g_process) {
+        g_process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+                                0, g_pid);
+        if (!g_process) {
+            LOG_ERROR("Can't read proc memory");
+            reset_global_state();
+            return NULL;
+        }
     }
 #endif
-    static byte read_buf[PAGE_LENGTH];
+    byte read_buf[PAGE_LENGTH];
     size_t read_len = 0;
     size_t page_len = MIN(PAGE_LENGTH, length);
     void *ret = NULL;
@@ -90,9 +108,10 @@ void *memread(ptr_t start_address, size_t length,
          address += page_len) {
 
 #ifndef _WIN32
-        read_len = fread(&read_buf, 1, page_len, mem_file);
+        fseek(g_mem_file, (long)address, SEEK_SET);
+        read_len = fread(&read_buf, sizeof(byte), page_len, g_mem_file);
 #else
-        ReadProcessMemory(process, (void *)address, &read_buf, page_len, &read_len);
+        ReadProcessMemory(g_process, (void *)address, &read_buf, page_len, &read_len);
         // Toolhelp32ReadProcessMemory(g_pid, (void *)address, &read_buf, page_len, &read_len);
 #endif
         ret = on_page_read(read_buf, read_len, address, data);
@@ -108,11 +127,6 @@ void *memread(ptr_t start_address, size_t length,
         }
     }
 
-#ifndef _WIN32
-    fclose(mem_file);
-#else
-    CloseHandle(process);
-#endif
     return ret;
 }
 
@@ -120,7 +134,10 @@ void *memreadall(bool quick, t_read_callback *on_page_read, void *data)
 {
     void *ret = NULL;
 
-    for (int i = 0; i < MAX_MAPS && g_maps_range[i].start; i++) {
+    int i;
+    for (i = 0; i < MAX_MAPS && g_maps_range[i].start; i++) {}
+    for (i--; i >= 0; i--) {
+    /* for (int i = 0; i < MAX_MAPS && g_maps_range[i].start; i++) { */
         ptr_t start = g_maps_range[i].start;
         size_t length = g_maps_range[i].end - g_maps_range[i].start;
         LOG_INFO("map at %12jx - %12jx,     size: %8jx",
@@ -206,7 +223,7 @@ static bool is_bullshit_memory(const char *memory_info_str)
 pid_t readmaps(const char *win_name, bool refresh_win)
 {
     if (refresh_win) {
-        g_pid = 0;
+        reset_global_state();
     }
 
     if (!g_pid) {
@@ -226,7 +243,7 @@ pid_t readmaps(const char *win_name, bool refresh_win)
     sprintf(path, "/proc/%d/maps", g_pid);
     FILE *maps_file = fopen(path, "r");
     if (!maps_file) {
-        g_pid = 0;
+        reset_global_state();
         return FALSE;
     }
 
@@ -249,7 +266,7 @@ pid_t readmaps(const char *win_name, bool refresh_win)
     HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
                                  0, g_pid);
     if (!process) {
-        g_pid = 0;
+        reset_global_state();
         return FALSE;
     }
 

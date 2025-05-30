@@ -10,8 +10,6 @@
 #define WINDOW_TITLE_OR_DEFAULT(game) (*game->window_title_setting ? game->window_title_setting : DEFAULT_D2R_WINDOW_TITLE)
 
 
-#define MAX_MAYBE_PLAYER 0x1000
-size_t g_maybe_player_count = 0;
 
 static void unit_deleter(size_t unused_key, void *node_value)
 {
@@ -61,31 +59,108 @@ static void reset_game_state(GameState *game)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+static bool deep_validate_Player(Player *maybe_player)
+{
+    Inventory inventory;
+    PlayerData player_data;
+    /* Act act; */
+    Path path;
+    Room1 room1;
+    Room2 room2;
+    Level level;
+
+    /* if (!maybe_player->pAct */
+    /*     || !memread((ptr_t)maybe_player->pAct, sizeof(Act), */
+    /*                 find_Act_callback, &act)) { */
+    /*     LOG_WARNING("Can't validate Act"); */
+    /*     return FALSE; */
+    /* } */
+    /* log_Act(&act); */
+
+    if (!maybe_player->pPath
+        || !memread((ptr_t)maybe_player->pPath, sizeof(Path),
+                    find_Path_callback, &path)) {
+        LOG_WARNING("Can't validate Path");
+        return FALSE;
+    }
+    log_UnitAny(maybe_player);                          /* DEBUG */
+    log_Path(&path);
+
+    if (!path.pRoom1
+        || !memread((ptr_t)path.pRoom1, sizeof(Room1),
+                    find_Room1_callback, &room1)) {
+        LOG_WARNING("Can't validate Room1");
+        return FALSE;
+    }
+    log_Room1(&room1);
+
+    if (!room1.pRoom2
+        || !memread((ptr_t)room1.pRoom2, sizeof(Room2),
+                    find_Room2_callback, &room2)) {
+        LOG_WARNING("Can't validate Room2");
+        return FALSE;
+    }
+    log_Room2(&room2);
+
+    if (!room2.pLevel
+        || !memread((ptr_t)room2.pLevel, sizeof(Level),
+                    find_Level_callback, &level)) {
+        LOG_WARNING("Can't validate Level");
+        return FALSE;
+    }
+    log_Level(&level);
+
+    if (!level.pRoom2First
+        || !memread((ptr_t)level.pRoom2First, sizeof(Room2),
+                    find_Room2_callback, &room2)) {
+        LOG_WARNING("Can't validate Room2First");
+        return FALSE;
+    }
+    log_Room2(&room2);
+
+    if (!maybe_player->pPlayerData
+        || !memread((ptr_t)maybe_player->pPlayerData, sizeof(PlayerData),
+                    find_PlayerData_callback, &player_data)) {
+        /* LOG_WARNING("Can't validate PlayerData"); */
+        return FALSE;
+    }
+    log_PlayerData(&player_data);
+
+    if (!maybe_player->pInventory
+        || !memread((ptr_t)maybe_player->pInventory, sizeof(Inventory),
+                    find_Inventory_callback, &inventory)) {
+        LOG_WARNING("Can't validate Inventory");
+        return FALSE;
+    }
+    log_Inventory(&inventory);
+
+    LOG_DEBUG("main: classic=%d xpac=%d [%s]",
+              inventory.wIsMainClassic, inventory.wIsMainXpac,
+              player_data.szName); /* DEBUG */
+    if (!inventory.wIsMainXpac || inventory.wIsMainClassic == 1) {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 inline static void *search_player_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
 {
     byte *b = buf;
     Player *player;
-    PlayerList **maybe_player_list = (PlayerList **)data;
+    UnitWithAddr *uwa = (UnitWithAddr *)data;
 
     while (buf_len >= sizeof(Player)) {
         player = (Player *)b;
         if (is_valid_Player(player)) {
             ptr_t here = address + (ptr_t)(b - buf);
-            LOG_INFO("found maybe-Player ptr at %16jx [%d]",
-                     here, ++g_maybe_player_count); /* DEBUG */
+            LOG_INFO("found maybe-Player ptr at %16jx", here); /* DEBUG */
             /* log_Player(player);                          /\* DEBUG *\/ */
 
-            PlayerList *pl;
-            MALLOC(pl, sizeof(PlayerList));
-            memcpy(&pl->player, b, sizeof(Player));
-            pl->player_addr = here;
-            pl->idx = g_maybe_player_count;      /* DEBUG */
-            PUSH_LINK(*maybe_player_list, pl);
-
-            if (g_maybe_player_count > MAX_MAYBE_PLAYER) {
-                g_maybe_player_count = 0;
-                LOG_ERROR("Too many Player found, stopping search");
-                return data;  // stop - TODO: might want to reset pid too...
+            if (deep_validate_Player(player)) {
+                memcpy(&uwa->unit, player, sizeof(Player));
+                uwa->unit_addr = here;
+                return data; // done
             }
         }
         b += sizeof(ptr_t);
@@ -93,17 +168,6 @@ inline static void *search_player_callback(byte *buf, size_t buf_len, ptr_t addr
     }
 
     return NULL; // keep reading
-}
-
-static void free_maybe_player(PlayerList *ptr)
-{
-    PlayerList *prev;
-
-    while (ptr) {
-        prev = ptr;
-        ptr = ptr->pNext;
-        FREE(prev);
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -117,10 +181,10 @@ static bool update_unit_callback(void *node_value, void *data)
     /*     return FALSE; */
     /* } */
 
-    static MonsterData mdata;
+    MonsterData mdata;
     /* static Act act; */
-    static Path path;
-    static UnitAny u;
+    Path path;
+    UnitAny u;
     UnitAny *next;
     MonsterData *m;
     /* Act *a; */
@@ -202,6 +266,7 @@ static bool update_unit_callback(void *node_value, void *data)
         }
         uwa->unit.pMonsterData = u.pMonsterData;
 
+        /* LOG_DEBUG("Successful monster refresh at %08x", uwa->unit_addr); /\* DEBUG *\/ */
     }
 
     return FALSE;
@@ -209,92 +274,9 @@ static bool update_unit_callback(void *node_value, void *data)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static bool deep_validate_Player(Player *maybe_player)
-{
-    //TODO: this is done twice, it's stupid
-    static Inventory inventory;
-    static PlayerData player_data;
-    /* static Act act; */
-    static Path path;
-    static Room1 room1;
-    static Room2 room2;
-    static Level level;
-
-    if (!maybe_player->pPlayerData
-        || !memread((ptr_t)maybe_player->pPlayerData, sizeof(PlayerData),
-                    find_PlayerData_callback, &player_data)) {
-        /* LOG_WARNING("Can't validate PlayerData"); */
-        return FALSE;
-    }
-    log_PlayerData(&player_data);
-    log_UnitAny(maybe_player);                          /* DEBUG */
-
-
-    /* if (!maybe_player->pAct */
-    /*     || !memread((ptr_t)maybe_player->pAct, sizeof(Act), */
-    /*                 find_Act_callback, &act)) { */
-    /*     LOG_WARNING("Can't validate Act"); */
-    /*     return FALSE; */
-    /* } */
-    /* log_Act(&act); */
-
-    if (!maybe_player->pPath
-        || !memread((ptr_t)maybe_player->pPath, sizeof(Path),
-                    find_Path_callback, &path)) {
-        LOG_WARNING("Can't validate Path");
-        return FALSE;
-    }
-    log_Path(&path);
-
-    if (!path.pRoom1
-        || !memread((ptr_t)path.pRoom1, sizeof(Room1),
-                    find_Room1_callback, &room1)) {
-        LOG_WARNING("Can't validate Room1");
-        return FALSE;
-    }
-    log_Room1(&room1);
-
-    if (!room1.pRoom2
-        || !memread((ptr_t)room1.pRoom2, sizeof(Room2),
-                    find_Room2_callback, &room2)) {
-        LOG_WARNING("Can't validate Room2");
-        return FALSE;
-    }
-    log_Room2(&room2);
-
-    if (!room2.pLevel
-        || !memread((ptr_t)room2.pLevel, sizeof(Level),
-                    find_Level_callback, &level)) {
-        LOG_WARNING("Can't validate Level");
-        return FALSE;
-    }
-    log_Level(&level);
-
-    if (!level.pRoom2First
-        || !memread((ptr_t)level.pRoom2First, sizeof(Room2),
-                    find_Room2_callback, &room2)) {
-        LOG_WARNING("Can't validate Room2First");
-        return FALSE;
-    }
-    log_Room2(&room2);
-
-    if (!maybe_player->pInventory
-        || !memread((ptr_t)maybe_player->pInventory, sizeof(Inventory),
-                    find_Inventory_callback, &inventory)) {
-        LOG_WARNING("Can't validate Inventory");
-        return FALSE;
-    }
-    log_Inventory(&inventory);
-    LOG_DEBUG("main: classic=%d xpac=%d [%s]",
-              inventory.wIsMainClassic, inventory.wIsMainXpac,
-              player_data.szName);
-
-    return inventory.wIsMainXpac || inventory.wIsMainClassic != 1; //classic
-}
-
 static bool update_player(GameState *game, Player *player, bool need_full_search)
 {
-    static PlayerList *maybe_player_list = NULL;
+    UnitWithAddr uwa = {0};
 
     if (!need_full_search && game->_player_addr) {
         UPDATE_STATUS(game, "Updating Player...");
@@ -307,39 +289,21 @@ static bool update_player(GameState *game, Player *player, bool need_full_search
     }
 
     UPDATE_STATUS(game, "Out of game...");
-    free_maybe_player(maybe_player_list);
-    maybe_player_list = NULL;
-    memreadall(TRUE, search_player_callback, &maybe_player_list);
-    if (!maybe_player_list) {
-        LOG_ERROR("Can't find any Player ptr");
-        return FALSE;
-    }
 
-    UPDATE_STATUS(game, "In Game...");  // TODO: move that before
-    PlayerList *pl;
-    UPDATE_STATUS(game, "Validating Player...");
-    for (pl = maybe_player_list; pl; pl = pl->pNext) {
-        if (deep_validate_Player(&pl->player)) {
-            LOG_DEBUG("YAY");
-            /* continue;               /\* DEBUG *\/ */
-            /* exit(EXIT_SUCCESS);     /\* DEBUG *\/ */
-            break;
-        }
-    }
-    if (!pl) {
-        LOG_ERROR("Can't find any valid Player");
-        /* exit(EXIT_FAILURE);     /\* DEBUG *\/ */
+    void *search_aborted = memreadall(TRUE, search_player_callback, &uwa);
+    if (!search_aborted) {
+        LOG_ERROR("Can't find Player ptr");
         return FALSE;
     }
+    UPDATE_STATUS(game, "In Game...");  // TODO: move that before
 
     /* pthread_mutex_lock(&game->mutex); */
-    game->_player_addr = pl->player_addr;  //TODO: remove from GameState
+    game->_player_addr = uwa.unit_addr;  //TODO: remove from GameState
     /* pthread_mutex_unlock(&game->mutex); */
 
-    memcpy(player, &pl->player, sizeof(Player));
+    memcpy(player, &uwa.unit, sizeof(Player));
     log_Player(player);
-    LOG_INFO("Woop woop! Found Player ptr at %16jx [%d]",
-             (ptr_t)pl->player_addr, pl->idx); /* DEBUG */
+    LOG_INFO("Woop woop! Found Player ptr at %16jx", uwa.unit_addr); /* DEBUG */
     return TRUE;
 }
 
@@ -374,9 +338,9 @@ static bool update_game_window(GameState *game, bool *need_full_search)
 
 bool update_game_state(GameState *game)
 {
-    static PlayerContent pc = {0};
-    static PlayerContent tmp = {0};
-    static Player player = {0};
+    static PlayerContent pc = {0};  // static because big
+    static PlayerContent tmp = {0};  // static because big
+    static Player player = {0};  // static because big
 
     bool need_full_search = FALSE;
     if (!update_game_window(game, &need_full_search)
@@ -432,7 +396,7 @@ bool update_game_state(GameState *game)
 
     game->all_levels = g_levels;
     UPDATE_STATUS(game, "Updating Map...");
-    game->level = parse_level_list((ptr_t)tmp.room2.pLevel);
+    game->level = parse_level_list((ptr_t)tmp.room2.pLevel); //TODO: pass Game
     tmp.room2.pLevel = game->level;
     memcpy(&pc, &tmp, sizeof(PlayerContent));
     memcpy(&game->player, &player, sizeof(Player));

@@ -29,7 +29,7 @@ void hex_dump(void *ptr, size_t len)  // stolen from motoko <3
 	}
 }
 
-
+//TODO: this is slow and stupid
 void print_log(int fd, const char *log_format, ...)
 {
     static char prev_msg[MAX_LOG_LEN];  // race-condition incoming

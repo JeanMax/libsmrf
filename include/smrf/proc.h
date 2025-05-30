@@ -29,6 +29,7 @@ void *memread(ptr_t start_address, size_t length,
 void *memreadall(bool quick, t_read_callback *on_page_read, void *data);
 pid_t readmaps(const char *win_name, bool refresh_win);  //TODO: rename
 
+// TODO: could be static
 pid_t pid_of_cmd(const char *cmd_name);
 pid_t pid_of_window(const char *win_name);
 

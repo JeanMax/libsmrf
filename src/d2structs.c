@@ -580,7 +580,7 @@ inline bool is_valid_PresetUnit(PresetUnit *ptr)
 
 inline bool is_valid_Path(Path *ptr)
 {
-    /* log_Path(ptr); /\* DEBUG *\/ */
+    log_Path(ptr); /* DEBUG */
     return IS_ALIGNED(ptr)
         && is_valid_ptr((ptr_t)ptr->pRoom1)
         && ptr->xPos > 0

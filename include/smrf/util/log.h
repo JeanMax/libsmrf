@@ -14,6 +14,7 @@
 # define NO_COLORS
 #endif
 
+//TODO: no colors if !isatty
 #ifdef NO_COLORS
 # define CLR_BLACK ""
 # define CLR_RED ""

@@ -48,7 +48,7 @@ struct PlayerContent {
 typedef  struct GameState  GameState;
 struct GameState {
     char window_title_setting[WINDOW_TITLE_MAX];  // need to be 1st
-    char status[STATUS_MAX];
+    char status[STATUS_MAX]; //TODO: store an enum and link that to an str[]
     Level *level;
     Player player;
     ptr_t _player_addr; //TODO: internal, hide

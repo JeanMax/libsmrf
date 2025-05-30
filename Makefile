@@ -145,6 +145,10 @@ re: fclean
 test: all
 	$(PRINTF) "All tests passed!\n"
 
+# show all TODO in project
+todo:
+	grep --color=auto -riIn --exclude-dir .git --exclude-dir sdk --exclude Makefile todo .
+
 
 ##
 ## PRIVATE RULES
@@ -172,5 +176,5 @@ $(OBJ_PATH):
 -include $(DEP)
 
 # just to avoid conflicts between rules and files/folders names
-.PHONY: all, dev, san, mecry, $(PROJECT), \
+.PHONY: all, dev, san, mecry, $(PROJECT), todo, \
 clean, fclean, mrproper, re, test, testdev, testsan

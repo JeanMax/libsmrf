@@ -12,7 +12,7 @@ inline dword act_from_area(dword area)
 }
 
 // PRESETS
-inline bool is_shrine(dword id)
+inline bool is_shrine(dword id)  //TODO: optimize these
 {
     return id == 2   // Shrine
         || id == 77  // Healthorama

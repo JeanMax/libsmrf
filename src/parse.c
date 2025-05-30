@@ -143,7 +143,8 @@ static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny 
 
     UnitWithAddr *uwa = hget(g_unit_table, u.dwUnitId);
     if (uwa) {
-        LOG_DEBUG("Won't update unit %x", u.dwUnitId);
+        //TODO: update addr (list!)
+        /* LOG_DEBUG("Won't update unit %x", u.dwUnitId); */
         return ret;
     }
 
