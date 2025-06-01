@@ -122,7 +122,6 @@ static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny 
     static MonsterData mdata;
     static UnitAny u;
     static Path path;
-    /* static Act act; */
 
     if (!memread(u_addr, sizeof(UnitAny),
                  find_UnitAny_callback, &u)) {
@@ -138,24 +137,25 @@ static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny 
     }
 
     if (u.dwType == UNIT_MONSTER && u.wIsCorpse == 1) {  // remove dead monsters
-        return ret;
+        return ret; //TODO: I feel like monster that could be reanimated have always that bool up
     }
 
     UnitWithAddr *uwa = hget(g_unit_table, u.dwUnitId);
     if (uwa) {
-        //TODO: update addr (list!)
-        /* LOG_DEBUG("Won't update unit %x", u.dwUnitId); */
+        for (int i = 0; i < MAX_UNIT_ADDR; i++) {
+            if (u_addr == uwa->unit_addr[i]) {  // already stored
+                return ret;
+            }
+        }
+        for (int i = 0; i < MAX_UNIT_ADDR; i++) {
+            if (!uwa->unit_addr[i]) {  // store new addr
+                uwa->unit_addr[i] = u_addr;
+                return ret;
+            }
+        }
+        LOG_DEBUG("Can't store new addr for unit %x", u.dwUnitId);
         return ret;
     }
-
-    /* if (!u.pAct || !is_valid_ptr((ptr_t)u.pAct) */
-    /*     || !memread((ptr_t)u.pAct, sizeof(Act), */
-    /*                 find_Act_callback, &act)) { */
-    /*     LOG_WARNING("Can't update unit's Act");  */
-    /*     /\* log_Act(&act);    /\\* DEBUG *\\/ *\/ */
-    /*     /\* log_UnitAny(&u);    /\\* DEBUG *\\/ *\/ */
-    /*     return ret; */
-    /* } */
 
     if (!u.pPath || !is_valid_ptr((ptr_t)u.pPath)
         || !memread((ptr_t)u.pPath, sizeof(Path),
@@ -185,7 +185,7 @@ static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny 
 
     MALLOC(uwa, sizeof(UnitWithAddr));
     memcpy(&uwa->unit, &u, sizeof(UnitAny));
-    uwa->unit_addr = u_addr;
+    uwa->unit_addr[0] = u_addr;
     hset(g_unit_table, u.dwUnitId, uwa);
 
     uwa->unit.pNext = NULL;

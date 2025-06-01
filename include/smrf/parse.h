@@ -5,11 +5,12 @@
 #include "d2sdk.h"
 #include "util/hash.h"
 
+#define MAX_UNIT_ADDR 8
 
 typedef  struct UnitWithAddr  UnitWithAddr;
 struct UnitWithAddr {
     UnitAny unit;
-    ptr_t unit_addr;
+    ptr_t unit_addr[MAX_UNIT_ADDR];
 };
 
 extern Level  *g_levels[MAX_AREA];
