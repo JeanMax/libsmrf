@@ -26,7 +26,7 @@ struct Inventory {
     word wIsMainClassic;
     byte _2[2];
     dword dwWeaponId;
-    byte _3[8];
+    void *pIsMain;
     UnitAny* pCursorItem;
     dword dwOwnerId;
     dword dwFilledSockets;

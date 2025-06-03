@@ -340,7 +340,9 @@ Level *parse_level_list(ptr_t level_addr)
         if (!level_new) {
             break;
         }
-        ADD_LINK(level_first, level_prev, level_new);
+        if (g_levels[level_new->dwLevelNo] == level_new) { // freshly duped
+            ADD_LINK(level_first, level_prev, level_new);
+        }
     } while (is_valid_ptr(next_level_addr));
 
     // consider it's a level[], go to next cell

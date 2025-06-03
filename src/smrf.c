@@ -45,12 +45,15 @@ void destroy_game_state(GameState *game)
 
 static void reset_game_state(GameState *game)
 {
+    static char status_bak[STATUS_MAX]; //TODO: dont
+
     pthread_mutex_lock(&game->mutex);
     free_all_levels();
     hdelall(g_unit_table);
+    memcpy(status_bak, game->status, STATUS_MAX);
     memset((char *)game + PLAYER_DATA_NAME_MAX,
            0, sizeof(GameState) - PLAYER_DATA_NAME_MAX);
-    /* UPDATE_STATUS(game, "Reset..."); */
+    memcpy(game->status, status_bak, STATUS_MAX);
     pthread_mutex_unlock(&game->mutex);
 }
 
@@ -82,14 +85,6 @@ static bool deep_validate_Player(Player *maybe_player)
     }
     log_Inventory(&inventory);
 
-    LOG_DEBUG("main: classic=%d xpac=%d [%s]",
-              inventory.wIsMainClassic, inventory.wIsMainXpac,
-              player_data.szName); /* DEBUG */
-    if (!inventory.wIsMainXpac || inventory.wIsMainClassic == 1) {
-        LOG_WARNING("Not the main character");
-        /* return FALSE; */
-    }
-
     if (!maybe_player->pPath
         || !memread((ptr_t)maybe_player->pPath, sizeof(Path),
                     find_Path_callback, &path)) {
@@ -98,6 +93,15 @@ static bool deep_validate_Player(Player *maybe_player)
     }
     log_UnitAny(maybe_player);                          /* DEBUG */
     log_Path(&path);
+
+    LOG_DEBUG("main: classic=%d xpac=%d ptr=%16jx [%s]",
+              inventory.wIsMainClassic, inventory.wIsMainXpac, inventory.pIsMain,
+              player_data.szName); /* DEBUG */
+    if (!inventory.pIsMain) {
+    /* if (!inventory.wIsMainXpac || inventory.wIsMainClassic == 1) { */
+        LOG_WARNING("Not the main character");
+        return FALSE;
+    }
 
     if (!path.pRoom1
         || !memread((ptr_t)path.pRoom1, sizeof(Room1),
@@ -298,10 +302,10 @@ static bool update_game_window(GameState *game, bool *need_full_search)
 
     if (strcmp(prev_title_name, WINDOW_TITLE_OR_DEFAULT(game))) {
         need_pid_refresh = TRUE;
+        UPDATE_STATUS(game, "Searching for D2R...");
         strcpy(prev_title_name, WINDOW_TITLE_OR_DEFAULT(game));
     }
 
-    UPDATE_STATUS(game, "Searching for D2R...");
     pid_t pid = readmaps(WINDOW_TITLE_OR_DEFAULT(game), need_pid_refresh);
     if (!pid) {
         need_pid_refresh = TRUE;

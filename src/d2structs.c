@@ -17,7 +17,7 @@ void log_Inventory(Inventory *ptr)
               "    word wIsMainClassic: %04x\n"
               "    byte _2[2]: %02x %02x\n"
               "    dword dwWeaponId: %08x\n"
-              "    byte _3[8]: %02x %02x %02x %02x %02x %02x %02x %02x\n"
+              "    void* pIsMain: %16jx\n"
               "    UnitAny* pCursorItem: %16jx\n"
               "    dword dwOwnerId: %08x\n"
               "    dword dwFilledSockets: %08x\n"
@@ -36,7 +36,7 @@ void log_Inventory(Inventory *ptr)
               ptr->wIsMainClassic,
               ptr->_2[0], ptr->_2[1],
               ptr->dwWeaponId,
-              ptr->_3[0], ptr->_3[1], ptr->_3[2], ptr->_3[3], ptr->_3[4], ptr->_3[5], ptr->_3[6], ptr->_3[7],
+              ptr->pIsMain,
               ptr->pCursorItem,
               ptr->dwOwnerId,
               ptr->dwFilledSockets,
