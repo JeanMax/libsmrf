@@ -370,4 +370,17 @@ enum UnitType {
 };
 typedef enum UnitType  UnitType;
 
+
+enum PlayerClass {
+    CLASS_AMA = 0,
+    CLASS_SOR,
+    CLASS_NEC,
+    CLASS_PAL,
+    CLASS_BAR,
+    CLASS_DRU,
+    CLASS_ASN,
+    CLASS_MAX,
+};
+typedef enum PlayerClass  PlayerClass;
+
 #endif

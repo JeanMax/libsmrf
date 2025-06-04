@@ -371,5 +371,8 @@ Level *parse_level_list(ptr_t level_addr)
         }
     } while (is_valid_ptr(next_level_addr));
 
+    if (!level_first) {
+        LOG_ERROR("Can't parse Level list");
+    }
     return level_first;
 }

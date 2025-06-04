@@ -276,8 +276,8 @@ struct UnitAny {
     void* pStats;
     void* pInventory;
     dword _dunno3[11];
-    word xPos;
-    word yPos;
+    word xPos;  // not updated with coords (seen non-0 in classic)
+    word yPos;  // not updated with coords (always 0?)
     dword _dunno4[14];
     void* pSkills;
     dword _dunno5[20];

@@ -423,20 +423,27 @@ void log_UnitAny(UnitAny *ptr)
               "    dword dwSeed[2]: %08x, %08x\n"
               "    dword _dunno1[2]: %08x, %08x\n"
               "    Path* pPath: %16jx\n"
-              "    dword _dunno2[18]: 08x\n"
+              "    dword _dunno2[18]: %08x %08x %08x %08x %08x %08x %08x %08x  "
+                                     "%08x %08x %08x %08x %08x %08x %08x %08x  "
+                                     "%08x %08x\n"
               "    void* pStats: %16jx\n"
               "    void* pInventory: %16jx\n"
-              "    dword _dunno3[11]: 08x\n"
+              "    dword _dunno3[11]: %08x %08x %08x %08x %08x %08x %08x %08x  "
+                                     "%08x %08x %08x\n"
               "    word xPos: %08x\n"
               "    word yPos: %08x\n"
-              "    dword _dunno4[14]: 08x\n"
+              "    dword _dunno4[14]: %08x %08x %08x %08x %08x %08x %08x %08x  "
+                                     "%08x %08x %08x %08x %08x %08x\n"
               "    void* pSkills: %16jx\n"
-              "    dword _dunno5[20]: 08x\n"
+              "    dword _dunno5[20]: %08x %08x %08x %08x %08x %08x %08x %08x  "
+                                     "%08x %08x %08x %08x %08x %08x %08x %08x  "
+                                     "%08x %08x %08x %08x\n"
               "    UnitAny* pNext: %16jx\n"
               "    void*    pRoomNext: %16jx\n"
-              /* "    dword _dunno6[5]: 08x\n" */
+              "    dword _dunno6[5]: %08x %08x %08x %08x %08x\n"
               "    dword dwPlayerClass: %08x\n"
-              /* "    dword _dunno7[11]: 08x\n" */
+              "    dword _dunno7[11]: %08x %08x %08x %08x %08x %08x %08x %08x  "
+                                     "%08x %08x %08x\n"
               "    word _pad2: %04x\n"
               "    byte wIsCorpse: %02x\n"
               "    byte _pad3: %02x\n"
@@ -452,20 +459,20 @@ void log_UnitAny(UnitAny *ptr)
               ptr->dwSeed[0], ptr->dwSeed[1],
               ptr->_dunno1[0], ptr->_dunno1[1],
               (ptr_t)ptr->pPath,
-              /* ptr->_dunno2[18], */
+              ptr->_dunno2[0], ptr->_dunno2[1], ptr->_dunno2[2], ptr->_dunno2[3], ptr->_dunno2[4], ptr->_dunno2[5], ptr->_dunno2[6], ptr->_dunno2[7], ptr->_dunno2[8], ptr->_dunno2[9], ptr->_dunno2[10], ptr->_dunno2[11], ptr->_dunno2[12], ptr->_dunno2[13], ptr->_dunno2[14], ptr->_dunno2[15], ptr->_dunno2[16], ptr->_dunno2[17],
               (ptr_t)ptr->pStats,
               (ptr_t)ptr->pInventory,
-              /* ptr->_dunno3[11], */
+              ptr->_dunno3[0], ptr->_dunno3[1], ptr->_dunno3[2], ptr->_dunno3[3], ptr->_dunno3[4], ptr->_dunno3[5], ptr->_dunno3[6], ptr->_dunno3[7], ptr->_dunno3[8], ptr->_dunno3[9], ptr->_dunno3[10],
               ptr->xPos,
               ptr->yPos,
-              /* ptr->_dunno4[14], */
+              ptr->_dunno4[0], ptr->_dunno4[1], ptr->_dunno4[2], ptr->_dunno4[3], ptr->_dunno4[4], ptr->_dunno4[5], ptr->_dunno4[6], ptr->_dunno4[7], ptr->_dunno4[8], ptr->_dunno4[9], ptr->_dunno4[10], ptr->_dunno4[11], ptr->_dunno4[12], ptr->_dunno4[13],
               (ptr_t)ptr->pSkills,
-              /* ptr->_dunno5[20], */
+              ptr->_dunno5[0], ptr->_dunno5[1], ptr->_dunno5[2], ptr->_dunno5[3], ptr->_dunno5[4], ptr->_dunno5[5], ptr->_dunno5[6], ptr->_dunno5[7], ptr->_dunno5[8], ptr->_dunno5[9], ptr->_dunno5[10], ptr->_dunno5[11], ptr->_dunno5[12], ptr->_dunno5[13], ptr->_dunno5[14], ptr->_dunno5[15], ptr->_dunno5[16], ptr->_dunno5[17], ptr->_dunno5[18], ptr->_dunno5[19],
               (ptr_t)ptr->pNext,
               (ptr_t)ptr->pRoomNext,
-              /* ptr->_dunno6[5], */
+              ptr->_dunno6[0], ptr->_dunno6[1], ptr->_dunno6[2], ptr->_dunno6[3], ptr->_dunno6[4],
               ptr->dwPlayerClass,
-              /* ptr->_dunno7[11], */
+              ptr->_dunno7[0], ptr->_dunno7[1], ptr->_dunno7[2], ptr->_dunno7[3], ptr->_dunno7[4], ptr->_dunno7[5], ptr->_dunno7[6], ptr->_dunno7[7], ptr->_dunno7[8], ptr->_dunno7[9], ptr->_dunno7[10],
               ptr->_pad2,
               ptr->wIsCorpse,
               ptr->_pad2);
@@ -525,7 +532,7 @@ inline bool is_valid_Level(Level *ptr)
         && ptr->dwPosY <= 0xffff
         && ptr->dwSizeX <= 0xff
         && ptr->dwSizeY <= 0xff
-        /* && ptr->dwLevelNo <= 137  // it can get weird */
+        && ptr->dwLevelNo < MAX_AREA  // TODO: it can get weird
         && ptr->dwRoomEntries <= 0xf
         && (!ptr->pRoom2First || is_valid_ptr__quick((ptr_t)ptr->pRoom2First))
         /* && is_valid_ptr__quick((ptr_t)ptr->pDunno) */
@@ -645,7 +652,7 @@ inline bool is_valid_PlayerData(PlayerData *ptr)
 
 inline bool is_valid_Player(Player *ptr)
 {
-    /* log_UnitAny(ptr);                          /\* DEBUG *\/ */
+    log_UnitAny(ptr);                          /* DEBUG */
     /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pPlayerData): %d", */
     /*             is_valid_ptr__quick((ptr_t)ptr->pPlayerData) ); */
     /* LOG_WARNING("is_valid_ptr((ptr_t)ptr->pAct): %d", */
@@ -654,20 +661,22 @@ inline bool is_valid_Player(Player *ptr)
     /*             is_valid_ptr((ptr_t)ptr->pPath) ); */
     /* LOG_WARNING("tr->dwAct < 5: %d", ptr->dwAct < 5); */
     return IS_ALIGNED(ptr)
-        && ptr->dwUnitId != 0
         && ptr->dwType == UNIT_PLAYER
-        && ptr->dwTxtFileNo == 1
-        && !ptr->xPos
-        && !ptr->yPos
+        && ptr->dwTxtFileNo == ptr->dwPlayerClass
+        && ptr->dwUnitId != 0
         && ptr->dwAct < 5
+        && ptr->dwPlayerClass < CLASS_MAX
+        /* && !ptr->xPos */
+        /* && !ptr->yPos */
         && is_valid_ptr__quick((ptr_t)ptr->pPlayerData)
+        && (!ptr->pAct || is_valid_ptr__quick((ptr_t)ptr->pAct))
+        && is_valid_ptr__quick((ptr_t)ptr->pPath)
         && is_valid_ptr__quick((ptr_t)ptr->pStats)
         && is_valid_ptr__quick((ptr_t)ptr->pInventory)
         && is_valid_ptr__quick((ptr_t)ptr->pSkills)
         && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
         && (!ptr->pRoomNext || is_valid_ptr__quick((ptr_t)ptr->pRoomNext))
-        && (!ptr->pAct || is_valid_ptr__quick((ptr_t)ptr->pAct))
-        && is_valid_ptr__quick((ptr_t)ptr->pPath);
+        ;
 }
 
 inline bool is_valid_UnitAny(UnitAny *ptr)
