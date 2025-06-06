@@ -350,26 +350,26 @@ Level *parse_level_list(ptr_t level_addr)
     do {
         near_level_addr += sizeof(Level);
         level_new = parse_level(near_level_addr, &next_level_addr);
-        if (!level_new || level_new->dwLevelNo == 1) { //TODO: enum
+        if (!level_new) {
             break;
         }
         if (g_levels[level_new->dwLevelNo] == level_new) { // freshly duped
             ADD_LINK(level_first, level_prev, level_new);
         }
-    } while (is_valid_ptr(next_level_addr));
+    } while (is_valid_ptr(near_level_addr));
 
     // consider it's a level[], go to prev cell
     near_level_addr = level_addr;
     do {
         near_level_addr -= sizeof(Level);
         level_new = parse_level(near_level_addr, &next_level_addr);
-        if (!level_new || level_new->dwLevelNo == 1) { //TODO: enum
+        if (!level_new) {
             break;
         }
         if (g_levels[level_new->dwLevelNo] == level_new) { // freshly duped
             ADD_LINK(level_first, level_prev, level_new);
         }
-    } while (is_valid_ptr(next_level_addr));
+    } while (is_valid_ptr(near_level_addr));
 
     if (!level_first) {
         LOG_ERROR("Can't parse Level list");
