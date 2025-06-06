@@ -97,7 +97,7 @@ static bool deep_validate_Player(Player *maybe_player)
     LOG_DEBUG("main: classic=%d xpac=%d ptr=%16jx [%s]",
               inventory.wIsMainClassic, inventory.wIsMainXpac, inventory.pIsMain,
               player_data.szName); /* DEBUG */
-    if (!inventory.pIsMain) {
+    if (!inventory.pIsMain || inventory.wIsMainClassic != 0x7) {
     /* if (!inventory.wIsMainXpac || inventory.wIsMainClassic == 1) { */
         LOG_WARNING("Not the main character");
         return FALSE;
