@@ -620,7 +620,8 @@ struct ObjectInfo {
     unsigned char blockMissile;
     unsigned char openWarp;
     unsigned char isAttackable;
-    unsigned char subClass;
+    unsigned char lockable;
+    ObjectSubclass subClass;
     int autoMap;
 };
 typedef struct ObjectInfo  ObjectInfo;

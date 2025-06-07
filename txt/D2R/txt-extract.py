@@ -113,6 +113,7 @@ def read_obj(filename):
         dtype={
             "*ID": pd.Int32Dtype(),
             "IsAttackable0": pd.Int32Dtype(),
+            "Lockable": pd.Int32Dtype(),
             "SizeX": pd.Int32Dtype(),
             "SizeY": pd.Int32Dtype(),
             "IsDoor": pd.Int32Dtype(),
@@ -124,7 +125,7 @@ def read_obj(filename):
         },
     )
     return df.loc[:, [
-        "Name", "Class", "*Description", "IsAttackable0",
+        "Name", "Class", "*Description", "IsAttackable0", "Lockable",
         "SizeX", "SizeY", "IsDoor", "BlocksVis",
         "BlockMissile", "OpenWarp", "AutoMap", "SubClass"
     ]]
@@ -245,7 +246,7 @@ def generate_monster_struct_content(df):
         f'{{{r["ResDm(N)"]}, {r["ResMa(N)"]}, {r["ResFi(N)"]}, {r["ResLi(N)"]}, {r["ResCo(N)"]}, {r["ResPo(N)"]}}},\n           '
         f'{{{r["ResDm(H)"]}, {r["ResMa(H)"]}, {r["ResFi(H)"]}, {r["ResLi(H)"]}, {r["ResCo(H)"]}, {r["ResPo(H)"]}}}}}}}'
         for _, r in df.iterrows()
-    ])
+    ]).replace("eat=14", "eat=THREAT_PRIME_EVIL").replace("eat=13", "eat=THREAT_BLOOD_RAVEN").replace("eat=12", "eat=THREAT_SHAMAN").replace("eat=11", "eat=THREAT_MINION").replace("eat=10", "eat=THREAT_MONSTER").replace("eat=9", "eat=THREAT_TURRET").replace("eat=8", "eat=THREAT_FAMILIAR").replace("eat=7", "eat=THREAT_CATAPULT").replace("eat=6", "eat=THREAT_DOOR").replace("eat=4", "eat=THREAT_TRAPPED_SOUL").replace("eat=2", "eat=THREAT_WALL").replace("eat=1", "eat=THREAT_BLOCK").replace("eat=0", "eat=NO_THREAT")
 
 
 def generate_super_struct_content(df):
@@ -269,10 +270,11 @@ def generate_object_struct_content(df):
         f'.blockMissile={r["BlockMissile"]}, '
         f'.openWarp={r["OpenWarp"]},    '
         f'.isAttackable={r["IsAttackable0"]}, '
+        f'.lockable={r["Lockable"]},\n     '
         f'.subClass={r["SubClass"]}, '
         f'.autoMap={r["AutoMap"]}}}'
         for _, r in df.iterrows()
-    ])
+    ]).replace("ss=128", "ss=SUB_SECRET_DOOR").replace("ss=64", "ss=SUB_WAYPOINT").replace("ss=32", "ss=SUB_WELL").replace("ss=16", "ss=SUB_ARCANE").replace("ss=8", "ss=SUB_CONTAINER").replace("ss=4", "ss=SUB_PORTAL").replace("ss=2", "ss=SUB_OBELISK").replace("ss=1", "ss=SUB_SHRINE").replace("ss=0", "ss=NO_SUBCLASS")
 
 
 ################################################################################
@@ -283,25 +285,25 @@ def align(i, size=8):
     return i
 
 ################################################################################
+txt_dir = "./txt/D2R/"
 
-
-level_df = read_lvl('./sdk/D2R/levels.txt')
+level_df = read_lvl(txt_dir + 'levels.txt')
 MAX_LEVEL = len(level_df)
 MAX_LEVEL_NAME = align(level_df["*StringName"].apply(len).max())
 
-act_df = read_act('./sdk/D2R/actinfo.txt')
+act_df = read_act(txt_dir + 'actinfo.txt')
 MAX_ACT = len(act_df)
 
-mon_df = read_mon('./sdk/D2R/monstats.txt')
+mon_df = read_mon(txt_dir + 'monstats.txt')
 MAX_MONSTER = len(mon_df)
 MAX_MONSTER_NAME = align(mon_df["NameStr"].apply(len).max())
 MAX_MONSTER_CLASS = align(mon_df["Id"].apply(len).max())
 
-super_df = read_super('./sdk/D2R/superuniques.txt')
+super_df = read_super(txt_dir + 'superuniques.txt')
 MAX_SUPER = len(super_df)
 MAX_SUPER_NAME = align(super_df["Name"].apply(len).max())
 
-obj_df = read_obj('./sdk/D2R/objects.txt')
+obj_df = read_obj(txt_dir + 'objects.txt')
 MAX_OBJ = len(obj_df)
 MAX_OBJ_NAME = align(obj_df["Name"].apply(len).max())
 MAX_OBJ_CLASS = align(obj_df["Class"].apply(len).max())
@@ -397,6 +399,26 @@ enum ResistanceId {{
 typedef enum ResistanceId ResistanceId;
 
 
+enum ThreatId {{
+    NO_THREAT = 0,
+    THREAT_BLOCK,
+    THREAT_WALL,
+    THREAT_UNUSED_3,
+    THREAT_TRAPPED_SOUL,
+    THREAT_UNUSED_5,
+    THREAT_DOOR,
+    THREAT_CATAPULT,
+    THREAT_FAMILIAR,
+    THREAT_TURRET,
+    THREAT_MONSTER,
+    THREAT_MINION,
+    THREAT_SHAMAN,
+    THREAT_BLOOD_RAVEN,
+    THREAT_PRIME_EVIL,
+}};
+typedef enum ThreatId ThreatId;
+
+
 enum SuperId  {{
     {generate_super_enum_content(super_df)}
 }};
@@ -433,7 +455,7 @@ struct MonsterInfo {{
     unsigned char inTown;
     unsigned char killable;
     unsigned char enabled;
-    unsigned char threat;
+    unsigned char threat;  // ThreatId
     unsigned char neverCount;
     unsigned char petIgnore;
     unsigned char inventory;
@@ -504,7 +526,8 @@ struct ObjectInfo {{
     unsigned char blockMissile;
     unsigned char openWarp;
     unsigned char isAttackable;
-    unsigned char subClass;
+    unsigned char lockable;
+    ObjectSubclass subClass;
     int autoMap;
 }};
 typedef struct ObjectInfo  ObjectInfo;

@@ -22,6 +22,26 @@ enum ResistanceId {
 typedef enum ResistanceId ResistanceId;
 
 
+enum ThreatId {
+    NO_THREAT = 0,
+    THREAT_BLOCK,
+    THREAT_WALL,
+    THREAT_UNUSED_3,
+    THREAT_TRAPPED_SOUL,
+    THREAT_UNUSED_5,
+    THREAT_DOOR,
+    THREAT_CATAPULT,
+    THREAT_FAMILIAR,
+    THREAT_TURRET,
+    THREAT_MONSTER,
+    THREAT_MINION,
+    THREAT_SHAMAN,
+    THREAT_BLOOD_RAVEN,
+    THREAT_PRIME_EVIL,
+};
+typedef enum ThreatId ThreatId;
+
+
 enum SuperId  {
     SUPER_BISHIBOSH,
     SUPER_BONEBREAK,
