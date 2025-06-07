@@ -277,7 +277,7 @@ def generate_object_struct_content(df):
         f'.subClass={r["SubClass"]}, '
         f'.autoMap={r["AutoMap"]}}}'
         for i, r in df.iterrows()
-    ]).replace("ss=128", "ss=SUB_SECRET_DOOR").replace("ss=64", "ss=SUB_WAYPOINT").replace("ss=32", "ss=SUB_WELL").replace("ss=16", "ss=SUB_ARCANE").replace("ss=8", "ss=SUB_CONTAINER").replace("ss=4", "ss=SUB_PORTAL").replace("ss=2", "ss=SUB_OBELISK").replace("ss=1", "ss=SUB_SHRINE").replace("ss=0", "ss=NO_SUBCLASS")
+    ]).replace("ss=128", "ss=SUB_SECRET_DOOR").replace("ss=64", "ss=SUB_WAYPOINT").replace("ss=32", "ss=SUB_WELL").replace("ss=16", "ss=SUB_ARCANE").replace("ss=8", "ss=SUB_CONTAINER").replace("ss=4", "ss=SUB_PORTAL").replace("ss=2", "ss=SUB_OBELISK").replace("ss=1", "ss=SUB_SHRINE").replace("ss=0", "ss=NO_SUBCLASS").replace("ap=1468", "ap=MAP_ANYA").replace("ap=1467", "ap=MAP_ALTAR").replace("ap=694", "ap=MAP_STAIR_LEFT").replace("ap=693", "ap=MAP_STAIR_RIGHT").replace("ap=427", "ap=MAP_TOME").replace("ap=339", "ap=MAP_PORTAL").replace("ap=319", "ap=MAP_BANK").replace("ap=318", "ap=MAP_CHEST").replace("ap=316", "ap=MAP_MALUS").replace("ap=315", "ap=MAP_GIBDIN").replace("ap=314", "ap=MAP_CAIN_STONE").replace("ap=313", "ap=MAP_INIFUSS_TREE").replace("ap=310", "ap=MAP_SHRINE").replace("ap=309", "ap=MAP_WELL").replace("ap=307", "ap=MAP_WAYPOINT").replace("ap=306", "ap=MAP_DIABLO_SEAL").replace("ap=305", "ap=MAP_COMPELLING_ORB").replace("ap=304", "ap=MAP_SEWER").replace("ap=223", "ap=MAP_TRAP_DOOR").replace("ap=0", "ap=NO_AUTOMAP")
 
 
 ################################################################################
@@ -505,7 +505,32 @@ enum ObjectSubclass {{
     SUB_WAYPOINT = 1 << 6,
     SUB_SECRET_DOOR = 1 << 7,
 }};
-typedef enum ObjectSubclass ObjectSubclass;
+typedef enum ObjectSubclass  ObjectSubclass;
+
+
+enum AutoMapId {{
+    NO_AUTOMAP = 0,
+    MAP_TRAP_DOOR = 223,
+    MAP_SEWER = 304,
+    MAP_COMPELLING_ORB = 305,
+    MAP_DIABLO_SEAL = 306,
+    MAP_WAYPOINT = 307,
+    MAP_WELL = 309,
+    MAP_SHRINE = 310,
+    MAP_INIFUSS_TREE = 313,
+    MAP_CAIN_STONE = 314,
+    MAP_GIBDIN = 315,
+    MAP_MALUS = 316,
+    MAP_CHEST = 318,
+    MAP_BANK = 319,
+    MAP_PORTAL = 339,
+    MAP_TOME = 427,
+    MAP_STAIR_RIGHT = 693,
+    MAP_STAIR_LEFT = 694,
+    MAP_ALTAR = 1467,
+    MAP_ANYA = 1468,
+}};
+typedef enum AutoMapId  AutoMapId;
 
 
 enum ObjectId  {{
@@ -533,7 +558,7 @@ struct ObjectInfo {{
     unsigned char isAttackable;
     unsigned char lockable;
     ObjectSubclass subClass;
-    int autoMap;
+    AutoMapId autoMap;
 }};
 typedef struct ObjectInfo  ObjectInfo;
 

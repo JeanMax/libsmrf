@@ -15,6 +15,31 @@ enum ObjectSubclass {
 typedef enum ObjectSubclass ObjectSubclass;
 
 
+enum AutoMapId {
+    NO_AUTOMAP = 0,
+    MAP_TRAP_DOOR = 223,
+    MAP_SEWER = 304,
+    MAP_COMPELLING_ORB = 305,
+    MAP_DIABLO_SEAL = 306,
+    MAP_WAYPOINT = 307,
+    MAP_WELL = 309,
+    MAP_SHRINE = 310,
+    MAP_INIFUSS_TREE = 313,
+    MAP_CAIN_STONE = 314,
+    MAP_GIBDIN = 315,
+    MAP_MALUS = 316,
+    MAP_CHEST = 318,
+    MAP_BANK = 319,
+    MAP_PORTAL = 339,
+    MAP_TOME = 427,
+    MAP_STAIR_RIGHT = 693,
+    MAP_STAIR_LEFT = 694,
+    MAP_ALTAR = 1467,
+    MAP_ANYA = 1468,
+};
+typedef enum AutoMapId  AutoMapId;
+
+
 enum ObjectId  {
     OBJ_NULL,
     OBJ_CASKET5,
@@ -622,7 +647,7 @@ struct ObjectInfo {
     unsigned char isAttackable;
     unsigned char lockable;
     ObjectSubclass subClass;
-    int autoMap;
+    AutoMapId autoMap;
 };
 typedef struct ObjectInfo  ObjectInfo;
 
