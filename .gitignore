@@ -6,6 +6,6 @@ libsmrfWindows_NT.a
 *.o
 *.d
 *.exe
-sdk
+txt
 smrfhck.ini
 smrfhck.log

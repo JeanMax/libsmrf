@@ -332,7 +332,6 @@ enum MonsterFlag {
 };
 typedef enum MonsterFlag  MonsterFlag;
 
-//TODO: monster name / id in monstat.txt
 
 #define MAX_AREA 137
 extern const char *AREAS[MAX_AREA];
