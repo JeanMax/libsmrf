@@ -864,7 +864,7 @@ typedef enum MonsterId  MonsterId;
 #define MAX_SUPER_NAME 32
 
 struct SuperInfo {
-    /* SuperId id; */
+    SuperId id;
     char name[MAX_SUPER_NAME];
     MonsterId monster;
 };
@@ -878,13 +878,13 @@ extern const SuperInfo SUPER_INFO[MAX_SUPER];
 #define MAX_MONSTER_CLASS 24
 
 struct MonsterInfo {
-    /* MonsterId id; */
+    MonsterId id;
     char name[MAX_MONSTER_NAME];
     char classId[MAX_MONSTER_CLASS];
     unsigned char inTown;
     unsigned char killable;
     unsigned char enabled;
-    unsigned char threat;
+    unsigned char threat;  // ThreatId
     unsigned char neverCount;
     unsigned char petIgnore;
     unsigned char inventory;

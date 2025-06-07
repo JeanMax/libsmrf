@@ -609,7 +609,7 @@ typedef enum ObjectId  ObjectId;
 #define MAX_OBJECT_DESC 80
 
 struct ObjectInfo {
-    /* ObjectId id; */
+    ObjectId id;
     char name[MAX_OBJECT_NAME];
     char classId[MAX_OBJECT_CLASS];
     char desc[MAX_OBJECT_DESC];

@@ -203,7 +203,7 @@ typedef enum LevelId  LevelId;
 #define MAX_ACT_WP 9
 
 struct ActInfo {
-    /* ActId id; */
+    ActId id;
     char name[MAX_ACT_NAME];
     LevelId wp[MAX_ACT_WP];
 };
@@ -216,7 +216,7 @@ extern const ActInfo ACT_INFO[MAX_ACT];
 #define MAX_LEVEL_NAME 32
 
 struct LevelInfo {
-    /* LevelId id; */
+    LevelId id;
     char name[MAX_LEVEL_NAME];
     ActId act;
     WaypointId wp;
