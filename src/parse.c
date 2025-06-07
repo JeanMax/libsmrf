@@ -299,7 +299,7 @@ static Room2 *parse_room2_list(ptr_t r2_addr, Room2 *r2_first)
     return r2_first;
 }
 
-static Level *parse_level(ptr_t level_addr, ptr_t *next_level_addr)
+static Level *parse_level(ptr_t level_addr)
 {
     Level *level_new;
     Level level;
@@ -308,7 +308,6 @@ static Level *parse_level(ptr_t level_addr, ptr_t *next_level_addr)
         ||!memread(level_addr, sizeof(Level),
                    find_Level_callback, &level)) {
         LOG_WARNING("Can't find level");
-        *next_level_addr = 0;
         return NULL;
     }
     /* log_Level(&level); */
@@ -317,59 +316,61 @@ static Level *parse_level(ptr_t level_addr, ptr_t *next_level_addr)
     level_new = g_levels[level.dwLevelNo];
     if (!level_new) {
         DUPE(level_new, &level, sizeof(Level));
-        level_new->pNext = NULL;
         level_new->pRoom2First = NULL;
         g_levels[level.dwLevelNo] = level_new;
     }
     level_new->pRoom2First = parse_room2_list((ptr_t)level.pRoom2First,
                                               level_new->pRoom2First);
 
-    *next_level_addr = (ptr_t)level.pNext;
     return level_new;
 }
 
 
 Level *parse_level_list(ptr_t level_addr)
 {
-    Level *level_first = NULL, *level_prev, *level_new;
+    Level *level_first = NULL, *level_new;
     ptr_t next_level_addr = level_addr;
 
-    // follow linked list
-    do {
-        level_new = parse_level(next_level_addr, &next_level_addr);
-        if (!level_new) {
-            break;
-        }
-        if (g_levels[level_new->dwLevelNo] == level_new) { // freshly duped
-            ADD_LINK(level_first, level_prev, level_new);
-        }
-    } while (is_valid_ptr(next_level_addr));
+    /* // follow linked list */
+    /* do { */
+    /*     level_new = parse_level(next_level_addr); */
+    /*     if (!level_new) { */
+    /*         break; */
+    /*     } */
+    /*     if (!level_first) { */
+    /*         level_first = level_new; */
+    /*     } */
+    /*     next_level_addr = (ptr_t)level_new->pNext; */
+    /* } while (is_valid_ptr(next_level_addr)); */
+
+
+    // just check current ptr
+    level_new = parse_level(next_level_addr);
+    if (!level_new) {
+        LOG_ERROR("Can't parse 1st Level ptr");
+        return NULL;
+    }
+    level_first = level_new;
 
     // consider it's a level[], go to next cell
-    ptr_t near_level_addr = level_addr;
+    next_level_addr = level_addr + sizeof(Level);
     do {
-        near_level_addr += sizeof(Level);
-        level_new = parse_level(near_level_addr, &next_level_addr);
+        level_new = parse_level(next_level_addr);
         if (!level_new) {
             break;
         }
-        if (g_levels[level_new->dwLevelNo] == level_new) { // freshly duped
-            ADD_LINK(level_first, level_prev, level_new);
-        }
-    } while (is_valid_ptr(near_level_addr));
+        next_level_addr += sizeof(Level);
+    } while (is_valid_ptr(next_level_addr));
 
     // consider it's a level[], go to prev cell
-    near_level_addr = level_addr;
+    next_level_addr = level_addr - sizeof(Level);
     do {
-        near_level_addr -= sizeof(Level);
-        level_new = parse_level(near_level_addr, &next_level_addr);
+        level_new = parse_level(next_level_addr);
         if (!level_new) {
             break;
         }
-        if (g_levels[level_new->dwLevelNo] == level_new) { // freshly duped
-            ADD_LINK(level_first, level_prev, level_new);
-        }
-    } while (is_valid_ptr(near_level_addr));
+        next_level_addr -= sizeof(Level);
+    } while (is_valid_ptr(next_level_addr));
 
     if (!level_first) {
         LOG_ERROR("Can't parse Level list");

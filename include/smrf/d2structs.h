@@ -65,9 +65,11 @@ struct PresetUnit {
 
 typedef  struct Level  Level;
 struct Level {
-    dword _1[4];  // 2 first are a pointer to somewhere close
+    Level *pLevelBis;
+    // somewhere close
     // ( 1216 bytes further == 2 * sizeof(Level) )
     // OR: 0000000[123] 00000010
+    dword _1[2];
     Room2* pRoom2First;
     void* pDunno;
     dword _2;

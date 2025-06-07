@@ -48,7 +48,8 @@ void log_Level(Level *ptr)
 {
     (void)ptr;
     LOG_DEBUG("struct " CLR_GREEN "Level" CLR_RESET " {\n"
-              "    dword _1[4]: %08x %08x %08x %08x\n"
+              "    Level* pLevelBis: %16jx\n"
+              "    dword _1[4]: %08x %08x\n"
               "    Room2* pRoom2First: %16jx\n"
               "    void* pDunno: %16jx\n"
               "    dword _2: %08x\n"
@@ -67,7 +68,8 @@ void log_Level(Level *ptr)
               "    dword RoomCenterY[9]: %08x %08x %08x %08x %08x %08x %08x %08x %08x\n"
               "    dword dwRoomEntries: %08x\n"
               "}",
-              ptr->_1[0], ptr->_1[1], ptr->_1[2], ptr->_1[3],
+              ptr->pLevelBis,
+              ptr->_1[0], ptr->_1[1],
               (ptr_t)ptr->pRoom2First,
               (ptr_t)ptr->pDunno,
               ptr->_2,
