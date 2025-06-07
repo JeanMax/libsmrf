@@ -148,7 +148,7 @@ test: all
 
 # show all TODO in project
 todo:
-	grep --color=auto -riIn --exclude-dir .git --exclude-dir sdk --exclude Makefile todo .
+	grep --color=auto -riIn --exclude-dir .git --exclude-dir txt --exclude Makefile -E '[^s]todo' .
 
 
 ##
