@@ -860,7 +860,7 @@ extern const SuperInfo SUPER_INFO[MAX_SUPER];
 struct MonsterInfo {
     /* MonsterId id; */
     char name[MAX_MONSTER_NAME];
-    char class[MAX_MONSTER_CLASS];
+    char classId[MAX_MONSTER_CLASS];
     unsigned char inTown;
     unsigned char killable;
     unsigned char enabled;

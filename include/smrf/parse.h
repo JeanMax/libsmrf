@@ -13,7 +13,7 @@ struct UnitWithAddr {
     ptr_t unit_addr[MAX_UNIT_ADDR];
 };
 
-extern Level  *g_levels[MAX_AREA];
+extern Level  *g_levels[MAX_LEVEL];
 
 void free_all_levels(void);
 Level *parse_level_list(ptr_t level_addr);

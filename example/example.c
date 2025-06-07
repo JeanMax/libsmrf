@@ -53,7 +53,7 @@ static bool main_loop(bool loop)
                      /* game.player.pAct->dwMapSeed, */
                      game.player.pPath->xPos,
                      game.player.pPath->yPos,
-                     AREAS[game.level->dwLevelNo],
+                     LEVEL_INFO[game.level->dwLevelNo].name,
                      game.level->dwLevelNo);
         }
         if (loop) {

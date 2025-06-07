@@ -534,7 +534,7 @@ inline bool is_valid_Level(Level *ptr)
         && ptr->dwPosY <= 0xffff
         && ptr->dwSizeX <= 0xff
         && ptr->dwSizeY <= 0xff
-        && ptr->dwLevelNo < MAX_AREA  // TODO: it can get weird
+        && ptr->dwLevelNo < MAX_LEVEL  // TODO: it can get weird
         && ptr->dwRoomEntries <= 0xf
         && (!ptr->pRoom2First || is_valid_ptr__quick((ptr_t)ptr->pRoom2First))
         /* && is_valid_ptr__quick((ptr_t)ptr->pDunno) */

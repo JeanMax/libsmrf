@@ -227,7 +227,7 @@ def generate_monster_struct_content(df):
     return ",\n    ".join([
         f'{{'
         f'.name="{r["NameStr"]}",{" " * (24 - len(r["NameStr"]))} '
-        f'.class="{r["Id"]}",\n     '
+        f'.classId="{r["Id"]}",\n     '
         f'.inTown={r["inTown"]},     '
         f'.killable={r["killable"]},  '
         f'.enabled={r["enabled"]},   '
@@ -260,7 +260,7 @@ def generate_object_struct_content(df):
     return ",\n    ".join([
         f'{{'
         f'.name="{r["Name"]}",{" " * (23 - len(r["Name"]))} '
-        f'.class="{r["Class"]}",\n     '
+        f'.classId="{r["Class"]}",\n     '
         f'.desc="{r["*Description"]}",\n     '
         f'.sizeX={r["SizeX"]},        '
         f'.sizeY={r["SizeY"]},       '
@@ -311,35 +311,35 @@ MAX_OBJ_DESC = align(obj_df["*Description"].apply(len).max())
 print(f"""////////////////////////////////////////////////////////////////////////////////
 // level.h
 ////////////////////////////////////////////////////////////////////////////////
-typedef enum ActId  ActId;
 enum ActId  {{
     {generate_act_enum_content(act_df)}
 }};
+typedef enum ActId  ActId;
 
 
-typedef enum WaypointId  WaypointId;
 enum WaypointId {{
     NO_WAYPOINT = 0xff,
     {generate_waypoint_enum_content(level_df)}
 }};
+typedef enum WaypointId  WaypointId;
 
 
-typedef enum LevelId  LevelId;
 enum LevelId {{
     {generate_level_enum_content(level_df)}
 }};
+typedef enum LevelId  LevelId;
 
 
 #define MAX_ACT {MAX_ACT}
 #define MAX_ACT_NAME 8
 #define MAX_ACT_WP 9
 
-typedef struct ActInfo  ActInfo;
 struct ActInfo {{
     /* ActId id; */
     char name[MAX_ACT_NAME];
     LevelId wp[MAX_ACT_WP];
 }};
+typedef struct ActInfo  ActInfo;
 
 extern const ActInfo ACT_INFO[MAX_ACT];
 
@@ -347,13 +347,13 @@ extern const ActInfo ACT_INFO[MAX_ACT];
 #define MAX_LEVEL {MAX_LEVEL}
 #define MAX_LEVEL_NAME {MAX_LEVEL_NAME}
 
-typedef struct LevelInfo  LevelInfo;
 struct LevelInfo {{
     /* LevelId id; */
     char name[MAX_LEVEL_NAME];
     ActId act;
     WaypointId wp;
 }};
+typedef struct LevelInfo  LevelInfo;
 
 extern const LevelInfo LEVEL_INFO[MAX_LEVEL];
 
@@ -376,16 +376,15 @@ const LevelInfo LEVEL_INFO[MAX_LEVEL] = {{
 ////////////////////////////////////////////////////////////////////////////////
 // monster.h
 ////////////////////////////////////////////////////////////////////////////////
-typedef enum DifficultyId DifficultyId;  //TODO: move
 enum DifficultyId {{
     DIFF_NORMAL = 0,
     DIFF_NIGHTMARE,
     DIFF_HELL,
     MAX_DIFFICULTY
 }};
+typedef enum DifficultyId DifficultyId;  //TODO: move
 
 
-typedef enum ResistanceId ResistanceId;
 enum ResistanceId {{
     RES_PHYSICAL = 0,
     RES_MAGIC,
@@ -395,29 +394,30 @@ enum ResistanceId {{
     RES_POISON,
     MAX_RESISTANCE
 }};
+typedef enum ResistanceId ResistanceId;
 
 
-typedef enum SuperId  SuperId;
 enum SuperId  {{
     {generate_super_enum_content(super_df)}
 }};
+typedef enum SuperId  SuperId;
 
 
-typedef enum MonsterId  MonsterId;
 enum MonsterId  {{
     {generate_monster_enum_content(mon_df)}
 }};
+typedef enum MonsterId  MonsterId;
 
 
 #define MAX_SUPER {MAX_SUPER}
 #define MAX_SUPER_NAME {MAX_SUPER_NAME}
 
-typedef struct SuperInfo  SuperInfo;
 struct SuperInfo {{
     /* SuperId id; */
     char name[MAX_SUPER_NAME];
     MonsterId monster;
 }};
+typedef struct SuperInfo  SuperInfo;
 
 extern const SuperInfo SUPER_INFO[MAX_SUPER];
 
@@ -426,11 +426,10 @@ extern const SuperInfo SUPER_INFO[MAX_SUPER];
 #define MAX_MONSTER_NAME {MAX_MONSTER_NAME}
 #define MAX_MONSTER_CLASS {MAX_MONSTER_CLASS}
 
-typedef struct MonsterInfo  MonsterInfo;
 struct MonsterInfo {{
     /* MonsterId id; */
     char name[MAX_MONSTER_NAME];
-    char class[MAX_MONSTER_CLASS];
+    char classId[MAX_MONSTER_CLASS];
     unsigned char inTown;
     unsigned char killable;
     unsigned char enabled;
@@ -445,6 +444,7 @@ struct MonsterInfo {{
     unsigned char zoo;
     int res[MAX_DIFFICULTY][MAX_RESISTANCE];
 }};
+typedef struct MonsterInfo  MonsterInfo;
 
 extern const MonsterInfo MONSTER_INFO[MAX_MONSTER];
 
@@ -467,7 +467,6 @@ const MonsterInfo MONSTER_INFO[MAX_MONSTER] = {{
 ////////////////////////////////////////////////////////////////////////////////
 // object.h
 ////////////////////////////////////////////////////////////////////////////////
-typedef enum ObjectSubclass ObjectSubclass;
 enum ObjectSubclass {{
     NO_SUBCLASS = 0,
     SUB_SHRINE = 1 << 0,
@@ -479,12 +478,13 @@ enum ObjectSubclass {{
     SUB_WAYPOINT = 1 << 6,
     SUB_SECRET_DOOR = 1 << 7,
 }};
+typedef enum ObjectSubclass ObjectSubclass;
 
 
-typedef enum ObjectId  ObjectId;
 enum ObjectId  {{
     {generate_object_enum_content(obj_df)}
 }};
+typedef enum ObjectId  ObjectId;
 
 
 #define MAX_OBJECT {MAX_OBJ}
@@ -492,11 +492,10 @@ enum ObjectId  {{
 #define MAX_OBJECT_CLASS {MAX_OBJ_CLASS}
 #define MAX_OBJECT_DESC {MAX_OBJ_DESC}
 
-typedef struct ObjectInfo  ObjectInfo;
 struct ObjectInfo {{
     /* ObjectId id; */
     char name[MAX_OBJECT_NAME];
-    char class[MAX_OBJECT_CLASS];
+    char classId[MAX_OBJECT_CLASS];
     char desc[MAX_OBJECT_DESC];
     unsigned char sizeX;
     unsigned char sizeY;
@@ -508,6 +507,7 @@ struct ObjectInfo {{
     unsigned char subClass;
     int autoMap;
 }};
+typedef struct ObjectInfo  ObjectInfo;
 
 extern const ObjectInfo OBJECT_INFO[MAX_OBJECT];
 

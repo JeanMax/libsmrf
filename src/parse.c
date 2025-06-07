@@ -6,7 +6,7 @@
 
 #define UPDATE_UNIT_FAILED ((ptr_t)-1)
 
-Level      *g_levels[MAX_AREA] = {0};
+Level      *g_levels[MAX_LEVEL] = {0};
 Htable     *g_unit_table = {0};  //TODO: move that to GameState (and remove private fields there)
 
 
@@ -51,7 +51,7 @@ static void free_room2_list(Room2 *ptr)
 
 void free_all_levels(void)
 {
-    for (int i = 0; i < MAX_AREA; i++) {
+    for (int i = 0; i < MAX_LEVEL; i++) {
         // we have our own poor-man hash table for storing them
         /* free_level_list(g_levels[i]); */
         if (g_levels[i]) {
@@ -183,7 +183,7 @@ static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny 
     DUPE(u.pPath, &path, sizeof(Path));
     /* DUPE(u.pAct, &act, sizeof(Act)); */
 
-    MALLOC(uwa, sizeof(UnitWithAddr));
+    MALLOC(uwa, sizeof(UnitWithAddr)); //TODO: leak (just a few? looks like you loose a node)
     memcpy(&uwa->unit, &u, sizeof(UnitAny));
     uwa->unit_addr[0] = u_addr;
     hset(g_unit_table, u.dwUnitId, uwa);

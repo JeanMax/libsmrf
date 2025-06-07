@@ -2,14 +2,9 @@
 #define _D2SDK_H
 
 #include "util/types.h"
-
-inline dword act_from_area(dword area)
-{
-    return area < 40 ? 1 :
-           (area < 75 ? 2 :
-            (area < 103 ? 3 :
-             (area < 109 ? 4 : 5)));
-}
+#include "sdk/level.h"
+#include "sdk/monster.h"
+#include "sdk/object.h"
 
 // PRESETS
 inline bool is_shrine(dword id)  //TODO: optimize these
@@ -333,8 +328,6 @@ enum MonsterFlag {
 typedef enum MonsterFlag  MonsterFlag;
 
 
-#define MAX_AREA 137
-extern const char *AREAS[MAX_AREA];
 
 /* enum collision_flag { */
 /*     COL_NONE = 0x0000, */

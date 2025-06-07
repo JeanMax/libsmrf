@@ -611,7 +611,7 @@ typedef enum ObjectId  ObjectId;
 struct ObjectInfo {
     /* ObjectId id; */
     char name[MAX_OBJECT_NAME];
-    char class[MAX_OBJECT_CLASS];
+    char classId[MAX_OBJECT_CLASS];
     char desc[MAX_OBJECT_DESC];
     unsigned char sizeX;
     unsigned char sizeY;

@@ -216,7 +216,7 @@ static bool is_bullshit_memory(const char *memory_info_str)
         return FALSE;
     }
 
-    return TRUE;
+    return TRUE; // probably dll
 }
 #endif
 
