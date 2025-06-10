@@ -175,7 +175,6 @@ static bool update_unit_callback(void *node_value, void *data)
     /*     return FALSE; */
     /* } */
 
-    MonsterData mdata;
     Path path;
     UnitAny u;
     UnitAny *next;
@@ -203,10 +202,10 @@ static bool update_unit_callback(void *node_value, void *data)
             continue;
         }
 
-        if (u.dwType == UNIT_MONSTER && u.wIsCorpse == 1) {  // remove dead monsters
-            hdel(g_unit_table, uwa->unit.dwUnitId);
-            return FALSE;
-        }
+        /* if (u.dwType == UNIT_MONSTER && u.wIsCorpse == 1) {  // remove dead monsters */
+        /*     hdel(g_unit_table, uwa->unit.dwUnitId); */
+        /*     return FALSE; */
+        /* } */
 
         next = uwa->unit.pNext;
         p = uwa->unit.pPath;
@@ -232,6 +231,7 @@ static bool update_unit_callback(void *node_value, void *data)
         uwa->unit.pPath = u.pPath;
 
         if (u.dwType == UNIT_MONSTER) {
+            MonsterData mdata;
             if (u.pMonsterData) {
                 if (!is_valid_ptr((ptr_t)u.pMonsterData)
                     || !memread((ptr_t)u.pMonsterData, sizeof(MonsterData),
@@ -248,7 +248,26 @@ static bool update_unit_callback(void *node_value, void *data)
             uwa->unit.pMonsterData = u.pMonsterData;
 
             /* LOG_DEBUG("Successful monster refresh at %08x", uwa->unit_addr); /\* DEBUG *\/ */
+        } else if (u.dwType == UNIT_PLAYER) {
+            PlayerData pdata;
+            if (u.pPlayerData) {
+                if (!is_valid_ptr((ptr_t)u.pPlayerData)
+                    || !memread((ptr_t)u.pPlayerData, sizeof(PlayerData),
+                                find_PlayerData_callback, &pdata)) {
+                    LOG_WARNING("Can't resfresh unit's PlayerData at addr %16jx", uwa->unit_addr[i]);
+                    uwa->unit_addr[i] = 0;
+                    continue;
+                }
+                DUPE(u.pPlayerData, &pdata, sizeof(PlayerData));
+            }
+            if (uwa->unit.pPlayerData) {
+                FREE(uwa->unit.pPlayerData);
+            }
+            uwa->unit.pPlayerData = u.pPlayerData;
+
+            /* LOG_DEBUG("Successful player refresh at %08x", uwa->unit_addr); /\* DEBUG *\/ */
         }
+
 
         return FALSE; // yay
     }
