@@ -132,10 +132,6 @@ static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny 
 
     UnitAny *ret = u.pNext;
 
-    if (!(u.dwType == UNIT_MONSTER || u.dwType == UNIT_PLAYER)) {
-        return ret;
-    }
-
     if (u.dwType == UNIT_MONSTER && u.wIsCorpse == 1) {  // remove dead monsters
         return ret; //TODO: I feel like monster that could be reanimated have always that bool up
     }
