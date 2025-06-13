@@ -172,6 +172,17 @@ def read_tile(filename):
     )
     return df.loc[:, ["Name", "NoInteract", "Id", "UniqueId"]]
 
+def read_missile(filename):
+    df = pd.read_csv(
+        filename,
+        delimiter="\t",
+        index_col="*ID",
+        dtype={
+            "*ID": pd.Int32Dtype(),
+            # there's a lot more infos in there (damages for instance)
+        }
+    )
+    return df.loc[:, ["Missile"]]
 
 ################################################################################
 
@@ -240,6 +251,13 @@ def generate_tile_enum_content(df):
         upcasify(f'TILE_{r["Name"]}')
         for _, r in df.iterrows()
     ]).replace("CLIFF_L", "CLIFF_L = 0")
+
+
+def generate_missile_enum_content(df):
+    return ",\n    ".join([
+        upcasify(f'MISS_{r["Missile"]}')
+        for _, r in df.iterrows()
+    ]).replace("MISS_ARROW,", "MISS_ARROW = 0,")
 
 
 ################################################################################
@@ -405,6 +423,14 @@ def generate_tile_struct_content(df):
         f'{{.id={i}, '
         f'.uid=UNIQUE_TILE_{upcasify(df[df["Id"] == i].iloc[0]["Name"])}}}'
         for i in df["Id"].unique()
+    ])
+
+
+def generate_missile_struct_content(df):
+    return ",\n    ".join([
+        f'{{.id={i}, '
+        f'.name="{r["Missile"]}"}}'
+        for i, r in df.iterrows()
     ])
 
 
@@ -800,6 +826,43 @@ const TileInfo TILE_INFO[MAX_TILE] = {{
 }};
 """
 
+
+def str_missile_inc(missile_df):
+    MAX_MISSILE = len(missile_df)
+    MAX_MISSILE_NAME = align(missile_df["Missile"].apply(len).max())
+    return f"""#ifndef _MISSILE_H
+#define _MISSILE_H
+
+enum MissileId  {{
+    {generate_missile_enum_content(missile_df)}
+}};
+typedef enum MissileId  MissileId;
+
+
+#define MAX_MISSILE {MAX_MISSILE}
+#define MAX_MISSILE_NAME {MAX_MISSILE_NAME}
+
+struct MissileInfo {{
+    MissileId id;
+    char name[MAX_MISSILE_NAME];
+}};
+typedef struct MissileInfo  MissileInfo;
+
+extern const MissileInfo MISSILE_INFO[MAX_MISSILE];
+
+
+#endif
+"""
+
+def str_missile_src(missile_df):
+    return f"""#include "sdk/missile.h"
+
+const MissileInfo MISSILE_INFO[MAX_MISSILE] = {{
+    {generate_missile_struct_content(missile_df)}
+}};
+"""
+
+
 ################################################################################
 
 
@@ -854,3 +917,48 @@ with open(SDK_SRC_DIR + "tile.c", "w") as f:
     f.write(
         str_tile_src(tile_df)
     )
+
+missile_df = read_missile(TXT_DIR + "missiles.txt")
+with open(SDK_INC_DIR + "missile.h", "w") as f:
+    f.write(
+        str_missile_inc(missile_df)
+    )
+with open(SDK_SRC_DIR + "missile.c", "w") as f:
+    f.write(
+        str_missile_src(missile_df)
+    )
+
+
+
+#TODO:
+# weapons.txt
+# armor.txt
+# belts.txt
+# books.txt
+# gems.txt
+# misc.txt (weapon -> armor -> misc)
+# runes.txt
+# setitems.txt
+# sets.txt
+# uniqueitems.txt
+
+# itemratio.txt
+# ItemStatCost.txt
+# ItemTypes.txt
+
+# MagicPrefix.txt
+# MagicSuffix.txt
+
+# Properties.txt
+# QualityItems.txt
+
+# RarePrefix.txt
+# RareSuffix.txt
+
+# uniqueprefix.txt
+# uniquesuffix.txt
+
+# automagic.txt
+
+# cubemain.txt
+# runeword: d2go
