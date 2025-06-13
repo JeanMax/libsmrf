@@ -278,7 +278,7 @@ struct UnitAny {
     };
     dword _dunno2[18];
     void* pStats;
-    void* pInventory;
+    Inventory* pInventory;
     dword _dunno3[11];
     word xPos;  // not updated with coords (seen non-0 in classic)
     word yPos;  // not updated with coords (always 0?)
@@ -330,7 +330,7 @@ bool is_valid_UnitAny(UnitAny *ptr);
     {                                                                       \
         (void)buf_len, (void)address;                                       \
         if (!is_valid_##STRUCT((STRUCT *)buf)) {                            \
-            LOG_WARNING("Invalid "#STRUCT" %16jx", address);                \
+            /* LOG_WARNING("Invalid "#STRUCT" %16jx", address); */ \
             /* log_##STRUCT((STRUCT *)buf); */                          \
             return NULL;                                                    \
         }                                                                   \

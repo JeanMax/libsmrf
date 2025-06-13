@@ -711,15 +711,18 @@ inline bool is_valid_UnitAny(UnitAny *ptr)
         return FALSE;
     }
 
-    if (ptr->dwType == UNIT_PLAYER) {
-        return is_valid_Player(ptr);
+    switch (ptr->dwType) {
+        case UNIT_PLAYER:
+            return is_valid_Player(ptr);
+        case UNIT_MONSTER:
+            return is_valid_Monster(ptr);
+        /* case UNIT_OBJECT: */
+        /*     return is_valid_object(ptr); //TODO */
+        /* case UNIT_MISSILE: */
+        /*     return is_valid_missile(ptr); //TODO */
+        /* case UNIT_ITEM: */
+        /*     return is_valid_item(ptr); //TODO */
     }
-
-    if (ptr->dwType == UNIT_MONSTER) {
-        return is_valid_Monster(ptr);
-    }
-
-    //TODO: check other types
 
     return FALSE;
 }

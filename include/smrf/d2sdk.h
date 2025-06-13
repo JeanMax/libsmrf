@@ -106,7 +106,7 @@ inline bool is_a_threat(const MonsterInfo *mon_info)
  * this is for preset type 1 with dwTxtFileNo > MAX_MONSTER + MAX_SUPER
  * -> usually boss / champions, but can be other weird preset "monstery" stuff
  */
-enum WeirdPresetMonsterId {
+enum WeirdPresetMonsterId { //TODO: move
     FIRST_WEIRD = MAX_MONSTER + MAX_SUPER - 1,
     DARK_WOOD_FALLEN,
     // ?
@@ -242,6 +242,7 @@ inline bool is_backward_tile(const UniqueTileInfo *utile_info)
 }
 
 
+//TODO: move
 enum MonsterFlag {
     MONSTER_NORMAL = 1 << 0,
     MONSTER_SUPER = 1 << 1,

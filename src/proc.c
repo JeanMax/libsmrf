@@ -89,13 +89,9 @@ void *memread(ptr_t start_address, size_t length,
     }
 #else
     if (!g_process) {
-        g_process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                                0, g_pid);
-        if (!g_process) {
-            LOG_ERROR("Can't read proc memory");
-            reset_global_state();
-            return NULL;
-        }
+        LOG_ERROR("Can't read proc memory");
+        reset_global_state();
+        return NULL;
     }
 #endif
     byte read_buf[PAGE_LENGTH];
@@ -120,8 +116,8 @@ void *memread(ptr_t start_address, size_t length,
         }
         if (read_len < page_len) {
             if (read_len) {
-                LOG_ERROR("something went wrong with memread (read_len: %zu)",
-                          (size_t)read_len);
+                LOG_ERROR("something went wrong with memread (read_len: %zu / %zu)",
+                          read_len, page_len);
             }
             break;
         }
@@ -263,9 +259,9 @@ pid_t readmaps(const char *win_name, bool refresh_win)
     }
     fclose(maps_file);
 #else
-    HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+    g_process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
                                  0, g_pid);
-    if (!process) {
+    if (!g_process) {
         reset_global_state();
         return FALSE;
     }
@@ -278,7 +274,7 @@ pid_t readmaps(const char *win_name, bool refresh_win)
 
     MEMORY_BASIC_INFORMATION info;
     for (ptr_t ptr = addr_min;
-         VirtualQueryEx(process, (void *)ptr, &info, sizeof(info)) && ptr < addr_max;
+         VirtualQueryEx(g_process, (void *)ptr, &info, sizeof(info)) && ptr < addr_max;
          ptr += info.RegionSize) {
         if (info.State == MEM_COMMIT && info.Type == MEM_PRIVATE
                 && !(info.Protect & PAGE_GUARD) && !(info.Protect & PAGE_NOACCESS)
@@ -292,7 +288,6 @@ pid_t readmaps(const char *win_name, bool refresh_win)
             i++;
         }
     }
-    CloseHandle(process);
 #endif
     /* LOG_DEBUG("%d maps found", i); /\* DEBUG *\/ */
     g_maps_range[i].start = 0;
