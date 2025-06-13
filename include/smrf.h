@@ -53,7 +53,7 @@ struct GameState {
     Player player;
     ptr_t _player_addr; //TODO: internal, hide
     pthread_mutex_t mutex;
-    Level **all_levels; // Level *all_levels[MAX_AREA]
+    Level **all_levels; // Level *all_levels[MAX_LEVEL]
 };
 
 

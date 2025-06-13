@@ -534,7 +534,7 @@ inline bool is_valid_Level(Level *ptr)
         && ptr->dwPosY <= 0xffff
         && ptr->dwSizeX <= 0xff
         && ptr->dwSizeY <= 0xff
-        && ptr->dwLevelNo < MAX_AREA  // TODO: it can get weird
+        && ptr->dwLevelNo < MAX_LEVEL  // TODO: it can get weird
         && ptr->dwRoomEntries <= 0xf
         && (!ptr->pRoom2First || is_valid_ptr__quick((ptr_t)ptr->pRoom2First))
         /* && is_valid_ptr__quick((ptr_t)ptr->pDunno) */
@@ -582,6 +582,8 @@ inline bool is_valid_PresetUnit(PresetUnit *ptr)
     if (ptr->pNext && !is_valid_ptr((ptr_t)ptr->pNext)) {
         LOG_WARNING("invalid pNext");
     }
+
+    //TODO: validate dwType / dwTxtFileNo
 
     return IS_ALIGNED(ptr)
         && (!ptr->pNext || is_valid_ptr((ptr_t)ptr->pNext));
@@ -652,6 +654,23 @@ inline bool is_valid_PlayerData(PlayerData *ptr)
         ;
 }
 
+inline bool is_valid_Monster(Monster *ptr)
+{
+    log_UnitAny(ptr);                          /* DEBUG */
+    return IS_ALIGNED(ptr)
+        && ptr->dwType == UNIT_MONSTER
+        && ptr->dwTxtFileNo < MAX_MONSTER
+        && ptr->dwUnitId != 0
+        && ptr->dwAct < 5
+        /* && ptr->dwPlayerClass < CLASS_MAX */
+        /* && !ptr->xPos */
+        /* && !ptr->yPos */
+        && is_valid_ptr__quick((ptr_t)ptr->pMonsterData)
+        && is_valid_ptr__quick((ptr_t)ptr->pPath)
+        && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
+        && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
+        ;
+}
 inline bool is_valid_Player(Player *ptr)
 {
     log_UnitAny(ptr);                          /* DEBUG */
@@ -667,7 +686,7 @@ inline bool is_valid_Player(Player *ptr)
         && ptr->dwTxtFileNo == ptr->dwPlayerClass
         && ptr->dwUnitId != 0
         && ptr->dwAct < 5
-        && ptr->dwPlayerClass < CLASS_MAX
+        && ptr->dwPlayerClass < MAX_PLAYER
         /* && !ptr->xPos */
         /* && !ptr->yPos */
         && is_valid_ptr__quick((ptr_t)ptr->pPlayerData)
@@ -683,13 +702,24 @@ inline bool is_valid_Player(Player *ptr)
 
 inline bool is_valid_UnitAny(UnitAny *ptr)
 {
-    return IS_ALIGNED(ptr)
-        && ptr->dwType < UNIT_MAX
-        && ptr->dwUnitId != 0
-        && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
-        && (!ptr->pPlayerData || is_valid_ptr__quick((ptr_t)ptr->pPlayerData))
-        /*     && ptr->dwAct < 5; */
-        /* && is_valid_ptr((ptr_t)ptr->pAct) */
-        && is_valid_ptr((ptr_t)ptr->pPath)
-        ;
+    if (!(IS_ALIGNED(ptr)
+          && ptr->dwType < MAX_UNIT
+          && ptr->dwUnitId != 0
+          && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
+          /* && is_valid_ptr((ptr_t)ptr->pAct) */
+          && is_valid_ptr((ptr_t)ptr->pPath))) {
+        return FALSE;
+    }
+
+    if (ptr->dwType == UNIT_PLAYER) {
+        return is_valid_Player(ptr);
+    }
+
+    if (ptr->dwType == UNIT_MONSTER) {
+        return is_valid_Monster(ptr);
+    }
+
+    //TODO: check other types
+
+    return FALSE;
 }

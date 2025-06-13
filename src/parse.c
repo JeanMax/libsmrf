@@ -6,7 +6,7 @@
 
 #define UPDATE_UNIT_FAILED ((ptr_t)-1)
 
-Level      *g_levels[MAX_AREA] = {0};
+Level      *g_levels[MAX_LEVEL] = {0};
 Htable     *g_unit_table = {0};  //TODO: move that to GameState (and remove private fields there)
 
 
@@ -51,7 +51,7 @@ static void free_room2_list(Room2 *ptr)
 
 void free_all_levels(void)
 {
-    for (int i = 0; i < MAX_AREA; i++) {
+    for (int i = 0; i < MAX_LEVEL; i++) {
         // we have our own poor-man hash table for storing them
         /* free_level_list(g_levels[i]); */
         if (g_levels[i]) {
@@ -120,6 +120,7 @@ static PresetUnit *preset_in_list(PresetUnit *pu, PresetUnit *pu_list)
 static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
 {
     static MonsterData mdata;
+    static PlayerData pdata;
     static UnitAny u;
     static Path path;
 
@@ -132,13 +133,9 @@ static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny 
 
     UnitAny *ret = u.pNext;
 
-    if (!(u.dwType == UNIT_MONSTER || u.dwType == UNIT_PLAYER)) {
-        return ret;
-    }
-
-    if (u.dwType == UNIT_MONSTER && u.wIsCorpse == 1) {  // remove dead monsters
-        return ret; //TODO: I feel like monster that could be reanimated have always that bool up
-    }
+    /* if (u.dwType == UNIT_MONSTER && u.wIsCorpse == 1) {  // remove dead monsters */
+    /*     return ret; */
+    /* } */
 
     UnitWithAddr *uwa = hget(g_unit_table, u.dwUnitId);
     if (uwa) {
@@ -176,14 +173,26 @@ static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny 
             return ret;
         }
         DUPE(u.pMonsterData, &mdata, sizeof(MonsterData));
-            log_MonsterData(&mdata);    /* DEBUG */
-            log_UnitAny(&u);    /* DEBUG */
+        /* log_MonsterData(&mdata);    /\* DEBUG *\/ */
+        /* log_UnitAny(&u);    /\* DEBUG *\/ */
+    } else if (u.dwType == UNIT_PLAYER) {
+        if (!u.pPlayerData || !is_valid_ptr((ptr_t)u.pPlayerData)
+            || !memread((ptr_t)u.pPlayerData, sizeof(PlayerData),
+                        find_PlayerData_callback, &pdata)) {
+            LOG_WARNING("Can't update unit's PlayerData");  //TODO: this fails a lot
+            /* log_PlayerData(&pdata);    /\* DEBUG *\/ */
+            /* log_UnitAny(&u);    /\* DEBUG *\/ */
+            return ret;
+        }
+        DUPE(u.pPlayerData, &pdata, sizeof(PlayerData));
+        /* log_PlayerData(&pdata);    /\* DEBUG *\/ */
+        /* log_UnitAny(&u);    /\* DEBUG *\/ */
     }
 
     DUPE(u.pPath, &path, sizeof(Path));
     /* DUPE(u.pAct, &act, sizeof(Act)); */
 
-    MALLOC(uwa, sizeof(UnitWithAddr));
+    MALLOC(uwa, sizeof(UnitWithAddr)); //TODO: leak (just a few? looks like you loose a node)
     memcpy(&uwa->unit, &u, sizeof(UnitAny));
     uwa->unit_addr[0] = u_addr;
     hset(g_unit_table, u.dwUnitId, uwa);

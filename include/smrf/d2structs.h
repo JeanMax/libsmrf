@@ -321,6 +321,7 @@ bool is_valid_Act(Act *ptr);
 bool is_valid_ActMisc(ActMisc *ptr);
 bool is_valid_MonsterData(MonsterData *ptr);
 bool is_valid_PlayerData(PlayerData *ptr);
+bool is_valid_Monster(Monster *ptr);
 bool is_valid_Player(Player *ptr);
 bool is_valid_UnitAny(UnitAny *ptr);
 

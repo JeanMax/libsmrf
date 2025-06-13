@@ -216,7 +216,7 @@ static bool is_bullshit_memory(const char *memory_info_str)
         return FALSE;
     }
 
-    return TRUE;
+    return TRUE; // probably dll
 }
 #endif
 
@@ -398,7 +398,9 @@ pid_t pid_of_window(const char *win_name)
             fclose(cookie);
         }
     }
-    system("rm -f " PID_COOKIE);
+    if (system("rm -f " PID_COOKIE)) {
+        LOG_WARNING("pid_of_window: can't rm cookie " PID_COOKIE);
+    }
     return pid;
 #else
     g_temp_pid = 0;

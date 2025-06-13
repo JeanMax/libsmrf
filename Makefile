@@ -20,7 +20,8 @@
 PROJECT = libsmrf$(OS).a
 
 # file-names of the sources
-SRC_NAME = smrf.c  proc.c  parse.c  d2structs.c  d2sdk.c  \
+SRC_NAME = smrf.c  proc.c  parse.c  d2structs.c  \
+           sdk/level.c  sdk/player.c  sdk/monster.c  sdk/object.c  sdk/missile.c  sdk/tile.c  \
            util/log.c  util/hash.c
 
 # name of the example to make
@@ -147,7 +148,7 @@ test: all
 
 # show all TODO in project
 todo:
-	grep --color=auto -riIn --exclude-dir .git --exclude-dir sdk --exclude Makefile todo .
+	grep --color=auto -riIn --exclude-dir .git --exclude-dir txt --exclude Makefile -E '[^s]todo' .
 
 
 ##
