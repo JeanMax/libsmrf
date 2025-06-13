@@ -158,6 +158,21 @@ def read_obj(filename):
     ]]
 
 
+def read_tile(filename):
+    df = pd.read_csv(
+        filename,
+        delimiter="\t",
+        skiprows=[72],  # "Expansion"
+        index_col=False,
+        dtype={
+            "Id": pd.Int32Dtype(),
+            "NoInteract": pd.Int32Dtype(),
+            "UniqueId": pd.Int32Dtype(),
+        }
+    )
+    return df.loc[:, ["Name", "NoInteract", "Id", "UniqueId"]]
+
+
 ################################################################################
 
 
@@ -184,9 +199,9 @@ def generate_level_enum_content(df):
             return r["*StringName"].replace("Sewers", f'Sewers Act {r["Act"] + 1}')
         return r["*StringName"]
     s = ",\n    ".join([
-        upcasify(replace_dupe(r))
+        upcasify(f'LVL_{replace_dupe(r)}')
         for _, r in df.iterrows()
-    ]).replace("NULL", "NO_LEVEL = 0")
+    ]).replace("LVL_NULL", "NO_LEVEL = 0")
     for i in range(1, 8):
         s = s.replace("TAL_RASHAS_TOMB,", f"TAL_RASHAS_TOMB_{i},", count=1)
     return s
@@ -196,21 +211,35 @@ def generate_monster_enum_content(df):
     return ",\n    ".join([
         upcasify(f'MON_{r["Id"]}')
         for _, r in df.iterrows()
-    ])
+    ]).replace("MON_SKELETON1", "MON_SKELETON1 = 0")
 
 
 def generate_super_enum_content(df):
     return ",\n    ".join([
         upcasify(f'SUPER_{r["Name"]}')
         for _, r in df.iterrows()
-    ])
+    ]).replace("SUPER_BISHIBOSH", "SUPER_BISHIBOSH = 0")
 
 
 def generate_object_enum_content(df):
     return ",\n    ".join([
         upcasify(f'OBJ_{r["Class"]}')
         for _, r in df.iterrows()
-    ])
+    ]).replace("OBJ_NULL", "NO_OBJECT = 0")
+
+
+def generate_unique_tile_enum_content(df):
+    return ",\n    ".join([
+        upcasify(f'UNIQUE_TILE_{r["Name"]}')
+        for _, r in df.iterrows()
+    ]).replace("CLIFF_L", "CLIFF_L = 0")
+
+
+def generate_tile_enum_content(df):
+    return ",\n    ".join([
+        upcasify(f'TILE_{r["Name"]}')
+        for _, r in df.iterrows()
+    ]).replace("CLIFF_L", "CLIFF_L = 0")
 
 
 ################################################################################
@@ -225,7 +254,7 @@ def generate_act_struct_content(level_df, act_df):
         "5": "V",
     }
     def wp_name(row, wp_idx):
-        return upcasify(level_df.loc[
+        return "LVL_" + upcasify(level_df.loc[
             row[f"waypoint{wp_idx}"], "*StringName"
         ])
     return ",\n    ".join([
@@ -359,6 +388,25 @@ def generate_object_struct_content(df):
         f'.autoMap={dict_replace(str(r["AutoMap"]), automap_dict)}}}'
         for i, r in df.iterrows()
     ])
+
+
+def generate_unique_tile_struct_content(df):
+    return ",\n    ".join([
+        f'{{.id={i},         '
+        f'.name="{r["Name"]}",\n     '
+        f'.noInteract={r["NoInteract"]}, '
+        f'.notUniqueId=TILE_{upcasify(r["Name"])}}}'
+        for i, r in df.iterrows()
+    ])
+
+
+def generate_tile_struct_content(df):
+    return ",\n    ".join([
+        f'{{.id={i}, '
+        f'.uid=UNIQUE_TILE_{upcasify(df[df["Id"] == i].iloc[0]["Name"])}}}'
+        for i in df["Id"].unique()
+    ])
+
 
 ################################################################################
 
@@ -692,6 +740,66 @@ const ObjectInfo OBJECT_INFO[MAX_OBJECT] = {{
 """
 
 
+def str_tile_inc(tile_df):
+    MAX_UNIQUE_TILE = len(tile_df)
+    MAX_TILE = tile_df["Id"].max() + 1
+    MAX_TILE_NAME = align(tile_df["Name"].apply(len).max())
+    return f"""#ifndef _TILE_H
+#define _TILE_H
+
+enum UniqueTileId  {{
+    {generate_unique_tile_enum_content(tile_df)}
+}};
+typedef enum UniqueTileId  UniqueTileId;
+
+
+enum TileId  {{
+    {generate_tile_enum_content(tile_df)}
+}};
+typedef enum TileId  TileId;
+
+
+#define MAX_UNIQUE_TILE {MAX_UNIQUE_TILE}
+#define MAX_TILE_NAME {MAX_TILE_NAME}
+
+struct UniqueTileInfo {{
+    UniqueTileId id;
+    char name[MAX_TILE_NAME];
+    int noInteract;
+    TileId notUniqueId;
+}};
+typedef struct UniqueTileInfo  UniqueTileInfo;
+
+extern const UniqueTileInfo UNIQUE_TILE_INFO[MAX_UNIQUE_TILE];
+
+
+#define MAX_TILE {MAX_TILE}
+
+struct TileInfo {{
+    TileId id;
+    UniqueTileId uid;
+}};
+typedef struct TileInfo  TileInfo;
+
+extern const TileInfo TILE_INFO[MAX_TILE];
+
+
+#endif
+"""
+
+def str_tile_src(tile_df):
+    return f"""#include "sdk/tile.h"
+
+const UniqueTileInfo UNIQUE_TILE_INFO[MAX_UNIQUE_TILE] = {{
+    {generate_unique_tile_struct_content(tile_df)}
+}};
+
+
+const TileInfo TILE_INFO[MAX_TILE] = {{
+    {generate_tile_struct_content(tile_df)}
+}};
+"""
+
 ################################################################################
 
 
@@ -735,4 +843,14 @@ with open(SDK_INC_DIR + "player.h", "w") as f:
 with open(SDK_SRC_DIR + "player.c", "w") as f:
     f.write(
         str_player_src()
+    )
+
+tile_df = read_tile(TXT_DIR + "lvlwarp.txt")
+with open(SDK_INC_DIR + "tile.h", "w") as f:
+    f.write(
+        str_tile_inc(tile_df)
+    )
+with open(SDK_SRC_DIR + "tile.c", "w") as f:
+    f.write(
+        str_tile_src(tile_df)
     )

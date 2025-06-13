@@ -2,53 +2,53 @@
 
 const ActInfo ACT_INFO[MAX_ACT] = {
     {.id=0, .name="Act I", .wp={
-        ROGUE_ENCAMPMENT,
-        COLD_PLAINS,
-        STONY_FIELD,
-        DARK_WOOD,
-        BLACK_MARSH,
-        OUTER_CLOISTER,
-        JAIL_LEVEL_1,
-        INNER_CLOISTER,
-        CATACOMBS_LEVEL_2
+        LVL_ROGUE_ENCAMPMENT,
+        LVL_COLD_PLAINS,
+        LVL_STONY_FIELD,
+        LVL_DARK_WOOD,
+        LVL_BLACK_MARSH,
+        LVL_OUTER_CLOISTER,
+        LVL_JAIL_LEVEL_1,
+        LVL_INNER_CLOISTER,
+        LVL_CATACOMBS_LEVEL_2
     }},
     {.id=1, .name="Act II", .wp={
-        LUT_GHOLEIN,
-        SEWERS_LEVEL_2,
-        DRY_HILLS,
-        HALLS_OF_THE_DEAD_LEVEL_2,
-        FAR_OASIS,
-        LOST_CITY,
-        PALACE_CELLAR_LEVEL_1,
-        ARCANE_SANCTUARY,
-        CANYON_OF_THE_MAGI
+        LVL_LUT_GHOLEIN,
+        LVL_SEWERS_LEVEL_2,
+        LVL_DRY_HILLS,
+        LVL_HALLS_OF_THE_DEAD_LEVEL_2,
+        LVL_FAR_OASIS,
+        LVL_LOST_CITY,
+        LVL_PALACE_CELLAR_LEVEL_1,
+        LVL_ARCANE_SANCTUARY,
+        LVL_CANYON_OF_THE_MAGI
     }},
     {.id=2, .name="Act III", .wp={
-        KURAST_DOCKTOWN,
-        SPIDER_FOREST,
-        GREAT_MARSH,
-        FLAYER_JUNGLE,
-        LOWER_KURAST,
-        KURAST_BAZAAR,
-        UPPER_KURAST,
-        TRAVINCAL,
-        DURANCE_OF_HATE_LEVEL_2
+        LVL_KURAST_DOCKTOWN,
+        LVL_SPIDER_FOREST,
+        LVL_GREAT_MARSH,
+        LVL_FLAYER_JUNGLE,
+        LVL_LOWER_KURAST,
+        LVL_KURAST_BAZAAR,
+        LVL_UPPER_KURAST,
+        LVL_TRAVINCAL,
+        LVL_DURANCE_OF_HATE_LEVEL_2
     }},
     {.id=3, .name="Act IV", .wp={
-        THE_PANDEMONIUM_FORTRESS,
-        CITY_OF_THE_DAMNED,
-        RIVER_OF_FLAME
+        LVL_THE_PANDEMONIUM_FORTRESS,
+        LVL_CITY_OF_THE_DAMNED,
+        LVL_RIVER_OF_FLAME
     }},
     {.id=4, .name="Act V", .wp={
-        HARROGATH,
-        FRIGID_HIGHLANDS,
-        ARREAT_PLATEAU,
-        CRYSTALLINE_PASSAGE,
-        GLACIAL_TRAIL,
-        HALLS_OF_PAIN,
-        FROZEN_TUNDRA,
-        THE_ANCIENTS_WAY,
-        THE_WORLDSTONE_KEEP_LEVEL_2
+        LVL_HARROGATH,
+        LVL_FRIGID_HIGHLANDS,
+        LVL_ARREAT_PLATEAU,
+        LVL_CRYSTALLINE_PASSAGE,
+        LVL_GLACIAL_TRAIL,
+        LVL_HALLS_OF_PAIN,
+        LVL_FROZEN_TUNDRA,
+        LVL_THE_ANCIENTS_WAY,
+        LVL_THE_WORLDSTONE_KEEP_LEVEL_2
     }}
 };
 

@@ -41,7 +41,7 @@ typedef enum AutoMapId  AutoMapId;
 
 
 enum ObjectId  {
-    OBJ_NULL,
+    NO_OBJECT = 0,
     OBJ_CASKET5,
     OBJ_DEERSHRINE,
     OBJ_CASKET6,

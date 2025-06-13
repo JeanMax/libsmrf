@@ -43,7 +43,7 @@ typedef enum ThreatId ThreatId;
 
 
 enum SuperId  {
-    SUPER_BISHIBOSH,
+    SUPER_BISHIBOSH = 0,
     SUPER_BONEBREAK,
     SUPER_COLDCROW,
     SUPER_RAKANISHU,
@@ -114,7 +114,7 @@ typedef enum SuperId  SuperId;
 
 
 enum MonsterId  {
-    MON_SKELETON1,
+    MON_SKELETON1 = 0,
     MON_SKELETON2,
     MON_SKELETON3,
     MON_SKELETON4,

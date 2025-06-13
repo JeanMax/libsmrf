@@ -2,10 +2,12 @@
 #define _D2SDK_H
 
 #include "util/types.h"
+
 #include "sdk/level.h"
 #include "sdk/player.h"
 #include "sdk/monster.h"
 #include "sdk/object.h"
+#include "sdk/tile.h"
 
 inline bool is_shrine(const ObjectInfo *obj_info)
 {
@@ -203,38 +205,40 @@ inline bool is_weird_preset_monster(dword id)
 }
 
 // for preset unit with type 5
-inline bool is_backward_tile(dword id) //TODO: parse tile (type 5) lvlwarp.txt
+inline bool is_backward_tile(const UniqueTileInfo *utile_info)
 {
-    return id == 5 //Cave Down
-        || id == 8 //Crypt Up
-        || id == 11 //Tower to Wilderness
-        || id == 13 //Jail Up : same for jail lvl2 and inner cloister :|
-        || id == 14 //Jail Down
-        || id == 16 //Catacombs to Cathedral
-        || id == 17 //Catacombs Up
-        || id == 21 //Sewer Dock to Town
-        || id == 22 //Sewer Up
-        || id == 25 //Harem to Town
-        || id == 26 //Harem Up 1
-        || id == 27 //Harem Up 2
-        || id == 30 //Basement Up 1
-        || id == 31 //Basement Up 2
-        || id == 45 //Tomb Up
-        || id == 48 //Lair Up
-        || id == 52 //Spider to Jungle
-        || id == 55 //Dungeon Up
-        || id == 57 //Kurast to Sewer
-        || id == 58 //Sewer Up L
-        || id == 59 //Sewer Up R
-        || id == 62 //Temple Up L
-        || id == 63 //Temple Up R
-        || id == 65 //Mephisto Up L
-        || id == 66 //Mephisto Up R
-        || id == 70 //Lava to Mesa
-        || id == 73 //Ice Caves Up
-        || id == 75 //Ice Caves Up
-        || id == 78 //Temple Up
-        || id == 81; //Baal Temple Up
+    return utile_info->notUniqueId == TILE_ACT_1_CAVE_DOWN
+        || utile_info->notUniqueId == TILE_ACT_1_CRYPT_UP
+        || utile_info->notUniqueId == TILE_ACT_1_TOWER_TO_WILDERNESS
+        || utile_info->notUniqueId == TILE_ACT_1_WILDERNESS_TO_CAVE_FLOOR_L
+        || utile_info->notUniqueId == TILE_ACT_1_JAIL_UP
+        // TODO: this doesn't work well for jail
+        /* || utile_info->notUniqueId == TILE_ACT_1_JAIL_DOWN */
+        || utile_info->notUniqueId == TILE_ACT_1_CATACOMBS_TO_CATHEDRAL
+        || utile_info->notUniqueId == TILE_ACT_1_CATACOMBS_UP
+        || utile_info->notUniqueId == TILE_ACT_2_SEWER_DOCK_TO_TOWN
+        || utile_info->notUniqueId == TILE_ACT_2_SEWER_UP
+        || utile_info->notUniqueId == TILE_ACT_2_HAREM_TO_TOWN
+        || utile_info->notUniqueId == TILE_ACT_2_HAREM_UP_1
+        || utile_info->notUniqueId == TILE_ACT_2_HAREM_UP_2
+        || utile_info->notUniqueId == TILE_ACT_2_BASEMENT_UP_1
+        || utile_info->notUniqueId == TILE_ACT_2_BASEMENT_UP_2
+        || utile_info->notUniqueId == TILE_ACT_2_TOMB_UP
+        || utile_info->notUniqueId == TILE_ACT_2_LAIR_UP
+        || utile_info->notUniqueId == TILE_ACT_3_SPIDER_TO_JUNGLE
+        || utile_info->notUniqueId == TILE_ACT_3_DUNGEON_UP
+        || utile_info->notUniqueId == TILE_ACT_3_KURAST_TO_SEWER
+        || utile_info->notUniqueId == TILE_ACT_3_SEWER_UP_L
+        || utile_info->notUniqueId == TILE_ACT_3_SEWER_UP_R
+        || utile_info->notUniqueId == TILE_ACT_3_TEMPLE_UP_L
+        || utile_info->notUniqueId == TILE_ACT_3_TEMPLE_UP_R
+        || utile_info->notUniqueId == TILE_ACT_3_MEPHISTO_UP_L
+        || utile_info->notUniqueId == TILE_ACT_3_MEPHISTO_UP_R
+        || utile_info->notUniqueId == TILE_ACT_4_LAVA_TO_MESA
+        || utile_info->notUniqueId == TILE_ACT_5_ICE_CAVES_UP_L
+        || utile_info->notUniqueId == TILE_ACT_5_ICE_CAVES_DOWN_FLOOR
+        || utile_info->notUniqueId == TILE_ACT_5_TEMPLE_UP
+        || utile_info->notUniqueId == TILE_ACT_5_BAAL_TEMPLE_UP_L;
 }
 
 
