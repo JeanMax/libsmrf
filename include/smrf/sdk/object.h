@@ -12,7 +12,7 @@ enum ObjectSubclass {
     SUB_WAYPOINT = 1 << 6,
     SUB_SECRET_DOOR = 1 << 7,
 };
-typedef enum ObjectSubclass ObjectSubclass;
+typedef enum ObjectSubclass  ObjectSubclass;
 
 
 enum AutoMapId {

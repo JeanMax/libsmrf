@@ -1,10 +1,36 @@
+#!/usr/bin/env python3
+
 import pandas as pd
+
+TXT_DIR = "./txt/D2R/"
+SDK_SRC_DIR = "./src/sdk/"
+SDK_INC_DIR = "./include/smrf/sdk/"
+
+
+
+################################################################################
+
+
+def align(i, size=8):
+    return i - i % size + size
+
+
+def upcasify(s):
+    return s.upper().replace(" ", "_").replace("-", "_").replace("'", "")
+
+
+def dict_replace(s, d):
+    for k, v in d.items():
+        s = s.replace(k, v)
+    return s
+
+################################################################################
 
 
 def read_lvl(filename):
     df = pd.read_csv(
         filename,
-        delimiter='\t',
+        delimiter="\t",
         skiprows=[110],  # "Expansion"
         false_values=["Null"],  # if you want the first "Null" level
         index_col="Name",
@@ -23,7 +49,7 @@ def read_lvl(filename):
 def read_act(filename):
     df = pd.read_csv(
         filename,
-        delimiter='\t',
+        delimiter="\t",
         index_col="start",
         dtype={
             "act": pd.Int32Dtype(),
@@ -40,7 +66,7 @@ def read_act(filename):
 def read_mon(filename):
     df = pd.read_csv(
         filename,
-        delimiter='\t',
+        delimiter="\t",
         skiprows=[411],  # "Expansion"
         index_col="*hcIdx",
         dtype={
@@ -94,7 +120,7 @@ def read_mon(filename):
 def read_super(filename):
     df = pd.read_csv(
         filename,
-        delimiter='\t',
+        delimiter="\t",
         skiprows=[43],  # "Expansion"
         index_col="hcIdx",
         dtype={
@@ -132,10 +158,6 @@ def read_obj(filename):
 
 
 ################################################################################
-
-
-def upcasify(s):
-    return s.upper().replace(" ", "_").replace("-", "_").replace("'", "")
 
 
 def generate_act_enum_content(df):
@@ -194,15 +216,20 @@ def generate_object_enum_content(df):
 
 
 def generate_act_struct_content(level_df, act_df):
+    roman_dict = {
+        "1": "I",
+        "2": "II",
+        "3": "III",
+        "4": "IV",
+        "5": "V",
+    }
     def wp_name(row, wp_idx):
         return upcasify(level_df.loc[
             row[f"waypoint{wp_idx}"], "*StringName"
         ])
-    def romanify(s):
-        return s.replace("1", "I").replace("2", "II").replace("3", "III").replace("4", "IV").replace("5", "V")
     return ",\n    ".join([
         f'{{.id={act_df.index.get_loc(i)}, '
-        f'.name="Act {romanify(str(r["act"]))}", .wp={{\n        '
+        f'.name="Act {dict_replace(str(r["act"]), roman_dict)}", .wp={{\n        '
         f'{",\n        ".join([wp_name(r, j) for j in range(1, 4 if r["act"] == 4 else 10)])}'
         f'\n    }}}}'
         for i, r in act_df.iterrows()
@@ -210,8 +237,13 @@ def generate_act_struct_content(level_df, act_df):
 
 
 def generate_level_struct_content(df):
-    def actify(s):
-        return s.replace("4", "ACT_5").replace("3", "ACT_4").replace("2", "ACT_3").replace("1", "ACT_2").replace("0", "ACT_1")
+    act_dict = {
+        "4": "ACT_5",
+        "3": "ACT_4",
+        "2": "ACT_3",
+        "1": "ACT_2",
+        "0": "ACT_1",
+    }
     def wp_name(wp_idx):
         if wp_idx == 255:
             return "NO_WAYPOINT"
@@ -221,12 +253,27 @@ def generate_level_struct_content(df):
     return ",\n    ".join([
         f'{{.id={df.index.get_loc(i)}, '
         f'.name="{r["*StringName"]}",{" " * (27 - len(r["*StringName"]))} '
-        f'.act={actify(str(r["Act"]))}, .wp={wp_name(r["Waypoint"])}}}'
+        f'.act={dict_replace(str(r["Act"]), act_dict)}, .wp={wp_name(r["Waypoint"])}}}'
         for i, r in df.iterrows()
     ])
 
 
 def generate_monster_struct_content(df):
+    threat_dict = {
+            "14": "THREAT_PRIME_EVIL",
+            "13": "THREAT_BLOOD_RAVEN",
+            "12": "THREAT_SHAMAN",
+            "11": "THREAT_MINION",
+            "10": "THREAT_MONSTER",
+            "9": "THREAT_TURRET",
+            "8": "THREAT_FAMILIAR",
+            "7": "THREAT_CATAPULT",
+            "6": "THREAT_DOOR",
+            "4": "THREAT_TRAPPED_SOUL",
+            "2": "THREAT_WALL",
+            "1": "THREAT_BLOCK",
+            "0": "NO_THREAT",
+    }
     return ",\n    ".join([
         f'{{.id={i},\n     '
         f'.name="{r["NameStr"]}",{" " * (19 - len(r["NameStr"]))} '
@@ -234,7 +281,7 @@ def generate_monster_struct_content(df):
         f'.inTown={r["inTown"]},     '
         f'.killable={r["killable"]},  '
         f'.enabled={r["enabled"]},   '
-        f'.threat={r["threat"]},\n     '
+        f'.threat={dict_replace(str(r["threat"]), threat_dict)},\n     '
         f'.neverCount={r["neverCount"]}, '
         f'.petIgnore={r["petIgnore"]}, '
         f'.inventory={r["inventory"]}, '
@@ -248,7 +295,7 @@ def generate_monster_struct_content(df):
         f'{{{r["ResDm(N)"]}, {r["ResMa(N)"]}, {r["ResFi(N)"]}, {r["ResLi(N)"]}, {r["ResCo(N)"]}, {r["ResPo(N)"]}}},\n           '
         f'{{{r["ResDm(H)"]}, {r["ResMa(H)"]}, {r["ResFi(H)"]}, {r["ResLi(H)"]}, {r["ResCo(H)"]}, {r["ResPo(H)"]}}}}}}}'
         for i, r in df.iterrows()
-    ]).replace("eat=14", "eat=THREAT_PRIME_EVIL").replace("eat=13", "eat=THREAT_BLOOD_RAVEN").replace("eat=12", "eat=THREAT_SHAMAN").replace("eat=11", "eat=THREAT_MINION").replace("eat=10", "eat=THREAT_MONSTER").replace("eat=9", "eat=THREAT_TURRET").replace("eat=8", "eat=THREAT_FAMILIAR").replace("eat=7", "eat=THREAT_CATAPULT").replace("eat=6", "eat=THREAT_DOOR").replace("eat=4", "eat=THREAT_TRAPPED_SOUL").replace("eat=2", "eat=THREAT_WALL").replace("eat=1", "eat=THREAT_BLOCK").replace("eat=0", "eat=NO_THREAT")
+    ])
 
 
 def generate_super_struct_content(df):
@@ -261,6 +308,39 @@ def generate_super_struct_content(df):
 
 
 def generate_object_struct_content(df):
+    subclass_dict = {
+        "128": "SUB_SECRET_DOOR",
+        "64": "SUB_WAYPOINT",
+        "32": "SUB_WELL",
+        "16": "SUB_ARCANE",
+        "8": "SUB_CONTAINER",
+        "4": "SUB_PORTAL",
+        "2": "SUB_OBELISK",
+        "1": "SUB_SHRINE",
+        "0": "NO_SUBCLASS",
+    }
+    automap_dict = {
+        "1468": "MAP_ANYA",
+        "1467": "MAP_ALTAR",
+        "694": "MAP_STAIR_LEFT",
+        "693": "MAP_STAIR_RIGHT",
+        "427": "MAP_TOME",
+        "339": "MAP_PORTAL",
+        "319": "MAP_BANK",
+        "318": "MAP_CHEST",
+        "316": "MAP_MALUS",
+        "315": "MAP_GIBDIN",
+        "314": "MAP_CAIN_STONE",
+        "313": "MAP_INIFUSS_TREE",
+        "310": "MAP_SHRINE",
+        "309": "MAP_WELL",
+        "307": "MAP_WAYPOINT",
+        "306": "MAP_DIABLO_SEAL",
+        "305": "MAP_COMPELLING_ORB",
+        "304": "MAP_SEWER",
+        "223": "MAP_TRAP_DOOR",
+        "0": "NO_AUTOMAP",
+    }
     return ",\n    ".join([
         f'{{.id={i},\n     '
         f'.name="{r["Name"]}",{" " * (23 - len(r["Name"]))} '
@@ -274,50 +354,21 @@ def generate_object_struct_content(df):
         f'.openWarp={r["OpenWarp"]},    '
         f'.isAttackable={r["IsAttackable0"]}, '
         f'.lockable={r["Lockable"]},\n     '
-        f'.subClass={r["SubClass"]}, '
-        f'.autoMap={r["AutoMap"]}}}'
+        f'.subClass={dict_replace(str(r["SubClass"]), subclass_dict)}, '
+        f'.autoMap={dict_replace(str(r["AutoMap"]), automap_dict)}}}'
         for i, r in df.iterrows()
-    ]).replace("ss=128", "ss=SUB_SECRET_DOOR").replace("ss=64", "ss=SUB_WAYPOINT").replace("ss=32", "ss=SUB_WELL").replace("ss=16", "ss=SUB_ARCANE").replace("ss=8", "ss=SUB_CONTAINER").replace("ss=4", "ss=SUB_PORTAL").replace("ss=2", "ss=SUB_OBELISK").replace("ss=1", "ss=SUB_SHRINE").replace("ss=0", "ss=NO_SUBCLASS").replace("ap=1468", "ap=MAP_ANYA").replace("ap=1467", "ap=MAP_ALTAR").replace("ap=694", "ap=MAP_STAIR_LEFT").replace("ap=693", "ap=MAP_STAIR_RIGHT").replace("ap=427", "ap=MAP_TOME").replace("ap=339", "ap=MAP_PORTAL").replace("ap=319", "ap=MAP_BANK").replace("ap=318", "ap=MAP_CHEST").replace("ap=316", "ap=MAP_MALUS").replace("ap=315", "ap=MAP_GIBDIN").replace("ap=314", "ap=MAP_CAIN_STONE").replace("ap=313", "ap=MAP_INIFUSS_TREE").replace("ap=310", "ap=MAP_SHRINE").replace("ap=309", "ap=MAP_WELL").replace("ap=307", "ap=MAP_WAYPOINT").replace("ap=306", "ap=MAP_DIABLO_SEAL").replace("ap=305", "ap=MAP_COMPELLING_ORB").replace("ap=304", "ap=MAP_SEWER").replace("ap=223", "ap=MAP_TRAP_DOOR").replace("ap=0", "ap=NO_AUTOMAP")
-
-
-################################################################################
-
-
-def align(i, size=8):
-    return i - i % size + size
-
+    ])
 
 ################################################################################
 
 
-txt_dir = "./txt/D2R/"
+def str_level_inc(level_df, act_df):
+    MAX_LEVEL = len(level_df)
+    MAX_LEVEL_NAME = align(level_df["*StringName"].apply(len).max())
+    MAX_ACT = len(act_df)
+    return f"""#ifndef _LEVEL_H
+#define _LEVEL_H
 
-level_df = read_lvl(txt_dir + 'levels.txt')
-MAX_LEVEL = len(level_df)
-MAX_LEVEL_NAME = align(level_df["*StringName"].apply(len).max())
-
-act_df = read_act(txt_dir + 'actinfo.txt')
-MAX_ACT = len(act_df)
-
-mon_df = read_mon(txt_dir + 'monstats.txt')
-MAX_MONSTER = len(mon_df)
-MAX_MONSTER_NAME = align(mon_df["NameStr"].apply(len).max())
-MAX_MONSTER_CLASS = align(mon_df["Id"].apply(len).max())
-
-super_df = read_super(txt_dir + 'superuniques.txt')
-MAX_SUPER = len(super_df)
-MAX_SUPER_NAME = align(super_df["Name"].apply(len).max())
-
-obj_df = read_obj(txt_dir + 'objects.txt')
-MAX_OBJ = len(obj_df)
-MAX_OBJ_NAME = align(obj_df["Name"].apply(len).max())
-MAX_OBJ_CLASS = align(obj_df["Class"].apply(len).max())
-MAX_OBJ_DESC = align(obj_df["*Description"].apply(len).max())
-
-
-print(f"""////////////////////////////////////////////////////////////////////////////////
-// level.h
-////////////////////////////////////////////////////////////////////////////////
 enum ActId  {{
     {generate_act_enum_content(act_df)}
 }};
@@ -365,10 +416,12 @@ typedef struct LevelInfo  LevelInfo;
 extern const LevelInfo LEVEL_INFO[MAX_LEVEL];
 
 
+#endif
+"""
 
-////////////////////////////////////////////////////////////////////////////////
-// level.c
-////////////////////////////////////////////////////////////////////////////////
+def str_level_src(level_df, act_df):
+    return f"""#include "sdk/level.h"
+
 const ActInfo ACT_INFO[MAX_ACT] = {{
     {generate_act_struct_content(level_df, act_df)}
 }};
@@ -377,12 +430,18 @@ const ActInfo ACT_INFO[MAX_ACT] = {{
 const LevelInfo LEVEL_INFO[MAX_LEVEL] = {{
     {generate_level_struct_content(level_df)}
 }};
+"""
 
 
+def str_monster_inc(monster_df, super_df):
+    MAX_MONSTER = len(monster_df)
+    MAX_MONSTER_NAME = align(monster_df["NameStr"].apply(len).max())
+    MAX_MONSTER_CLASS = align(monster_df["Id"].apply(len).max())
+    MAX_SUPER = len(super_df)
+    MAX_SUPER_NAME = align(super_df["Name"].apply(len).max())
+    return f"""#ifndef _MONSTER_H
+#define _MONSTER_H
 
-////////////////////////////////////////////////////////////////////////////////
-// monster.h
-////////////////////////////////////////////////////////////////////////////////
 enum DifficultyId {{
     DIFF_NORMAL = 0,
     DIFF_NIGHTMARE,
@@ -431,7 +490,7 @@ typedef enum SuperId  SuperId;
 
 
 enum MonsterId  {{
-    {generate_monster_enum_content(mon_df)}
+    {generate_monster_enum_content(monster_df)}
 }};
 typedef enum MonsterId  MonsterId;
 
@@ -476,24 +535,30 @@ typedef struct MonsterInfo  MonsterInfo;
 extern const MonsterInfo MONSTER_INFO[MAX_MONSTER];
 
 
+#endif
+"""
 
-////////////////////////////////////////////////////////////////////////////////
-// monster.c
-////////////////////////////////////////////////////////////////////////////////
+def str_monster_src(monster_df, super_df):
+    return f"""#include "sdk/monster.h"
+
 const SuperInfo SUPER_INFO[MAX_SUPER] = {{
     {generate_super_struct_content(super_df)}
 }};
 
 
 const MonsterInfo MONSTER_INFO[MAX_MONSTER] = {{
-    {generate_monster_struct_content(mon_df)}
+    {generate_monster_struct_content(monster_df)}
 }};
+"""
 
+def str_object_inc(object_df):
+    MAX_OBJ = len(object_df)
+    MAX_OBJ_NAME = align(object_df["Name"].apply(len).max())
+    MAX_OBJ_CLASS = align(object_df["Class"].apply(len).max())
+    MAX_OBJ_DESC = align(object_df["*Description"].apply(len).max())
+    return f"""#ifndef _OBJECT_H
+#define _OBJECT_H
 
-
-////////////////////////////////////////////////////////////////////////////////
-// object.h
-////////////////////////////////////////////////////////////////////////////////
 enum ObjectSubclass {{
     NO_SUBCLASS = 0,
     SUB_SHRINE = 1 << 0,
@@ -534,7 +599,7 @@ typedef enum AutoMapId  AutoMapId;
 
 
 enum ObjectId  {{
-    {generate_object_enum_content(obj_df)}
+    {generate_object_enum_content(object_df)}
 }};
 typedef enum ObjectId  ObjectId;
 
@@ -565,12 +630,50 @@ typedef struct ObjectInfo  ObjectInfo;
 extern const ObjectInfo OBJECT_INFO[MAX_OBJECT];
 
 
+#endif
+"""
 
-////////////////////////////////////////////////////////////////////////////////
-// object.c
-////////////////////////////////////////////////////////////////////////////////
+def str_object_src(object_df):
+    return f"""#include "sdk/object.h"
+
 const ObjectInfo OBJECT_INFO[MAX_OBJECT] = {{
-    {generate_object_struct_content(obj_df)}
+    {generate_object_struct_content(object_df)}
 }};
+"""
 
-""")
+
+################################################################################
+
+
+level_df = read_lvl(TXT_DIR + "levels.txt")
+act_df = read_act(TXT_DIR + "actinfo.txt")
+with open(SDK_INC_DIR + "level.h", "w") as f:
+    f.write(
+        str_level_inc(level_df, act_df)
+    )
+with open(SDK_SRC_DIR + "level.c", "w") as f:
+    f.write(
+        str_level_src(level_df, act_df)
+    )
+
+monster_df = read_mon(TXT_DIR + "monstats.txt")
+super_df = read_super(TXT_DIR + "superuniques.txt")
+with open(SDK_INC_DIR + "monster.h", "w") as f:
+    f.write(
+        str_monster_inc(monster_df, super_df)
+    )
+with open(SDK_SRC_DIR + "monster.c", "w") as f:
+    f.write(
+        str_monster_src(monster_df, super_df)
+    )
+
+
+object_df = read_obj(TXT_DIR + "objects.txt")
+with open(SDK_INC_DIR + "object.h", "w") as f:
+    f.write(
+        str_object_inc(object_df)
+    )
+with open(SDK_SRC_DIR + "object.c", "w") as f:
+    f.write(
+        str_object_src(object_df)
+    )
