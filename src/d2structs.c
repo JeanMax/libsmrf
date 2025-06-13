@@ -686,7 +686,7 @@ inline bool is_valid_Player(Player *ptr)
         && ptr->dwTxtFileNo == ptr->dwPlayerClass
         && ptr->dwUnitId != 0
         && ptr->dwAct < 5
-        && ptr->dwPlayerClass < CLASS_MAX
+        && ptr->dwPlayerClass < MAX_PLAYER
         /* && !ptr->xPos */
         /* && !ptr->yPos */
         && is_valid_ptr__quick((ptr_t)ptr->pPlayerData)
@@ -703,7 +703,7 @@ inline bool is_valid_Player(Player *ptr)
 inline bool is_valid_UnitAny(UnitAny *ptr)
 {
     if (!(IS_ALIGNED(ptr)
-          && ptr->dwType < UNIT_MAX
+          && ptr->dwType < MAX_UNIT
           && ptr->dwUnitId != 0
           && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
           /* && is_valid_ptr((ptr_t)ptr->pAct) */

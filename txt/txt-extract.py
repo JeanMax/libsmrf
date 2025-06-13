@@ -24,6 +24,7 @@ def dict_replace(s, d):
         s = s.replace(k, v)
     return s
 
+
 ################################################################################
 
 
@@ -433,6 +434,54 @@ const LevelInfo LEVEL_INFO[MAX_LEVEL] = {{
 """
 
 
+def str_player_inc():
+    return f"""#ifndef _PLAYER_H
+#define _PLAYER_H
+
+enum PlayerId  {{
+    PLAYER_AMA = 0,
+    PLAYER_SOR,
+    PLAYER_NEC,
+    PLAYER_PAL,
+    PLAYER_BAR,
+    PLAYER_DRU,
+    PLAYER_ASS,
+    MAX_PLAYER,
+}};
+typedef enum PlayerId  PlayerId;
+
+
+#define MAX_PLAYER_NAME 16
+#define MAX_PLAYER_CLASS 8
+
+struct PlayerInfo {{
+    PlayerId id;
+    char name[MAX_PLAYER_NAME];
+    char classId[MAX_PLAYER_CLASS];
+}};
+typedef struct PlayerInfo  PlayerInfo;
+
+extern const PlayerInfo PLAYER_INFO[MAX_PLAYER];
+
+
+#endif
+{""}"""
+
+def str_player_src():
+    return f"""#include "sdk/player.h"
+
+const PlayerInfo PLAYER_INFO[MAX_PLAYER] = {{
+    {{.id=PLAYER_AMA, .name="Amazon",      .classId="ama"}},
+    {{.id=PLAYER_SOR, .name="Sorceress",   .classId="sor"}},
+    {{.id=PLAYER_NEC, .name="Necromancer", .classId="nec"}},
+    {{.id=PLAYER_PAL, .name="Paladin",     .classId="pal"}},
+    {{.id=PLAYER_BAR, .name="Barbarian",   .classId="bar"}},
+    {{.id=PLAYER_DRU, .name="Druid",       .classId="dru"}},
+    {{.id=PLAYER_ASS, .name="Assassin",    .classId="ass"}},
+}};
+{""}"""
+
+
 def str_monster_inc(monster_df, super_df):
     MAX_MONSTER = len(monster_df)
     MAX_MONSTER_NAME = align(monster_df["NameStr"].apply(len).max())
@@ -551,6 +600,7 @@ const MonsterInfo MONSTER_INFO[MAX_MONSTER] = {{
 }};
 """
 
+
 def str_object_inc(object_df):
     MAX_OBJ = len(object_df)
     MAX_OBJ_NAME = align(object_df["Name"].apply(len).max())
@@ -667,7 +717,6 @@ with open(SDK_SRC_DIR + "monster.c", "w") as f:
         str_monster_src(monster_df, super_df)
     )
 
-
 object_df = read_obj(TXT_DIR + "objects.txt")
 with open(SDK_INC_DIR + "object.h", "w") as f:
     f.write(
@@ -676,4 +725,14 @@ with open(SDK_INC_DIR + "object.h", "w") as f:
 with open(SDK_SRC_DIR + "object.c", "w") as f:
     f.write(
         str_object_src(object_df)
+    )
+
+# super lazy, I should parse playerclass.txt instead
+with open(SDK_INC_DIR + "player.h", "w") as f:
+    f.write(
+        str_player_inc()
+    )
+with open(SDK_SRC_DIR + "player.c", "w") as f:
+    f.write(
+        str_player_src()
     )

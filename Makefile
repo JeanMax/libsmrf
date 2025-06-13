@@ -21,7 +21,7 @@ PROJECT = libsmrf$(OS).a
 
 # file-names of the sources
 SRC_NAME = smrf.c  proc.c  parse.c  d2structs.c  \
-           sdk/level.c  sdk/monster.c  sdk/object.c  \
+           sdk/level.c  sdk/player.c  sdk/monster.c  sdk/object.c  \
            util/log.c  util/hash.c
 
 # name of the example to make

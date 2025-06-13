@@ -3,6 +3,7 @@
 
 #include "util/types.h"
 #include "sdk/level.h"
+#include "sdk/player.h"
 #include "sdk/monster.h"
 #include "sdk/object.h"
 
@@ -292,21 +293,9 @@ enum UnitType {
     UNIT_MISSILE,
     UNIT_ITEM,
     UNIT_TILE,
-    UNIT_MAX,
+    MAX_UNIT,
 };
 typedef enum UnitType  UnitType;
 
-
-enum PlayerClass {
-    CLASS_AMA = 0,
-    CLASS_SOR,
-    CLASS_NEC,
-    CLASS_PAL,
-    CLASS_BAR,
-    CLASS_DRU,
-    CLASS_ASS,
-    CLASS_MAX,
-};
-typedef enum PlayerClass  PlayerClass;
 
 #endif
