@@ -44,6 +44,7 @@ LDLIBS = -pthread
 
 # linking flags
 LDFLAGS =
+RLDFLAGS = -s -flto=auto -Wl,-O2,--sort-common,--as-needed  # release
 
 # compilation flags
 CPPFLAGS =
@@ -55,8 +56,8 @@ CPPFLAGS =
 
 # compilation/linking flags for the differents public rules
 WFLAGS = -std=c18 -Wextra -Wall -Wpadded  # warnings
-RCFLAGS = $(WFLAGS) -O2  # release
-DCFLAGS = $(WFLAGS) -g -Og -DNDEBUG  # debug
+RCFLAGS = $(WFLAGS) -O3 -fomit-frame-pointer -flto=auto  # release
+DCFLAGS = $(WFLAGS) -g -Og -DNDEBUG # -D_FORTIFY_SOURCE=2  # debug
 SCFLAGS = $(DCFLAGS) -fsanitize=address,undefined  # sanitize
 WWFLAGS = $(WFLAGS) -Wpedantic -Wshadow -Wconversion -Wcast-align \
   -Wstrict-prototypes -Wmissing-prototypes -Wunreachable-code -Winit-self \
@@ -99,7 +100,8 @@ endif
 
 # release build
 all:
-	+$(MAKE) $(PROJECT) "CFLAGS = $(RCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/rel$(OS)"
+	+$(MAKE) $(PROJECT) "CFLAGS = $(RCFLAGS)" "OBJ_PATH = $(OBJ_DIR)/rel$(OS)" \
+        "LDFLAGS = $(RLDFLAGS)"
 
 # masochist build
 mecry:
