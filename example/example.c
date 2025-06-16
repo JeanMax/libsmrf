@@ -51,8 +51,8 @@ static bool main_loop(bool loop)
                      "\"area\": %d"
                      "}",
                      /* game.player.pAct->dwMapSeed, */
-                     game.player.pPath->xPos,
-                     game.player.pPath->yPos,
+                     game.player->pPath->xPos,
+                     game.player->pPath->yPos,
                      LEVEL_INFO[game.level->dwLevelNo].name,
                      game.level->dwLevelNo);
         }

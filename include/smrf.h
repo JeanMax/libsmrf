@@ -23,25 +23,6 @@ extern Htable *g_unit_table;  //TODO: berk
     } while (0)
 
 
-typedef  struct PlayerList  PlayerList;
-struct PlayerList {
-    Player player;
-    ptr_t player_addr;
-    long  idx;                   /* DEBUG */
-    PlayerList *pNext;
-};
-
-
-typedef  struct PlayerContent  PlayerContent;
-struct PlayerContent {
-    PlayerData player_data;
-    Act act;
-    Path path;
-    Room1 room1;
-    Room2 room2;
-};
-
-
 #define WINDOW_TITLE_MAX 256
 #define STATUS_MAX 32
 
@@ -50,8 +31,8 @@ struct GameState {
     char window_title_setting[WINDOW_TITLE_MAX];  // need to be 1st
     char status[STATUS_MAX]; //TODO: store an (atomic??) enum and link that to an str[]
     Level *level;
-    Player player;
-    ptr_t _player_addr; //TODO: internal, hide
+    Player *player;
+    ptr_t _ut_addr; //TODO: internal, hide
     pthread_mutex_t mutex;
     Level **all_levels; // Level *all_levels[MAX_LEVEL]
 };

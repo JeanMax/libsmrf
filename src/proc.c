@@ -5,17 +5,20 @@
 
 #ifndef _WIN32
 # include <dirent.h>
+# include <ctype.h> // isspace
 #else
 # include <windows.h>
 # include <tlhelp32.h>
 # include <winuser.h>
+# include <psapi.h>
+
+# define MAX_MODULE 0x100
 #endif
 
-#include <ctype.h> // isspace
 #include <stdio.h> // fseek
 
 
-#define PAGE_LENGTH 0x1000
+#define PAGE_LENGTH 0x4000
 #ifndef PATH_MAX
 # define PATH_MAX 0x100
 #endif
@@ -32,10 +35,17 @@ static FILE *g_mem_file = NULL;
 static HANDLE g_process = NULL;
 #endif
 
+static MapAddress g_base_addr = {0};  //TODO: this is ugly
+
+#define D2R_EXE "D2R.exe"
+#define DELICIOUS_COOKIE "/tmp/smrf.cookie"
+
 
 static void reset_global_state(void)  // TODO: :|
 {
     g_pid = 0;
+    g_base_addr.start = 0;
+    g_base_addr.end = 0;
 #ifndef _WIN32
     if (g_mem_file) {
         fclose(g_mem_file);
@@ -48,33 +58,11 @@ static void reset_global_state(void)  // TODO: :|
     }
 #endif
 }
-////////////////////////////////////////////////////////////////////////////////
-
-byte *memsearch(const void *mem, const void *search, size_t mem_len, size_t search_len)
-{
-    byte *ptr = (byte *)mem;
-#ifdef NDEBUG
-    if (!IS_ALIGNED(ptr)) {
-        LOG_ERROR("unaligned memsearch: %zu bytes left to align (%16jx)",
-                  (ptr_t)ptr % sizeof(ptr_t), (ptr_t)ptr);
-        /* return NULL; */
-    }
-#endif
-
-    while (mem_len >= search_len) {
-        if (!memcmp(ptr, search, search_len)) {
-            return ptr;
-        }
-        ptr += sizeof(ptr_t);
-        mem_len -= sizeof(ptr_t);
-   }
-    return NULL;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void *memread(ptr_t start_address, size_t length,
-            t_read_callback *on_page_read, void *data)
+              t_read_callback *on_page_read, void *data)
 {
 #ifndef _WIN32
     if (!g_mem_file) {
@@ -110,20 +98,24 @@ void *memread(ptr_t start_address, size_t length,
         ReadProcessMemory(g_process, (void *)address, &read_buf, page_len, &read_len);
         // Toolhelp32ReadProcessMemory(g_pid, (void *)address, &read_buf, page_len, &read_len);
 #endif
-        ret = on_page_read(read_buf, read_len, address, data);
-        if (ret) {
+        if (read_len < page_len) {
+            LOG_WARNING("something went wrong with memread (read_len: %zu / %zu)",
+                        read_len, page_len);
             break;
         }
-        if (read_len < page_len) {
-            if (read_len) {
-                LOG_ERROR("something went wrong with memread (read_len: %zu / %zu)",
-                          read_len, page_len);
-            }
+        ret = on_page_read(read_buf, read_len, address, data);
+        if (ret) {
             break;
         }
     }
 
     return ret;
+}
+
+void *memreadbase(ptr_t start_address, size_t length,
+                  t_read_callback *on_page_read, void *data)
+{
+    return memread(g_base_addr.start + start_address, length, on_page_read, data);
 }
 
 void *memreadall(bool quick, t_read_callback *on_page_read, void *data)
@@ -160,6 +152,17 @@ void *memreadall(bool quick, t_read_callback *on_page_read, void *data)
     return ret;
 }
 
+void *memreadallbase(t_read_callback *on_page_read, void *data)
+{
+    size_t length = g_base_addr.end - g_base_addr.start;
+
+    LOG_INFO("base at %12jx - %12jx,     size: %8jx",
+             g_base_addr.start, g_base_addr.end, length); /* DEBUG */
+
+    return memread(g_base_addr.start, length, on_page_read, data);
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 inline bool is_valid_ptr(ptr_t ptr)
@@ -175,6 +178,15 @@ inline bool is_valid_ptr(ptr_t ptr)
         }
     }
     return FALSE;
+}
+
+inline bool is_valid_ptr__base(ptr_t ptr)
+{
+    if (!ptr || !IS_ALIGNED(ptr)) {
+        return FALSE;
+    }
+    ptr += g_base_addr.start;
+    return ptr >= g_base_addr.start && ptr <= g_base_addr.end;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -215,6 +227,67 @@ static bool is_bullshit_memory(const char *memory_info_str)
     return TRUE; // probably dll
 }
 #endif
+
+static bool readbase(void)
+{
+#ifndef _WIN32
+    if (!system("pid=$(pgrep -f '^C:.*" D2R_EXE "'); "
+                "objdump -P header \"$(readlink -f /proc/$pid/cwd/" D2R_EXE ")\" "
+                "| grep -E 'Image Base|Size Of Image' "
+                "| cut -d: -f2 "
+                "| xargs > " DELICIOUS_COOKIE)) {
+        FILE *cookie = fopen(DELICIOUS_COOKIE, "r");
+        if (cookie) {
+            ptr_t img_start, img_size;
+            char read_buf[READ_BUF_LEN];
+            fgets(read_buf, READ_BUF_LEN, cookie);
+            sscanf(read_buf, "%16jx %16jx\n", &img_start, &img_size);
+            g_base_addr.start = img_start + 0x100000000;
+            g_base_addr.end = g_base_addr.start + img_size;
+            /* LOG_DEBUG("found base at: %16jx %16jx %16jx", */
+            /*           g_base_addr.start, g_base_addr.end + g_base_addr.start, g_base_addr.end); */
+            fclose(cookie);
+            if (system("rm -f " DELICIOUS_COOKIE)) {
+                LOG_WARNING("readbase: can't rm cookie " DELICIOUS_COOKIE);
+            }
+            return TRUE;
+        }
+    }
+
+#else
+    MODULEINFO modInfo = {0};
+    HMODULE hMods[MAX_MODULE];
+    DWORD cbNeeded;
+    if (!EnumProcessModules(g_process, hMods, sizeof(hMods), &cbNeeded)) {
+        LOG_ERROR("Can't EnumProcessModules");
+        return FALSE;
+    }
+    for (DWORD i = 0; i < (cbNeeded / sizeof(HMODULE)); i++) {
+        TCHAR szModName[MAX_PATH];
+        if (!GetModuleFileNameEx(g_process, hMods[i], szModName,
+                                sizeof(szModName) / sizeof(TCHAR))) {
+            continue;
+        }
+        if (!strstr(szModName, D2R_EXE)) {
+            continue;
+        }
+        if (!GetModuleInformation(g_process, hMods[i],
+                                  &modInfo, sizeof(modInfo))) {
+            LOG_ERROR("Can't GetModuleInformation");
+            return FALSE;
+        }
+        /* LOG_DEBUG("found base at: %16jx %16jx %16jx", */
+        /*           modInfo.lpBaseOfDll, modInfo.SizeOfImage, modInfo.EntryPoint); */
+
+        g_base_addr.start = (ptr_t)modInfo.lpBaseOfDll;
+        g_base_addr.end = (ptr_t)modInfo.lpBaseOfDll + modInfo.SizeOfImage;
+        return TRUE;
+    }
+
+#endif
+    LOG_ERROR("Can't find base");
+    return FALSE;
+}
 
 pid_t readmaps(const char *win_name, bool refresh_win)
 {
@@ -259,8 +332,10 @@ pid_t readmaps(const char *win_name, bool refresh_win)
     }
     fclose(maps_file);
 #else
-    g_process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                                 0, g_pid);
+    if (!g_process) {
+        g_process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+                                0, g_pid);
+    }
     if (!g_process) {
         reset_global_state();
         return FALSE;
@@ -292,68 +367,16 @@ pid_t readmaps(const char *win_name, bool refresh_win)
     /* LOG_DEBUG("%d maps found", i); /\* DEBUG *\/ */
     g_maps_range[i].start = 0;
     g_maps_range[i].end = 0;
+
+    if (!g_base_addr.start && !readbase()) {
+        reset_global_state();
+        return FALSE;
+    }
+
     return i ? g_pid : FALSE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-pid_t pid_of_cmd(const char *cmd_name)
-{
-#ifndef _WIN32
-    FILE *cmd_file;
-    struct dirent *entry;
-    char path[PATH_MAX], read_buf[READ_BUF_LEN];
-    pid_t ret = 0;
-
-    DIR *proc_dir = opendir("/proc/");
-    if (!proc_dir) {
-        perror("Fail");
-        return ret;
-    }
-
-    while ((entry = readdir(proc_dir))) {
-        strcpy(path, "/proc/");
-        strcat(path, entry->d_name);
-        strcat(path, "/cmdline");
-
-        cmd_file = fopen(path, "r");
-        if (cmd_file) {
-			if (fgets(read_buf, READ_BUF_LEN - 1, cmd_file)
-                    && strstr(read_buf, cmd_name)) {  // TODO: this is extra inclusive
-                ret = atoi(entry->d_name);
-                fclose(cmd_file);
-                closedir(proc_dir);
-                return ret;
-            }
-            fclose(cmd_file);
-        }
-    }
-
-    closedir(proc_dir);
-    return ret;
-#else
-    PROCESSENTRY32 processInfo;
-    processInfo.dwSize = sizeof(processInfo);
-
-    HANDLE processesSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (processesSnapshot == INVALID_HANDLE_VALUE) {
-        return 0;
-    }
-
-    if (!Process32First(processesSnapshot, &processInfo)) {
-        return 0;
-    }
-    do {
-        if (!strcmp(cmd_name, processInfo.szExeFile)) {
-            CloseHandle(processesSnapshot);
-            return processInfo.th32ProcessID;
-        }
-    } while (Process32Next(processesSnapshot, &processInfo));
-
-    CloseHandle(processesSnapshot);
-    return 0;
-#endif
-}
 
 #ifdef _WIN32
 static pid_t g_temp_pid = {0};
@@ -370,8 +393,6 @@ static BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lparam)
 
     return TRUE;
 }
-#else
-#define PID_COOKIE "/tmp/smrf.pid"
 #endif
 
 pid_t pid_of_window(const char *win_name)
@@ -381,20 +402,20 @@ pid_t pid_of_window(const char *win_name)
     pid_t pid = 0;
 
     snprintf(buf, WINDOW_TITLE_MAX,
-             "wmctrl -lp | grep -m1 '%s' | cut -d' ' -f4 2>/dev/null > " PID_COOKIE,
+             "wmctrl -lp | grep -m1 '%s' | cut -d' ' -f4 2>/dev/null > " DELICIOUS_COOKIE,
              win_name);  // I'm sorry I'm fucking lazy
 
     if (!system(buf)) {
-        FILE *cookie = fopen(PID_COOKIE, "r");
+        FILE *cookie = fopen(DELICIOUS_COOKIE, "r");
         if (cookie) {
             if (fgets(buf, WINDOW_TITLE_MAX, cookie)) {
                 pid = atoi(buf);
             }
             fclose(cookie);
         }
-    }
-    if (system("rm -f " PID_COOKIE)) {
-        LOG_WARNING("pid_of_window: can't rm cookie " PID_COOKIE);
+        if (system("rm -f " DELICIOUS_COOKIE)) {
+            LOG_WARNING("pid_of_window: can't rm cookie " DELICIOUS_COOKIE);
+        }
     }
     return pid;
 #else

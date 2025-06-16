@@ -1,6 +1,8 @@
 #ifndef _LOG_H
 #define _LOG_H
 
+#include "types.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -43,10 +45,16 @@
 #ifdef NDEBUG
 # define LOG_INFO(str, ...) \
     print_log(STDOUT_FILENO, CLR_BLUE "[INFO]: " CLR_RESET str "\n", ##__VA_ARGS__)
-# define LOG_DEBUG(str, ...) \
-    print_log(STDERR_FILENO, CLR_MAGENTA "[DEBUG]: " CLR_RESET str "\n", ##__VA_ARGS__)
-# define LOG_WARNING(str, ...) \
-    print_log(STDERR_FILENO, CLR_YELLOW "[WARNING]: " CLR_RESET str "\n", ##__VA_ARGS__)
+# define LOG_DEBUG(str, ...) do {                                       \
+        if (g_verbose) {                                                \
+            print_log(STDERR_FILENO, CLR_MAGENTA "[DEBUG]: " CLR_RESET str "\n", ##__VA_ARGS__); \
+        }                                                               \
+    } while (0)
+# define LOG_WARNING(str, ...) do {                                     \
+        if (g_verbose) {                                                \
+            print_log(STDERR_FILENO, CLR_YELLOW "[WARNING]: " CLR_RESET str "\n", ##__VA_ARGS__); \
+        }                                                               \
+    } while (0)
 #else
 # define LOG_INFO(str, ...) print_log(STDOUT_FILENO, str "\n", ##__VA_ARGS__)
 # define LOG_DEBUG(str, ...) do {} while (0)
@@ -61,5 +69,9 @@
 
 void hex_dump(void *ptr, size_t len);
 void print_log(int fd, const char *log_format, ...);
+
+
+extern bool g_verbose;
+
 
 #endif

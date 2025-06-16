@@ -7,7 +7,9 @@
 #include "smrf/util/log.h"
 
 #define DEFAULT_D2R_WINDOW_TITLE "Diablo II: Resurrected"
-#define WINDOW_TITLE_OR_DEFAULT(game) (*game->window_title_setting ? game->window_title_setting : DEFAULT_D2R_WINDOW_TITLE)
+#define WINDOW_TITLE_OR_DEFAULT(game)                                          \
+  (*game->window_title_setting ? game->window_title_setting                    \
+                               : DEFAULT_D2R_WINDOW_TITLE)
 
 
 
@@ -38,22 +40,19 @@ void destroy_game_state(GameState *game)
     pthread_mutex_lock(&game->mutex);
     free_all_levels();
     hfree(&g_unit_table);
-    memset(game, 0, sizeof(GameState));
     pthread_mutex_unlock(&game->mutex);
     pthread_mutex_destroy(&game->mutex);
+    memset(game, 0, sizeof(GameState));
 }
 
 static void reset_game_state(GameState *game)
 {
-    static char status_bak[STATUS_MAX]; //TODO: dont
-
     pthread_mutex_lock(&game->mutex);
     free_all_levels();
     hdelall(g_unit_table);
-    memcpy(status_bak, game->status, STATUS_MAX);
-    memset((char *)game + PLAYER_DATA_NAME_MAX,
-           0, sizeof(GameState) - PLAYER_DATA_NAME_MAX);
-    memcpy(game->status, status_bak, STATUS_MAX);
+    game->all_levels = NULL;
+    game->level = NULL;
+    game->player = NULL;
     pthread_mutex_unlock(&game->mutex);
 }
 
@@ -136,32 +135,6 @@ static bool deep_validate_Player(Player *maybe_player)
     log_Room2(&room2);
 
     return TRUE;
-}
-
-inline static void *search_player_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
-{
-    byte *b = buf;
-    Player *player;
-    UnitWithAddr *uwa = (UnitWithAddr *)data;
-
-    while (buf_len >= sizeof(Player)) {
-        player = (Player *)b;
-        if (is_valid_Player(player)) {
-            ptr_t here = address + (ptr_t)(b - buf);
-            LOG_INFO("found maybe-Player ptr at %16jx", here); /* DEBUG */
-            /* log_Player(player);                          /\* DEBUG *\/ */
-
-            if (deep_validate_Player(player)) {
-                memcpy(&uwa->unit, player, sizeof(Player));
-                uwa->unit_addr[0] = here;
-                return data; // done
-            }
-        }
-        b += sizeof(ptr_t);
-        buf_len -= sizeof(ptr_t);
-    }
-
-    return NULL; // keep reading
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -280,36 +253,107 @@ static bool update_unit_callback(void *node_value, void *data)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static bool update_player(GameState *game, Player *player, bool need_full_search)
+static Player *parse_unit_table(ptr_t ut_addr)
 {
-    UnitWithAddr uwa = {0};  //TODO: now it's a addr-list... rename and use something appropriate here
+    UnitHashTable ut;
+    Player *player = NULL;
 
-    if (!need_full_search && game->_player_addr) {
-        UPDATE_STATUS(game, "Updating Player...");
-        if (!memread((ptr_t)game->_player_addr, sizeof(Player),
-                     find_Player_callback, player)) {
-            LOG_ERROR("Can't refresh player");
-            return FALSE;
-        }
-        return TRUE;
+    if (!is_valid_ptr__base(ut_addr)
+        || !memreadbase(ut_addr, sizeof(UnitHashTable),
+                    find_UnitHashTable_callback, &ut)) {
+        LOG_ERROR("Can't parse unit table %d", is_valid_ptr__base(ut_addr));
+        return NULL;
     }
 
+    for (UnitType u_type = 0; u_type < MAX_UNIT; u_type++) {
+        for (ptr_t i = 0; i < UNIT_HASH_TABLE_LEN; i++) {
+            UnitAny *u = ut.table[u_type * UNIT_HASH_TABLE_LEN + i];
+            if (!u) {
+                continue;
+            }
+
+            UnitAny *parsed_unit = parse_unit_list((ptr_t)u);
+            if (!parsed_unit) {
+                LOG_WARNING("Couldn't parse unit from UnitHashTable");
+                continue;
+            }
+
+            UnitAny un;
+            if (u_type == UNIT_PLAYER && !player
+                && memread((ptr_t)u, sizeof(Player),
+                           find_Player_callback, &un)
+                && deep_validate_Player(&un)) {
+                    player = parsed_unit;
+                    LOG_WARNING("ZBOUB");
+            }
+        }
+    }
+
+    return player;
+}
+
+static void *search_unit_table_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
+{
+    (void)data;
+    byte *b = buf;
+    UnitHashTable ut;
+
+    while (buf_len >= sizeof(dword)) {
+        dword maybe_ut = *(dword *)b;
+
+        if (is_valid_ptr__base(maybe_ut)
+            && memreadbase(maybe_ut, sizeof(UnitHashTable),
+                           find_UnitHashTable_callback, &ut)) {
+            ptr_t here = address + (ptr_t)(b - buf);
+            LOG_INFO("found UT at %16jx - %16jx", here, maybe_ut); /* DEBUG */
+            return (void *)here;
+            /* return (void *)maybe_ut; */
+        }
+
+        b += sizeof(dword);
+        buf_len -= sizeof(dword);
+    }
+
+    return NULL; // keep reading
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+static bool update_player(GameState *game, bool need_full_search)
+{
     UPDATE_STATUS(game, "Out of game...");
 
-    void *search_aborted = memreadall(FALSE, search_player_callback, &uwa);
-    if (!search_aborted) {
-        LOG_ERROR("Can't find Player ptr");
+    if (need_full_search || !game->_ut_addr) {
+        void *ut_addr = memreadallbase(search_unit_table_callback, NULL);
+        if (!ut_addr) {
+            LOG_ERROR("Can't find UnitHashTable ptr");
+            return FALSE;
+        }
+        game->_ut_addr = (ptr_t)ut_addr;
+        LOG_INFO("Woop woop! Found UnitHashTable ptr"); /* DEBUG */
+    }
+
+    dword ut;
+    if (!memread((ptr_t)game->_ut_addr, sizeof(dword),
+                 find_dword_callback, &ut)) {
+        LOG_ERROR("Can't read UnitHashTable ptr");
+        game->_ut_addr = 0;
         return FALSE;
     }
-    UPDATE_STATUS(game, "In Game...");  // TODO: move that before
+    Player *player = parse_unit_table(ut);
+    if (!game->player) {
+        if (!player) {
+            LOG_ERROR("Can't find player");
+            game->_ut_addr = 0;
+            return FALSE;
+        } else {
+            pthread_mutex_lock(&game->mutex);
+            game->player = player;
+            pthread_mutex_unlock(&game->mutex);
+            LOG_INFO("Woop woop! Found Player ptr"); /* DEBUG */
+        }
+    }
 
-    /* pthread_mutex_lock(&game->mutex); */
-    game->_player_addr = uwa.unit_addr[0];  //TODO: remove from GameState
-    /* pthread_mutex_unlock(&game->mutex); */
-
-    memcpy(player, &uwa.unit, sizeof(Player));
-    log_Player(player);
-    LOG_INFO("Woop woop! Found Player ptr at %16jx", uwa.unit_addr); /* DEBUG */
     return TRUE;
 }
 
@@ -344,63 +388,56 @@ static bool update_game_window(GameState *game, bool *need_full_search)
 
 bool update_game_state(GameState *game)
 {
-    static PlayerContent pc = {0};  // static because big
-    static PlayerContent tmp = {0};  // static because big
-    static Player player = {0};  // static because big
+    static Room1 room1;
+    static Room2 room2;
 
     bool need_full_search = FALSE;
     if (!update_game_window(game, &need_full_search)
-        || !update_player(game, &player, need_full_search)) {
+        || !update_player(game, need_full_search)) {
         reset_game_state(game);
         return FALSE;
     }
 
-    UPDATE_STATUS(game, "Updating Game...");
-    if (!memread((ptr_t)player.pPlayerData, sizeof(PlayerData),
-                 find_PlayerData_callback, &tmp.player_data)) {
-        LOG_ERROR("Can't find playerData");
-        reset_game_state(game);
-        return FALSE;
-    }
-    log_PlayerData(&tmp.player_data);
-
-    if (!memread((ptr_t)player.pPath, sizeof(Path),
-                 find_Path_callback, &tmp.path)) {
-        LOG_ERROR("Can't find path");
-        return FALSE;
-    }
-    log_Path(&tmp.path);
-
-    if (!memread((ptr_t)tmp.path.pRoom1, sizeof(Room1),
-                 find_Room1_callback, &tmp.room1)) {
-        LOG_ERROR("Can't find room1");
-        return FALSE;
-    }
-    /* log_Room1(&tmp.room1); */
-
-    if (!memread((ptr_t)tmp.room1.pRoom2, sizeof(Room2),
-                 find_Room2_callback, &tmp.room2)) {
-        LOG_ERROR("Can't find room2");
-        return FALSE;
-    }
-    /* log_Room2(&tmp.room2); */
+    dword uid = game->player->dwUnitId;
 
     pthread_mutex_lock(&game->mutex);
     UPDATE_STATUS(game, "Updating Units...");
     LOG_DEBUG("before: %d units in table", g_unit_table->length);
     hiter(g_unit_table, update_unit_callback, NULL);
     LOG_DEBUG("after: %d units in table", g_unit_table->length);
+    pthread_mutex_unlock(&game->mutex);
 
+    UnitWithAddr *uwa = hget(g_unit_table, uid);
+    if (!uwa) {
+        LOG_INFO("Player lost, assuming Out of Game");
+        UPDATE_STATUS(game, "Out of game...");
+        reset_game_state(game);
+        return FALSE;
+    }
+
+    if (!memread((ptr_t)uwa->unit.pPath->pRoom1, sizeof(Room1),
+                 find_Room1_callback, &room1)) {
+        LOG_ERROR("Can't find room1");
+        return FALSE;
+    }
+    /* log_Room1(&tmp.room1); */
+
+    if (!memread((ptr_t)room1.pRoom2, sizeof(Room2),
+                 find_Room2_callback, &room2)) {
+        LOG_ERROR("Can't find room2");
+        return FALSE;
+    }
+    /* log_Room2(&tmp.room2); */
+
+
+    pthread_mutex_lock(&game->mutex);
+    game->player = &uwa->unit;
     game->all_levels = g_levels;
     UPDATE_STATUS(game, "Updating Map...");
-    game->level = parse_level_list((ptr_t)tmp.room2.pLevel); //TODO: pass Game
-    tmp.room2.pLevel = game->level;
-    memcpy(&pc, &tmp, sizeof(PlayerContent));
-    memcpy(&game->player, &player, sizeof(Player));
-    game->player.pPlayerData = &pc.player_data;
-    game->player.pPath = &pc.path;
-    game->player.pPath->pRoom1 = &pc.room1;
-    game->player.pPath->pRoom1->pRoom2 = &pc.room2;
+    game->level = parse_level_list((ptr_t)room2.pLevel); //TODO: pass Game
+    room2.pLevel = game->level;
+    room1.pRoom2 = &room2;
+    game->player->pPath->pRoom1 = &room1;
     UPDATE_STATUS(game, "Fresh.");
     pthread_mutex_unlock(&game->mutex);
 

@@ -480,6 +480,16 @@ void log_UnitAny(UnitAny *ptr)
               ptr->_pad2);
 }
 
+void log_UnitHashTable(UnitHashTable *ptr)
+{
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "UnitHashTable" CLR_RESET " {\n"
+              "    UnitAny *table[%d]: %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx %16jx\n"
+              "}",
+              UNIT_HASH_TABLE_LEN,
+              ptr->table[0], ptr->table[1], ptr->table[2], ptr->table[3], ptr->table[4], ptr->table[5], ptr->table[6], ptr->table[7], ptr->table[8], ptr->table[9], ptr->table[10], ptr->table[11], ptr->table[12], ptr->table[13], ptr->table[14], ptr->table[15], ptr->table[16], ptr->table[17], ptr->table[18], ptr->table[19], ptr->table[20], ptr->table[21], ptr->table[22], ptr->table[23], ptr->table[24], ptr->table[25], ptr->table[26], ptr->table[27], ptr->table[28], ptr->table[29], ptr->table[30], ptr->table[31], ptr->table[32], ptr->table[33], ptr->table[34], ptr->table[35], ptr->table[36], ptr->table[37], ptr->table[38], ptr->table[39], ptr->table[40], ptr->table[41], ptr->table[42], ptr->table[43], ptr->table[44], ptr->table[45], ptr->table[46], ptr->table[47], ptr->table[48], ptr->table[49], ptr->table[50], ptr->table[51], ptr->table[52], ptr->table[53], ptr->table[54], ptr->table[55], ptr->table[56], ptr->table[57], ptr->table[58], ptr->table[59], ptr->table[60], ptr->table[61], ptr->table[62], ptr->table[63], ptr->table[64], ptr->table[65], ptr->table[66], ptr->table[67], ptr->table[68], ptr->table[69], ptr->table[70], ptr->table[71], ptr->table[72], ptr->table[73], ptr->table[74], ptr->table[75], ptr->table[76], ptr->table[77], ptr->table[78], ptr->table[79], ptr->table[80], ptr->table[81], ptr->table[82], ptr->table[83], ptr->table[84], ptr->table[85], ptr->table[86], ptr->table[87], ptr->table[88], ptr->table[89], ptr->table[90], ptr->table[91], ptr->table[92], ptr->table[93], ptr->table[94], ptr->table[95], ptr->table[96], ptr->table[97], ptr->table[98], ptr->table[99], ptr->table[100], ptr->table[101], ptr->table[102], ptr->table[103], ptr->table[104], ptr->table[105], ptr->table[106], ptr->table[107], ptr->table[108], ptr->table[109], ptr->table[110], ptr->table[111], ptr->table[112], ptr->table[113], ptr->table[114], ptr->table[115], ptr->table[116], ptr->table[117], ptr->table[118], ptr->table[119], ptr->table[120], ptr->table[121], ptr->table[122], ptr->table[123], ptr->table[124], ptr->table[125], ptr->table[126], ptr->table[127]);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 static inline bool is_valid_player_name_str(const char *b, size_t len)
@@ -504,31 +514,30 @@ static inline bool is_valid_player_name_str(const char *b, size_t len)
     return *start; // forbid empty string
 }
 
-inline bool is_valid_Inventory(Inventory *ptr)
+inline bool is_valid_Inventory(Inventory *ptr)  //TODO
 {
     return IS_ALIGNED(ptr);
-    //TODO
 }
 
 inline bool is_valid_Level(Level *ptr)
 {
     static dword zero[86] = {0};
-    log_Level(ptr);                          /* DEBUG */
+    /* log_Level(ptr);                          /\* DEBUG *\/ */
 #ifdef NDEBUG
-    if (memcmp(ptr->_zero, zero, sizeof(dword) * 80)) {
-        LOG_WARNING("not zero'ed");
-        LOG_WARNING("dword _zero[80]: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n",
-                    ptr->_zero[0], ptr->_zero[1], ptr->_zero[2], ptr->_zero[3], ptr->_zero[4], ptr->_zero[5], ptr->_zero[6], ptr->_zero[7], ptr->_zero[8], ptr->_zero[9], ptr->_zero[10], ptr->_zero[11], ptr->_zero[12], ptr->_zero[13], ptr->_zero[14], ptr->_zero[15], ptr->_zero[16], ptr->_zero[17], ptr->_zero[18], ptr->_zero[19], ptr->_zero[20], ptr->_zero[21], ptr->_zero[22], ptr->_zero[23], ptr->_zero[24], ptr->_zero[25], ptr->_zero[26], ptr->_zero[27], ptr->_zero[28], ptr->_zero[29], ptr->_zero[30], ptr->_zero[31], ptr->_zero[32], ptr->_zero[33], ptr->_zero[34], ptr->_zero[35], ptr->_zero[36], ptr->_zero[37], ptr->_zero[38], ptr->_zero[39], ptr->_zero[40], ptr->_zero[41], ptr->_zero[42], ptr->_zero[43], ptr->_zero[44], ptr->_zero[45], ptr->_zero[46], ptr->_zero[47], ptr->_zero[48], ptr->_zero[49], ptr->_zero[50], ptr->_zero[51], ptr->_zero[52], ptr->_zero[53], ptr->_zero[54], ptr->_zero[55], ptr->_zero[56], ptr->_zero[57], ptr->_zero[58], ptr->_zero[59], ptr->_zero[60], ptr->_zero[61], ptr->_zero[62], ptr->_zero[63], ptr->_zero[64], ptr->_zero[65], ptr->_zero[66], ptr->_zero[67], ptr->_zero[68], ptr->_zero[69], ptr->_zero[70], ptr->_zero[71], ptr->_zero[72], ptr->_zero[73], ptr->_zero[74], ptr->_zero[75], ptr->_zero[76], ptr->_zero[77], ptr->_zero[78], ptr->_zero[79]);
-    }
+    /* if (memcmp(ptr->_zero, zero, sizeof(dword) * 80)) { */
+        /* LOG_WARNING("not zero'ed"); */
+        /* LOG_WARNING("dword _zero[80]: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n", */
+        /*             ptr->_zero[0], ptr->_zero[1], ptr->_zero[2], ptr->_zero[3], ptr->_zero[4], ptr->_zero[5], ptr->_zero[6], ptr->_zero[7], ptr->_zero[8], ptr->_zero[9], ptr->_zero[10], ptr->_zero[11], ptr->_zero[12], ptr->_zero[13], ptr->_zero[14], ptr->_zero[15], ptr->_zero[16], ptr->_zero[17], ptr->_zero[18], ptr->_zero[19], ptr->_zero[20], ptr->_zero[21], ptr->_zero[22], ptr->_zero[23], ptr->_zero[24], ptr->_zero[25], ptr->_zero[26], ptr->_zero[27], ptr->_zero[28], ptr->_zero[29], ptr->_zero[30], ptr->_zero[31], ptr->_zero[32], ptr->_zero[33], ptr->_zero[34], ptr->_zero[35], ptr->_zero[36], ptr->_zero[37], ptr->_zero[38], ptr->_zero[39], ptr->_zero[40], ptr->_zero[41], ptr->_zero[42], ptr->_zero[43], ptr->_zero[44], ptr->_zero[45], ptr->_zero[46], ptr->_zero[47], ptr->_zero[48], ptr->_zero[49], ptr->_zero[50], ptr->_zero[51], ptr->_zero[52], ptr->_zero[53], ptr->_zero[54], ptr->_zero[55], ptr->_zero[56], ptr->_zero[57], ptr->_zero[58], ptr->_zero[59], ptr->_zero[60], ptr->_zero[61], ptr->_zero[62], ptr->_zero[63], ptr->_zero[64], ptr->_zero[65], ptr->_zero[66], ptr->_zero[67], ptr->_zero[68], ptr->_zero[69], ptr->_zero[70], ptr->_zero[71], ptr->_zero[72], ptr->_zero[73], ptr->_zero[74], ptr->_zero[75], ptr->_zero[76], ptr->_zero[77], ptr->_zero[78], ptr->_zero[79]); */
+    /* } */
 #endif
-    LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pRoom2First): %d",
-                !ptr->pRoom2First || is_valid_ptr__quick((ptr_t)ptr->pRoom2First) );
-    /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pDunno): %d", */
-    /*             is_valid_ptr__quick((ptr_t)ptr->pDunno) ); */
-    LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pNext): %d",
-                !ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext) );
-    LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pMisc): %d",
-                !ptr->pMisc || is_valid_ptr__quick((ptr_t)ptr->pMisc) );
+    /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pRoom2First): %d", */
+    /*             !ptr->pRoom2First || is_valid_ptr__quick((ptr_t)ptr->pRoom2First) ); */
+    /* /\* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pDunno): %d", *\/ */
+    /* /\*             is_valid_ptr__quick((ptr_t)ptr->pDunno) ); *\/ */
+    /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pNext): %d", */
+    /*             !ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext) ); */
+    /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pMisc): %d", */
+    /*             !ptr->pMisc || is_valid_ptr__quick((ptr_t)ptr->pMisc) ); */
     return IS_ALIGNED(ptr)
         && ptr->dwPosX <= 0xffff
         && ptr->dwPosY <= 0xffff
@@ -591,11 +600,11 @@ inline bool is_valid_PresetUnit(PresetUnit *ptr)
 
 inline bool is_valid_Path(Path *ptr)
 {
-    log_Path(ptr); /* DEBUG */
+    /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pRoom1): %d", */
+    /*             is_valid_ptr__quick((ptr_t)ptr->pRoom1)); */
+    /* log_Path(ptr); /\* DEBUG *\/ */
     return IS_ALIGNED(ptr)
-        && is_valid_ptr((ptr_t)ptr->pRoom1)
-        && ptr->xPos > 0
-        && ptr->yPos > 0
+        && is_valid_ptr__quick((ptr_t)ptr->pRoom1)
         /* && (!ptr->pRoomUnk || is_valid_ptr((ptr_t)ptr->pRoomUnk)) */
         /* && (!ptr->pUnit || is_valid_ptr((ptr_t)ptr->pUnit)) */
         /* && (!ptr->pTargetUnit || is_valid_ptr((ptr_t)ptr->pTargetUnit)); */
@@ -656,10 +665,10 @@ inline bool is_valid_PlayerData(PlayerData *ptr)
 
 inline bool is_valid_Monster(Monster *ptr)
 {
-    log_UnitAny(ptr);                          /* DEBUG */
+    /* log_UnitAny(ptr);                          /\* DEBUG *\/ */
     return IS_ALIGNED(ptr)
         && ptr->dwType == UNIT_MONSTER
-        && ptr->dwTxtFileNo < MAX_MONSTER
+        /* && ptr->dwTxtFileNo < MAX_MONSTER */
         && ptr->dwUnitId != 0
         && ptr->dwAct < 5
         /* && ptr->dwPlayerClass < CLASS_MAX */
@@ -668,12 +677,12 @@ inline bool is_valid_Monster(Monster *ptr)
         && is_valid_ptr__quick((ptr_t)ptr->pMonsterData)
         && is_valid_ptr__quick((ptr_t)ptr->pPath)
         && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
-        && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
         ;
 }
+
 inline bool is_valid_Player(Player *ptr)
 {
-    log_UnitAny(ptr);                          /* DEBUG */
+    /* log_UnitAny(ptr);                          /\* DEBUG *\/ */
     /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pPlayerData): %d", */
     /*             is_valid_ptr__quick((ptr_t)ptr->pPlayerData) ); */
     /* LOG_WARNING("is_valid_ptr((ptr_t)ptr->pAct): %d", */
@@ -707,7 +716,7 @@ inline bool is_valid_UnitAny(UnitAny *ptr)
           && ptr->dwUnitId != 0
           && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
           /* && is_valid_ptr((ptr_t)ptr->pAct) */
-          && is_valid_ptr((ptr_t)ptr->pPath))) {
+          && is_valid_ptr__quick((ptr_t)ptr->pPath))) {
         return FALSE;
     }
 
@@ -722,7 +731,47 @@ inline bool is_valid_UnitAny(UnitAny *ptr)
         /*     return is_valid_missile(ptr); //TODO */
         /* case UNIT_ITEM: */
         /*     return is_valid_item(ptr); //TODO */
+        /* case UNIT_TILE: */
+        /*     return is_valid_TILE(ptr); //TODO */
     }
 
-    return FALSE;
+    return TRUE;                /* DEBUG */
+}
+
+inline bool is_valid_UnitHashTable(UnitHashTable *ptr)
+{
+    if (!IS_ALIGNED(ptr)) {
+        return FALSE;
+    }
+
+    int player_count = 0;
+    int monster_count = 0;
+
+    for (UnitType u_type = 0; u_type < MAX_UNIT; u_type++) {
+        for (ptr_t i = 0; i < UNIT_HASH_TABLE_LEN; i++) {
+            UnitAny *u = ptr->table[u_type * UNIT_HASH_TABLE_LEN + i];
+            if (u) {
+                if (!is_valid_ptr((ptr_t)u)) {
+                    return FALSE;
+                }
+
+                UnitAny un;
+                if (!memread((ptr_t)u, sizeof(UnitAny),
+                             find_UnitAny_callback, &un)) {
+                    return FALSE;
+                }
+
+                if (u_type == UNIT_MONSTER) {
+                    monster_count++;
+                } else if (u_type == UNIT_PLAYER) {
+                    player_count++;
+                }
+            }
+        }
+    }
+
+    LOG_DEBUG("%d monsters / %d players in table",
+             monster_count, player_count);
+
+    return player_count && monster_count;
 }

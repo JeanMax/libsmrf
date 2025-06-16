@@ -227,6 +227,11 @@ typedef  struct Waypoint  Waypoint;
 /*     byte flags;  */
 /* }; */
 
+#define UNIT_HASH_TABLE_LEN 128
+typedef struct UnitHashTable  UnitHashTable;
+struct UnitHashTable {
+    UnitAny *table[UNIT_HASH_TABLE_LEN * MAX_UNIT];
+};
 
 #define PLAYER_DATA_NAME_MAX 0x40
 typedef  struct PlayerData  PlayerData;
@@ -309,6 +314,7 @@ void log_MonsterData(MonsterData *ptr);
 void log_PlayerData(PlayerData *ptr);
 void log_Player(Player *ptr);
 void log_UnitAny(UnitAny *ptr);
+void log_UnitHashTable(UnitHashTable *ptr);
 
 bool is_valid_Inventory(Inventory *ptr);
 bool is_valid_Level(Level *ptr);
@@ -324,6 +330,7 @@ bool is_valid_PlayerData(PlayerData *ptr);
 bool is_valid_Monster(Monster *ptr);
 bool is_valid_Player(Player *ptr);
 bool is_valid_UnitAny(UnitAny *ptr);
+bool is_valid_UnitHashTable(UnitHashTable *ptr);
 
 #define DEF_STRUCT_CPY_CALLBACK(STRUCT) \
     inline static void *find_##STRUCT##_callback(byte *buf, size_t buf_len, ptr_t address, void *data) \
@@ -351,5 +358,22 @@ DEF_STRUCT_CPY_CALLBACK(PlayerData)
 DEF_STRUCT_CPY_CALLBACK(MonsterData)
 DEF_STRUCT_CPY_CALLBACK(Player)
 DEF_STRUCT_CPY_CALLBACK(UnitAny)
+DEF_STRUCT_CPY_CALLBACK(UnitHashTable)
+
+
+#define DEF_TYPE_CPY_CALLBACK(TYPE) \
+    inline static void *find_##TYPE##_callback(byte *buf, size_t buf_len, ptr_t address, void *data) \
+    {                                                                   \
+        (void)buf_len, (void)address;                                   \
+        memcpy(data, buf, sizeof(TYPE));                                \
+        return data;                                                    \
+    }
+
+DEF_TYPE_CPY_CALLBACK(byte)
+DEF_TYPE_CPY_CALLBACK(word)
+DEF_TYPE_CPY_CALLBACK(dword)
+DEF_TYPE_CPY_CALLBACK(qword)
+DEF_TYPE_CPY_CALLBACK(ptr_t)
+
 
 #endif
