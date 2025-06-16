@@ -17,6 +17,7 @@ extern Level  *g_levels[MAX_LEVEL];
 
 void free_all_levels(void);
 Level *parse_level_list(ptr_t level_addr);
+UnitAny *parse_unit_list(ptr_t u_addr);
 
 
 #endif

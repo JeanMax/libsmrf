@@ -4,7 +4,7 @@
 #include "util/list.h"
 #include "util/malloc.h"
 
-#define UPDATE_UNIT_FAILED ((ptr_t)-1)
+#define HKEY(u) ( (size_t)(u).dwUnitId | ((size_t)(u).dwType << 32) )
 
 Level      *g_levels[MAX_LEVEL] = {0};
 Htable     *g_unit_table = {0};  //TODO: move that to GameState (and remove private fields there)
@@ -117,7 +117,7 @@ static PresetUnit *preset_in_list(PresetUnit *pu, PresetUnit *pu_list)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
+static UnitAny *parse_unit(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
 {
     static MonsterData mdata;
     static PlayerData pdata;
@@ -137,7 +137,7 @@ static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny 
     /*     return ret; */
     /* } */
 
-    UnitWithAddr *uwa = hget(g_unit_table, u.dwUnitId);
+    UnitWithAddr *uwa = hget(g_unit_table, HKEY(u));
     if (uwa) {
         for (int i = 0; i < MAX_UNIT_ADDR; i++) {
             if (u_addr == uwa->unit_addr[i]) {  // already stored
@@ -157,7 +157,8 @@ static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny 
     if (!u.pPath || !is_valid_ptr((ptr_t)u.pPath)
         || !memread((ptr_t)u.pPath, sizeof(Path),
                     find_Path_callback, &path)) {
-        LOG_WARNING("Can't update unit's Path");  //TODO: this fails a lot
+        /* LOG_WARNING("Can't update unit's Path %d", */
+        /*             u.pPath && is_valid_ptr((ptr_t)u.pPath));  //TODO: this fails a lot */
         /* log_Path(&path);    /\* DEBUG *\/ */
         /* log_UnitAny(&u);    /\* DEBUG *\/ */
         return ret;
@@ -189,13 +190,15 @@ static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny 
         /* log_UnitAny(&u);    /\* DEBUG *\/ */
     }
 
+    //TODO: parse inventory
+
     DUPE(u.pPath, &path, sizeof(Path));
     /* DUPE(u.pAct, &act, sizeof(Act)); */
 
-    MALLOC(uwa, sizeof(UnitWithAddr)); //TODO: leak (just a few? looks like you loose a node)
+    ZALLOC(uwa, sizeof(UnitWithAddr)); //TODO: leak (just a few? looks like you loose a node)
     memcpy(&uwa->unit, &u, sizeof(UnitAny));
     uwa->unit_addr[0] = u_addr;
-    hset(g_unit_table, u.dwUnitId, uwa);
+    hset(g_unit_table, HKEY(u), uwa);
 
     uwa->unit.pNext = NULL;
     ADD_LINK(*u_first, *u_last, &uwa->unit);
@@ -203,13 +206,13 @@ static UnitAny *store_monster_or_player(ptr_t u_addr, UnitAny **u_last, UnitAny 
     return ret;
 }
 
-static UnitAny *parse_unit_list(ptr_t u_addr)
+UnitAny *parse_unit_list(ptr_t u_addr)
 {
     UnitAny *u_last = NULL, *u_first = NULL;
 
     while (is_valid_ptr(u_addr)) {
-        u_addr = (ptr_t)(void *)store_monster_or_player(u_addr,
-                                                        &u_first, &u_last);
+        u_addr = (ptr_t)(void *)parse_unit(u_addr,
+                                           &u_first, &u_last);
     }
 
     return u_first;
@@ -320,7 +323,7 @@ static Level *parse_level(ptr_t level_addr)
         return NULL;
     }
     /* log_Level(&level); */
-    LOG_DEBUG("found Level ptr at %16jx", level_addr); /* DEBUG */
+    /* LOG_DEBUG("found Level ptr at %16jx", level_addr); /\* DEBUG *\/ */
 
     level_new = g_levels[level.dwLevelNo];
     if (!level_new) {
