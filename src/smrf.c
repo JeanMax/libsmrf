@@ -319,6 +319,34 @@ static void *search_unit_table_callback(byte *buf, size_t buf_len, ptr_t address
 
 ////////////////////////////////////////////////////////////////////////////////
 
+static void *search_player_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
+{
+    (void)data;
+    byte *b = buf;
+    UnitAny u;
+
+    while (buf_len >= sizeof(ptr_t)) {
+        Player *maybe_player = *(Player **)b;
+
+        if (is_valid_ptr((ptr_t)maybe_player)
+                && memread((ptr_t)maybe_player, sizeof(Player),
+                            find_Player_callback, &u)
+                && deep_validate_Player(&u)) {
+            ptr_t here = address + (ptr_t)(b - buf);
+            LOG_INFO("found Player at %16jx - %16jx", here, maybe_player); /* DEBUG */
+            /* return (void *)here; */
+            return (void *)maybe_player;
+        }
+
+        b += sizeof(ptr_t);
+        buf_len -= sizeof(ptr_t);
+    }
+
+    return NULL; // keep reading
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 static bool update_player(GameState *game, bool need_full_search)
 {
     UPDATE_STATUS(game, "Out of game...");
@@ -340,21 +368,49 @@ static bool update_player(GameState *game, bool need_full_search)
         game->_ut_addr = 0;
         return FALSE;
     }
+
     Player *player = parse_unit_table(ut);
-    if (!game->player) {
-        if (!player) {
-            LOG_ERROR("Can't find player");
-            game->_ut_addr = 0;
-            return FALSE;
-        } else {
+    if (game->player) {
+        return TRUE;  // nothing to do
+    }
+
+    if (player) {  // 1st update (nominal)
+        pthread_mutex_lock(&game->mutex);
+        game->player = player;
+        pthread_mutex_unlock(&game->mutex);
+        LOG_INFO("Woop woop! Found Player ptr"); /* DEBUG */
+
+        return TRUE;
+    }
+
+    UPDATE_STATUS(game, "Weird game, trying hack...");
+    LOG_ERROR("Can't find player...");
+
+    void *player_addr = memreadallbase(search_player_callback, NULL);
+    if (!player_addr) {
+        LOG_ERROR("Couldn't find another Player ptr, damn.");
+        game->_ut_addr = 0;
+        return FALSE;
+    }
+
+    LOG_INFO("Wop wooop woop, another Player ptr found!");
+    parse_unit_list((ptr_t)player_addr);
+    Player p;
+    if (memread((ptr_t)player_addr, sizeof(Player),
+                find_Player_callback, &p)) {
+        UnitWithAddr *uwa = hget(g_unit_table, p.dwUnitId);
+        if (uwa) {  // alternative player adress
+            LOG_INFO("Yay.");
             pthread_mutex_lock(&game->mutex);
-            game->player = player;
+            game->player = &uwa->unit;
             pthread_mutex_unlock(&game->mutex);
-            LOG_INFO("Woop woop! Found Player ptr"); /* DEBUG */
+            return TRUE;
         }
     }
 
-    return TRUE;
+    LOG_ERROR("Hack failed, damn.");
+    game->_ut_addr = 0;
+    return FALSE;
 }
 
 static bool update_game_window(GameState *game, bool *need_full_search)
@@ -393,7 +449,8 @@ bool update_game_state(GameState *game)
 
     bool need_full_search = FALSE;
     if (!update_game_window(game, &need_full_search)
-        || !update_player(game, need_full_search)) {
+        || !update_player(game, need_full_search)
+        || !game->player) {
         reset_game_state(game);
         return FALSE;
     }
