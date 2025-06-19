@@ -12,11 +12,10 @@
 #include <pthread.h>
 
 #include "smrf/d2structs.h"
-#include "smrf/util/hash.h"
+#include "smrf/parse.h"
 
 #include "smrf/d2sdk.h"  // for convenience when using the lib
 
-extern Htable *g_unit_table;  //TODO: berk
 
 #define UPDATE_STATUS(game, statux) do {        \
         strcpy(game->status, statux);           \

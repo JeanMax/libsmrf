@@ -4,10 +4,7 @@
 #include "util/list.h"
 #include "util/malloc.h"
 
-#define HKEY(u) ( (size_t)(u).dwUnitId | ((size_t)(u).dwType << 32) )
-
 Level      *g_levels[MAX_LEVEL] = {0};
-Htable     *g_unit_table = {0};  //TODO: move that to GameState (and remove private fields there)
 
 
 static void free_preset_list(PresetUnit *ptr)
@@ -116,107 +113,6 @@ static PresetUnit *preset_in_list(PresetUnit *pu, PresetUnit *pu_list)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-static UnitAny *parse_unit(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
-{
-    static MonsterData mdata;
-    static PlayerData pdata;
-    static UnitAny u;
-    static Path path;
-
-    if (!memread(u_addr, sizeof(UnitAny),
-                 find_UnitAny_callback, &u)) {
-        LOG_WARNING("Can't update unit");
-        return NULL;
-    }
-    /* log_UnitAny(&u); */
-
-    UnitAny *ret = u.pNext;
-
-    /* if (u.dwType == UNIT_MONSTER && u.wIsCorpse == 1) {  // remove dead monsters */
-    /*     return ret; */
-    /* } */
-
-    UnitWithAddr *uwa = hget(g_unit_table, HKEY(u));
-    if (uwa) {
-        for (int i = 0; i < MAX_UNIT_ADDR; i++) {
-            if (u_addr == uwa->unit_addr[i]) {  // already stored
-                return ret;
-            }
-        }
-        for (int i = 0; i < MAX_UNIT_ADDR; i++) {
-            if (!uwa->unit_addr[i]) {  // store new addr
-                uwa->unit_addr[i] = u_addr;
-                return ret;
-            }
-        }
-        LOG_DEBUG("Can't store new addr for unit %x", u.dwUnitId);
-        return ret;
-    }
-
-    if (!u.pPath || !is_valid_ptr((ptr_t)u.pPath)
-        || !memread((ptr_t)u.pPath, sizeof(Path),
-                    find_Path_callback, &path)) {
-        /* LOG_WARNING("Can't update unit's Path %d", */
-        /*             u.pPath && is_valid_ptr((ptr_t)u.pPath));  //TODO: this fails a lot */
-        /* log_Path(&path);    /\* DEBUG *\/ */
-        /* log_UnitAny(&u);    /\* DEBUG *\/ */
-        return ret;
-    }
-
-    if (u.dwType == UNIT_MONSTER) {
-        if (!u.pMonsterData || !is_valid_ptr((ptr_t)u.pMonsterData)
-            || !memread((ptr_t)u.pMonsterData, sizeof(MonsterData),
-                        find_MonsterData_callback, &mdata)) {
-            LOG_WARNING("Can't update unit's MonsterData");  //TODO: this fails a lot
-            /* log_MonsterData(&mdata);    /\* DEBUG *\/ */
-            /* log_UnitAny(&u);    /\* DEBUG *\/ */
-            return ret;
-        }
-        DUPE(u.pMonsterData, &mdata, sizeof(MonsterData));
-        /* log_MonsterData(&mdata);    /\* DEBUG *\/ */
-        /* log_UnitAny(&u);    /\* DEBUG *\/ */
-    } else if (u.dwType == UNIT_PLAYER) {
-        if (!u.pPlayerData || !is_valid_ptr((ptr_t)u.pPlayerData)
-            || !memread((ptr_t)u.pPlayerData, sizeof(PlayerData),
-                        find_PlayerData_callback, &pdata)) {
-            LOG_WARNING("Can't update unit's PlayerData");  //TODO: this fails a lot
-            /* log_PlayerData(&pdata);    /\* DEBUG *\/ */
-            /* log_UnitAny(&u);    /\* DEBUG *\/ */
-            return ret;
-        }
-        DUPE(u.pPlayerData, &pdata, sizeof(PlayerData));
-        /* log_PlayerData(&pdata);    /\* DEBUG *\/ */
-        /* log_UnitAny(&u);    /\* DEBUG *\/ */
-    }
-
-    //TODO: parse inventory
-
-    DUPE(u.pPath, &path, sizeof(Path));
-    /* DUPE(u.pAct, &act, sizeof(Act)); */
-
-    ZALLOC(uwa, sizeof(UnitWithAddr)); //TODO: leak (just a few? looks like you loose a node)
-    memcpy(&uwa->unit, &u, sizeof(UnitAny));
-    uwa->unit_addr[0] = u_addr;
-    hset(g_unit_table, HKEY(u), uwa);
-
-    uwa->unit.pNext = NULL;
-    ADD_LINK(*u_first, *u_last, &uwa->unit);
-
-    return ret;
-}
-
-UnitAny *parse_unit_list(ptr_t u_addr)
-{
-    UnitAny *u_last = NULL, *u_first = NULL;
-
-    while (is_valid_ptr(u_addr)) {
-        u_addr = (ptr_t)(void *)parse_unit(u_addr,
-                                           &u_first, &u_last);
-    }
-
-    return u_first;
-}
 
 static PresetUnit *parse_preset_list(ptr_t pu_addr, PresetUnit *pu_first)
 {
@@ -336,7 +232,6 @@ static Level *parse_level(ptr_t level_addr)
 
     return level_new;
 }
-
 
 Level *parse_level_list(ptr_t level_addr)
 {
