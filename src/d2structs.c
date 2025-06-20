@@ -363,6 +363,16 @@ void log_PlayerData(PlayerData *ptr)
               (ptr_t)ptr->pHellWaypoint);
 }
 
+void log_MissileData(MissileData *ptr)
+{
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "MissileData" CLR_RESET " {\n"
+              /* "    byte _1[64]: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n" */
+              "}"
+              /* ptr->_1[0], ptr->_1[1], ptr->_1[2], ptr->_1[3], ptr->_1[4], ptr->_1[5], ptr->_1[6], ptr->_1[7], ptr->_1[8], ptr->_1[9], ptr->_1[10], ptr->_1[11], ptr->_1[12], ptr->_1[13], ptr->_1[14], ptr->_1[15], ptr->_1[16], ptr->_1[17], ptr->_1[18], ptr->_1[19], ptr->_1[20], ptr->_1[21], ptr->_1[22], ptr->_1[23], ptr->_1[24], ptr->_1[25], ptr->_1[26], ptr->_1[27], ptr->_1[28], ptr->_1[29], ptr->_1[30], ptr->_1[31], ptr->_1[32], ptr->_1[33], ptr->_1[34], ptr->_1[35], ptr->_1[36], ptr->_1[37], ptr->_1[38], ptr->_1[39], ptr->_1[40], ptr->_1[41], ptr->_1[42], ptr->_1[43], ptr->_1[44], ptr->_1[45], ptr->_1[46], ptr->_1[47], ptr->_1[48], ptr->_1[49], ptr->_1[50], ptr->_1[51], ptr->_1[52], ptr->_1[53], ptr->_1[54], ptr->_1[55], ptr->_1[56], ptr->_1[57], ptr->_1[58], ptr->_1[59], ptr->_1[60], ptr->_1[61], ptr->_1[62], ptr->_1[63] */
+              );
+    hex_dump(ptr, sizeof(MissileData));
+}
 
 void log_MonsterData(MonsterData *ptr)
 {
@@ -629,6 +639,12 @@ inline bool is_valid_ActMisc(ActMisc *ptr)
         && ptr->dwStaffTombLevel < 12; //TODO
 }
 
+inline bool is_valid_MissileData(MissileData *ptr)
+{
+    return IS_ALIGNED(ptr);
+    /* && ptr->fType < TODO; */
+}
+
 inline bool is_valid_MonsterData(MonsterData *ptr)
 {
     return IS_ALIGNED(ptr);
@@ -660,6 +676,23 @@ inline bool is_valid_PlayerData(PlayerData *ptr)
         && is_valid_ptr__quick((ptr_t)ptr->pNightmareWaypoint)
         && is_valid_ptr__quick((ptr_t)ptr->pHellWaypoint)
         && is_valid_player_name_str(ptr->szName, PLAYER_DATA_NAME_MAX)
+        ;
+}
+
+inline bool is_valid_Missile(Missile *ptr)
+{
+    /* log_UnitAny(ptr);                          /\* DEBUG *\/ */
+    return IS_ALIGNED(ptr)
+        && ptr->dwType == UNIT_MISSILE
+        /* && ptr->dwTxtFileNo < MAX_MONSTER */
+        && ptr->dwUnitId != 0
+        /* && ptr->dwAct < 5 */
+        /* && ptr->dwPlayerClass < CLASS_MAX */
+        /* && !ptr->xPos */
+        /* && !ptr->yPos */
+        && is_valid_ptr__quick((ptr_t)ptr->pMissileData)
+        && is_valid_ptr__quick((ptr_t)ptr->pPath)
+        && (!ptr->pNext || is_valid_ptr__quick((ptr_t)ptr->pNext))
         ;
 }
 
@@ -727,8 +760,8 @@ inline bool is_valid_UnitAny(UnitAny *ptr)
             return is_valid_Monster(ptr);
         /* case UNIT_OBJECT: */
         /*     return is_valid_object(ptr); //TODO */
-        /* case UNIT_MISSILE: */
-        /*     return is_valid_missile(ptr); //TODO */
+        case UNIT_MISSILE:
+            return is_valid_Missile(ptr); //TODO
         /* case UNIT_ITEM: */
         /*     return is_valid_item(ptr); //TODO */
         /* case UNIT_TILE: */

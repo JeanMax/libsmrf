@@ -7,6 +7,7 @@
 #include "sdk/player.h"
 #include "sdk/monster.h"
 #include "sdk/object.h"
+#include "sdk/missile.h"
 #include "sdk/tile.h"
 
 inline bool is_shrine(const ObjectInfo *obj_info)

@@ -17,7 +17,7 @@ inline void delete_unit_callback(size_t unused_key, void *node_value)
     if (uwa->unit.pPath) {
         FREE(uwa->unit.pPath);
     }
-    if (uwa->unit.dwType == UNIT_MONSTER && uwa->unit.pMonsterData) {
+    if (uwa->unit.pMonsterData) {  // works for other types too...
         FREE(uwa->unit.pMonsterData);
     }
     FREE(uwa);
@@ -62,7 +62,7 @@ bool update_unit_callback(void *node_value, void *data)
         }
 
         /* if (u.dwType == UNIT_MONSTER && u.wIsCorpse == 1) {  // remove dead monsters */
-        /*     hdel(g_unit_table, uwa->unit.dwUnitId); */
+        /*     hdel(g_unit_table, HKEY(uwa->unit)); */
         /*     return FALSE; */
         /* } */
 
@@ -89,25 +89,8 @@ bool update_unit_callback(void *node_value, void *data)
         }
         uwa->unit.pPath = u.pPath;
 
-        if (u.dwType == UNIT_MONSTER) {
-            MonsterData mdata;
-            if (u.pMonsterData) {
-                if (!is_valid_ptr((ptr_t)u.pMonsterData)
-                    || !memread((ptr_t)u.pMonsterData, sizeof(MonsterData),
-                                find_MonsterData_callback, &mdata)) {
-                    LOG_WARNING("Can't resfresh unit's MonsterData at addr %16jx", uwa->unit_addr[i]);
-                    uwa->unit_addr[i] = 0;
-                    continue;
-                }
-                DUPE(u.pMonsterData, &mdata, sizeof(MonsterData));
-            }
-            if (uwa->unit.pMonsterData) {
-                FREE(uwa->unit.pMonsterData);
-            }
-            uwa->unit.pMonsterData = u.pMonsterData;
 
-            /* LOG_DEBUG("Successful monster refresh at %08x", uwa->unit_addr); /\* DEBUG *\/ */
-        } else if (u.dwType == UNIT_PLAYER) {
+        if (u.dwType == UNIT_PLAYER) {
             PlayerData pdata;
             if (u.pPlayerData) {
                 if (!is_valid_ptr((ptr_t)u.pPlayerData)
@@ -125,6 +108,50 @@ bool update_unit_callback(void *node_value, void *data)
             uwa->unit.pPlayerData = u.pPlayerData;
 
             /* LOG_DEBUG("Successful player refresh at %08x", uwa->unit_addr); /\* DEBUG *\/ */
+
+        } else if (u.dwType == UNIT_MONSTER) {
+            MonsterData pdata;
+            if (u.pMonsterData) {
+                if (!is_valid_ptr((ptr_t)u.pMonsterData)
+                    || !memread((ptr_t)u.pMonsterData, sizeof(MonsterData),
+                                find_MonsterData_callback, &pdata)) {
+                    LOG_WARNING("Can't resfresh unit's MonsterData at addr %16jx", uwa->unit_addr[i]);
+                    uwa->unit_addr[i] = 0;
+                    continue;
+                }
+                DUPE(u.pMonsterData, &pdata, sizeof(MonsterData));
+            }
+            if (uwa->unit.pMonsterData) {
+                FREE(uwa->unit.pMonsterData);
+            }
+            uwa->unit.pMonsterData = u.pMonsterData;
+
+            /* LOG_DEBUG("Successful monster refresh at %08x", uwa->unit_addr); /\* DEBUG *\/ */
+
+        } else if (u.dwType == UNIT_MISSILE) {
+            MissileData pdata;
+            if (u.pMissileData) {
+                if (!is_valid_ptr((ptr_t)u.pMissileData)
+                    || !memread((ptr_t)u.pMissileData, sizeof(MissileData),
+                                find_MissileData_callback, &pdata)) {
+                    LOG_WARNING("Can't resfresh unit's MissileData at addr %16jx", uwa->unit_addr[i]);
+                    uwa->unit_addr[i] = 0;
+                    continue;
+                    /* break;  // don't try too hard for missiles */
+                }
+                DUPE(u.pMissileData, &pdata, sizeof(MissileData));
+            }
+            if (uwa->unit.pMissileData) {
+                FREE(uwa->unit.pMissileData);
+            }
+            uwa->unit.pMissileData = u.pMissileData;
+
+            /* LOG_DEBUG("Successful missile refresh at %08x", uwa->unit_addr); /\* DEBUG *\/ */
+            /* log_MissileData(&pdata);    /\* DEBUG *\/ */
+            /* log_Path(u.pPath);    /\* DEBUG *\/ */
+            /* log_UnitAny(&u);    /\* DEBUG *\/ */
+        } else {
+            uwa->unit.pMonsterData = NULL;
         }
 
 
@@ -132,7 +159,7 @@ bool update_unit_callback(void *node_value, void *data)
     }
 
     // here we can assume all addr were invalid
-    hdel(g_unit_table, uwa->unit.dwUnitId);
+    hdel(g_unit_table, HKEY(uwa->unit));
 
     return FALSE;
 }
@@ -262,10 +289,8 @@ Player *parse_unit_table(ptr_t ut_addr)
 
 static UnitAny *parse_unit(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
 {
-    static MonsterData mdata;
-    static PlayerData pdata;
-    static UnitAny u;
-    static Path path;
+    UnitAny u;
+    Path path;
 
     if (!memread(u_addr, sizeof(UnitAny),
                  find_UnitAny_callback, &u)) {
@@ -307,19 +332,9 @@ static UnitAny *parse_unit(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
         return ret;
     }
 
-    if (u.dwType == UNIT_MONSTER) {
-        if (!u.pMonsterData || !is_valid_ptr((ptr_t)u.pMonsterData)
-            || !memread((ptr_t)u.pMonsterData, sizeof(MonsterData),
-                        find_MonsterData_callback, &mdata)) {
-            LOG_WARNING("Can't update unit's MonsterData");  //TODO: this fails a lot
-            /* log_MonsterData(&mdata);    /\* DEBUG *\/ */
-            /* log_UnitAny(&u);    /\* DEBUG *\/ */
-            return ret;
-        }
-        DUPE(u.pMonsterData, &mdata, sizeof(MonsterData));
-        /* log_MonsterData(&mdata);    /\* DEBUG *\/ */
-        /* log_UnitAny(&u);    /\* DEBUG *\/ */
-    } else if (u.dwType == UNIT_PLAYER) {
+
+    if (u.dwType == UNIT_PLAYER) {
+        PlayerData pdata;
         if (!u.pPlayerData || !is_valid_ptr((ptr_t)u.pPlayerData)
             || !memread((ptr_t)u.pPlayerData, sizeof(PlayerData),
                         find_PlayerData_callback, &pdata)) {
@@ -331,6 +346,34 @@ static UnitAny *parse_unit(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
         DUPE(u.pPlayerData, &pdata, sizeof(PlayerData));
         /* log_PlayerData(&pdata);    /\* DEBUG *\/ */
         /* log_UnitAny(&u);    /\* DEBUG *\/ */
+
+    } else if (u.dwType == UNIT_MONSTER) {
+        MonsterData pdata;
+        if (!u.pMonsterData || !is_valid_ptr((ptr_t)u.pMonsterData)
+            || !memread((ptr_t)u.pMonsterData, sizeof(MonsterData),
+                        find_MonsterData_callback, &pdata)) {
+            LOG_WARNING("Can't update unit's MonsterData");  //TODO: this fails a lot
+            /* log_MonsterData(&pdata);    /\* DEBUG *\/ */
+            /* log_UnitAny(&u);    /\* DEBUG *\/ */
+            return ret;
+        }
+        DUPE(u.pMonsterData, &pdata, sizeof(MonsterData));
+        /* log_MonsterData(&pdata);    /\* DEBUG *\/ */
+        /* log_UnitAny(&u);    /\* DEBUG *\/ */
+
+    } else if (u.dwType == UNIT_MISSILE) {
+        MissileData pdata;
+        if (!u.pMissileData || !is_valid_ptr((ptr_t)u.pMissileData)
+            || !memread((ptr_t)u.pMissileData, sizeof(MissileData),
+                        find_MissileData_callback, &pdata)) {
+            LOG_WARNING("Can't update unit's MissileData");
+            /* log_MissileData(&pdata);    /\* DEBUG *\/ */
+            /* log_UnitAny(&u);    /\* DEBUG *\/ */
+            return ret;
+        }
+        DUPE(u.pMissileData, &pdata, sizeof(MissileData));
+        /* log_MissileData(&pdata);    /\* DEBUG *\/ */
+        /* log_UnitAny(&u);    /\* DEBUG *\/ */
     }
 
     //TODO: parse inventory
@@ -338,7 +381,7 @@ static UnitAny *parse_unit(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
     DUPE(u.pPath, &path, sizeof(Path));
     /* DUPE(u.pAct, &act, sizeof(Act)); */
 
-    ZALLOC(uwa, sizeof(UnitWithAddr)); //TODO: leak (just a few? looks like you loose a node)
+    ZALLOC(uwa, sizeof(UnitWithAddr));  //TODO: leak (players? test htable too)
     memcpy(&uwa->unit, &u, sizeof(UnitAny));
     uwa->unit_addr[0] = u_addr;
     hset(g_unit_table, HKEY(u), uwa);

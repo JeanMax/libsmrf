@@ -233,6 +233,28 @@ struct UnitHashTable {
     UnitAny *table[UNIT_HASH_TABLE_LEN * MAX_UNIT];
 };
 
+typedef  struct MissileData  MissileData;
+struct MissileData {
+    void *_0;
+    byte _1[2];
+    byte something1;
+    byte _2;
+    byte skillId;
+    byte _3;
+    byte something3;
+    byte _4;
+    byte something4;
+    byte _5[3];
+    byte _5bis[2];
+    byte something4bis;  // frame animation index ?
+    byte something4ter;  // animation state
+    dword _7; // ff ff ff 7f
+    byte _8[4];
+    byte something5;
+    byte _9[3];
+    dword ownerId;  //owner uid / ff ff ff ff?
+};
+
 #define PLAYER_DATA_NAME_MAX 0x40
 typedef  struct PlayerData  PlayerData;
 struct PlayerData {
@@ -258,6 +280,7 @@ struct MonsterData {
 };
 
 typedef  struct UnitAny  Player;
+typedef  struct UnitAny  Missile;
 typedef  struct UnitAny  Monster;
 struct UnitAny {
     dword dwType;      // enum UnitType
@@ -267,6 +290,7 @@ struct UnitAny {
     union {
         PlayerData* pPlayerData;
         MonsterData *pMonsterData;
+        MissileData *pMissileData;
         void* pItemData;
         void* pObjectData;
         // TileData *pTileData doesn't appear to exist anymore
@@ -310,6 +334,7 @@ void log_PresetUnit(PresetUnit *ptr);
 void log_Path(Path *ptr);
 void log_Act(Act *ptr);
 void log_ActMisc(ActMisc *ptr);
+void log_MissileData(MissileData *ptr);
 void log_MonsterData(MonsterData *ptr);
 void log_PlayerData(PlayerData *ptr);
 void log_Player(Player *ptr);
@@ -325,9 +350,11 @@ bool is_valid_PresetUnit(PresetUnit *ptr);
 bool is_valid_Path(Path *ptr);
 bool is_valid_Act(Act *ptr);
 bool is_valid_ActMisc(ActMisc *ptr);
+bool is_valid_MissileData(MissileData *ptr);
 bool is_valid_MonsterData(MonsterData *ptr);
 bool is_valid_PlayerData(PlayerData *ptr);
 bool is_valid_Monster(Monster *ptr);
+bool is_valid_Missile(Missile *ptr);
 bool is_valid_Player(Player *ptr);
 bool is_valid_UnitAny(UnitAny *ptr);
 bool is_valid_UnitHashTable(UnitHashTable *ptr);
@@ -356,6 +383,7 @@ DEF_STRUCT_CPY_CALLBACK(Act)
 DEF_STRUCT_CPY_CALLBACK(ActMisc)
 DEF_STRUCT_CPY_CALLBACK(PlayerData)
 DEF_STRUCT_CPY_CALLBACK(MonsterData)
+DEF_STRUCT_CPY_CALLBACK(MissileData)
 DEF_STRUCT_CPY_CALLBACK(Player)
 DEF_STRUCT_CPY_CALLBACK(UnitAny)
 DEF_STRUCT_CPY_CALLBACK(UnitHashTable)
