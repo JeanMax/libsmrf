@@ -31,9 +31,11 @@ struct GameState {
     char status[STATUS_MAX]; //TODO: store an (atomic??) enum and link that to an str[]
     Level *level;
     Player *player;
-    ptr_t _ut_addr; //TODO: internal, hide
+    ptr_t _ut_addr; //TODO: internal, hide (and store in settings?)
+    ptr_t _gi_addr; //TODO: internal, hide (and store in settings?)
     pthread_mutex_t mutex;
     Level **all_levels; // Level *all_levels[MAX_LEVEL]
+    /* GameInfo *info; */
 };
 
 

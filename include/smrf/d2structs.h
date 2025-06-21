@@ -14,6 +14,49 @@ typedef  struct Room1  Room1;
 typedef  struct Room2  Room2;
 typedef  struct ActMisc  ActMisc;
 
+
+enum GameInfoFlag {
+     GAME_FLAG_UNSET = 0,
+     GAME_FLAG_OFF,
+     GAME_FLAG_ON
+};
+typedef enum GameInfoFlag  GameInfoFlag;  //TODO: move
+
+
+
+#define GAME_INFO_STR_MAX 0x40
+typedef  struct GameInfo  GameInfo;
+struct GameInfo {
+    char gameName[GAME_INFO_STR_MAX];
+    qword inGame;
+    void *_dunno1;
+    qword _dunno2;
+    byte _dunno3a;
+    byte _zero1[6];
+    byte _dunno3b;
+
+    char gamePass[GAME_INFO_STR_MAX];
+    qword inGameBis;
+    void *_dunno1Bis;
+    qword _dunno2Bis;
+    byte _dunno3aBis;
+    byte _zero2[6];
+    byte _dunno3bBis;
+
+    qword _dunno1Ter;
+    qword _dunno2Ter;  // NULL
+    qword _dunno3Ter;  // NULL
+    qword inGameTer;
+
+    dword something1;  // enum GameInfoFlag  for the remaining dwords
+    dword expansionInfo;  // 1=classic 2=xpac
+    dword hardcoreInfo; // 1=soft 2=hard
+    dword ladderInfo;  // 1=noladd 2=ladder
+    dword difficultyId;  // enum DifficultyId
+    dword something2;
+    qword _dunnoLast;  // NULL
+};
+
 typedef  struct Inventory  Inventory;
 struct Inventory {
     dword dwSignature;
@@ -325,6 +368,7 @@ struct UnitAny {
 };
 
 
+void log_GameInfo(GameInfo *ptr);
 void log_Inventory(Inventory *ptr);
 void log_Level(Level *ptr);
 void log_Room2(Room2 *ptr);
@@ -341,6 +385,7 @@ void log_Player(Player *ptr);
 void log_UnitAny(UnitAny *ptr);
 void log_UnitHashTable(UnitHashTable *ptr);
 
+bool is_valid_GameInfo(GameInfo *ptr);
 bool is_valid_Inventory(Inventory *ptr);
 bool is_valid_Level(Level *ptr);
 bool is_valid_Room2(Room2 *ptr);
@@ -372,6 +417,7 @@ bool is_valid_UnitHashTable(UnitHashTable *ptr);
         return data;                                                        \
     }
 
+DEF_STRUCT_CPY_CALLBACK(GameInfo)
 DEF_STRUCT_CPY_CALLBACK(Inventory)
 DEF_STRUCT_CPY_CALLBACK(Level)
 DEF_STRUCT_CPY_CALLBACK(Room2)
@@ -402,6 +448,14 @@ DEF_TYPE_CPY_CALLBACK(word)
 DEF_TYPE_CPY_CALLBACK(dword)
 DEF_TYPE_CPY_CALLBACK(qword)
 DEF_TYPE_CPY_CALLBACK(ptr_t)
+
+
+inline static void *memcpy_callback(byte *buf, size_t buf_len, ptr_t address, void *data)
+{
+    (void)address;
+    memcpy(data, buf, buf_len);
+    return data;
+}
 
 
 #endif

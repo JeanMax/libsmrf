@@ -3,6 +3,64 @@
 #include "proc.h"  // is_valid_ptr
 #include <ctype.h>  // isupper/islower
 
+void log_GameInfo(GameInfo *ptr)
+{
+    (void)ptr;
+    LOG_DEBUG("struct " CLR_GREEN "GameInfo" CLR_RESET " {\n"
+              "    char gameName[GAME_INFO_STR_MAX]: %s\n"
+              "    qword inGame: %16jx\n"
+              "    void *_dunno1: %16jx\n"
+              "    qword _dunno2: %16jx\n"
+              "    byte _dunno3a: %02x\n"
+              "    byte _zero1[6]: %02x %02x %02x %02x %02x %02x\n"
+              "    byte _dunno3b: %02x\n"
+              "    char gamePass[GAME_INFO_STR_MAX]: %s\n"
+              "    qword inGameBis: %16jx\n"
+              "    void *_dunno1Bis: %16jx\n"
+              "    qword _dunno2Bis: %16jx\n"
+              "    byte _dunno3aBis: %02x\n"
+              "    byte _zero2[6]: %02x %02x %02x %02x %02x %02x\n"
+              "    byte _dunno3bBis: %02x\n"
+              "    qword _dunno1Ter: %16jx\n"
+              "    qword _dunno2Ter: %16jx\n"
+              "    qword _dunno3Ter: %16jx\n"
+              "    qword inGameTer: %16jx\n"
+              "    dword something1: %08x\n"
+              "    dword expansionInfo: %08x\n"
+              "    dword hardcoreInfo: %08x\n"
+              "    dword ladderInfo: %08x\n"
+              "    dword difficultyId: %08x\n"
+              "    dword something2: %08x\n"
+              "    qword _dunnoLast: %16jx\n"
+              "}",
+              ptr->gameName,
+              ptr->inGame,
+              ptr->_dunno1,
+              ptr->_dunno2,
+              ptr->_dunno3a,
+              ptr->_zero1[0], ptr->_zero1[1], ptr->_zero1[2], ptr->_zero1[3], ptr->_zero1[4], ptr->_zero1[5],
+              ptr->_dunno3b,
+              ptr->gamePass,
+              ptr->inGameBis,
+              ptr->_dunno1Bis,
+              ptr->_dunno2Bis,
+              ptr->_dunno3aBis,
+              ptr->_zero2[0], ptr->_zero2[1], ptr->_zero2[2], ptr->_zero2[3], ptr->_zero2[4], ptr->_zero2[5],
+              ptr->_dunno3bBis,
+              ptr->_dunno1Ter,
+              ptr->_dunno2Ter,
+              ptr->_dunno3Ter,
+              ptr->inGameTer,
+              ptr->something1,
+              ptr->expansionInfo,
+              ptr->hardcoreInfo,
+              ptr->ladderInfo,
+              ptr->difficultyId,
+              ptr->something2,
+              ptr->_dunnoLast);
+    /* hex_dump(ptr, sizeof(GameInfo)); /\* DEBUG *\/ */
+}
+
 void log_Inventory(Inventory *ptr)
 {
     (void)ptr;
@@ -502,26 +560,54 @@ void log_UnitHashTable(UnitHashTable *ptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static inline bool is_valid_player_name_str(const char *b, size_t len)
+static inline bool is_valid_string(const char *b, size_t len, bool check_right)
 {
     const char *start = b;
     while ((size_t)(b - start) < len) {
-        if (*b && !(isupper((int)*b) || islower((int)*b) || *b == '_')) {
-            return FALSE;
+        if (*b && !(isprint((int)*b) || *b == ' ')) {
+            return FALSE;  //TODO: it actually accepts wide char :|
         }
         // check if right side is 0 padded
         if (!*b) {
-            while ((size_t)(b - start) < len) {
-                if (*b) {
-                    return FALSE;
+            if (check_right) {
+                while ((size_t)(b - start) < len) {
+                    if (*b) {
+                        return FALSE;
+                    }
+                    b++;
                 }
-                b++;
             }
             return *start;
         }
         b++;
     }
     return *start; // forbid empty string
+}
+
+inline bool is_valid_GameInfo(GameInfo *ptr)
+{
+    return IS_ALIGNED(ptr)
+        && (ptr->inGame == 0 || ptr->inGame == 1)
+        && ptr->inGame == ptr->inGameBis
+        && ptr->inGame == ptr->inGameTer
+        && ptr->_dunnoLast == 0
+        && is_valid_ptr__quick((ptr_t)ptr->_dunno1)
+        && is_valid_ptr__quick((ptr_t)ptr->_dunno1Bis)
+        && ptr->_dunno1 + 0x60 == ptr->_dunno1Bis
+        && ptr->_dunno1Ter
+        && ptr->_dunno3a
+        && ptr->_dunno3b
+        && ptr->_dunno3aBis
+        && ptr->_dunno3bBis
+        && (ptr->something1 == GAME_FLAG_UNSET || ptr->something1 == GAME_FLAG_OFF || ptr->something1 == GAME_FLAG_ON)
+        && (ptr->something2 == GAME_FLAG_UNSET || ptr->something2 == GAME_FLAG_OFF || ptr->something2 == GAME_FLAG_ON)
+        && (ptr->expansionInfo == GAME_FLAG_UNSET || ptr->expansionInfo == GAME_FLAG_OFF || ptr->expansionInfo == GAME_FLAG_ON)
+        && (ptr->hardcoreInfo == GAME_FLAG_UNSET || ptr->hardcoreInfo == GAME_FLAG_OFF || ptr->hardcoreInfo == GAME_FLAG_ON)
+        && (ptr->ladderInfo == GAME_FLAG_UNSET || ptr->ladderInfo == GAME_FLAG_OFF || ptr->ladderInfo == GAME_FLAG_ON)
+        && (ptr->difficultyId == DIFF_NORMAL || ptr->difficultyId == DIFF_NIGHTMARE || ptr->difficultyId == DIFF_HELL)
+        && (!*ptr->gameName || is_valid_string(ptr->gameName, GAME_INFO_STR_MAX, FALSE))
+        && (!*ptr->gamePass || is_valid_string(ptr->gamePass, GAME_INFO_STR_MAX, FALSE))
+        ;
 }
 
 inline bool is_valid_Inventory(Inventory *ptr)  //TODO
@@ -666,8 +752,8 @@ inline bool is_valid_PlayerData(PlayerData *ptr)
     /*          is_valid_ptr__quick((ptr_t)ptr->pNightmareWaypoint)); */
     /* LOG_WARNING("is_valid_ptr__quick((ptr_t)ptr->pHellWaypoint): %d", */
     /*          is_valid_ptr__quick((ptr_t)ptr->pHellWaypoint)); */
-    /* LOG_WARNING("is_valid_player_name_str(ptr->szName, PLAYER_DATA_NAME_MAX): %d", */
-    /*          is_valid_player_name_str(ptr->szName, PLAYER_DATA_NAME_MAX)); */
+    /* LOG_WARNING("is_valid_string(ptr->szName, PLAYER_DATA_NAME_MAX, TRUE): %d", */
+    /*          is_valid_string(ptr->szName, PLAYER_DATA_NAME_MAX)); */
     return IS_ALIGNED(ptr)
         && is_valid_ptr__quick((ptr_t)ptr->pNormalQuest)
         && is_valid_ptr__quick((ptr_t)ptr->pNightmareQuest)
@@ -675,7 +761,7 @@ inline bool is_valid_PlayerData(PlayerData *ptr)
         && is_valid_ptr__quick((ptr_t)ptr->pNormalWaypoint)
         && is_valid_ptr__quick((ptr_t)ptr->pNightmareWaypoint)
         && is_valid_ptr__quick((ptr_t)ptr->pHellWaypoint)
-        && is_valid_player_name_str(ptr->szName, PLAYER_DATA_NAME_MAX)
+        && is_valid_string(ptr->szName, PLAYER_DATA_NAME_MAX, TRUE)
         ;
 }
 

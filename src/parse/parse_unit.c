@@ -7,6 +7,7 @@
 #define HKEY(u) ( (size_t)(u).dwUnitId | ((size_t)(u).dwType << 32) )
 
 Htable     *g_unit_table = {0};  //TODO: move that to GameState (and remove private fields there)
+bool        g_is_expansion = TRUE;
 
 
 inline void delete_unit_callback(size_t unused_key, void *node_value)
@@ -174,11 +175,15 @@ static bool is_main_char(Inventory *inv, PlayerData *pdata)
         return FALSE;
     }
 
-    if (inv->wIsMainXpac) {
-        return inv->wIsMainClassic == 0x7;  // xpac
+    if (g_is_expansion && !inv->wIsMainXpac) {
+        return FALSE;
     }
 
-    return inv->wIsMainClassic == 0x3;  // classic
+    if (!g_is_expansion && inv->wIsMainXpac) {
+        return FALSE;
+    }
+
+    return inv->wIsMainClassic == 0x3 || inv->wIsMainClassic == 0x7;
 }
 
 bool deep_validate_Player(Player *maybe_player)

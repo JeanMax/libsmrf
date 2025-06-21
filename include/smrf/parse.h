@@ -12,8 +12,9 @@ Level *parse_level_list(ptr_t level_addr);
 
 
 // parse_unit.c
-extern Htable *g_unit_table;  //TODO: berk
+extern bool g_is_expansion; //TODO: berk
 
+extern Htable *g_unit_table;  //TODO: berk
 #define MAX_UNIT_ADDR 32
 
 typedef  struct UnitWithAddr  UnitWithAddr;

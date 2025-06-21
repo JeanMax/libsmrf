@@ -18,7 +18,7 @@
 #include <stdio.h> // fseek
 
 
-#define PAGE_LENGTH 0x4000
+#define PAGE_LENGTH 0x1800  // sizeof UnitHashTable ... if bigger you miss the GameInfo
 #ifndef PATH_MAX
 # define PATH_MAX 0x100
 #endif
@@ -91,6 +91,8 @@ void *memread(ptr_t start_address, size_t length,
          address < start_address + length;
          address += page_len) {
 
+        //TODO: if something is between 2 pages, you won't find it
+
 #ifndef _WIN32
         fseek(g_mem_file, (long)address, SEEK_SET);
         read_len = fread(&read_buf, sizeof(byte), page_len, g_mem_file);
@@ -101,10 +103,9 @@ void *memread(ptr_t start_address, size_t length,
         if (read_len < page_len) {
             LOG_WARNING("something went wrong with memread (read_len: %zu / %zu)",
                         read_len, page_len);
-            break;
         }
         ret = on_page_read(read_buf, read_len, address, data);
-        if (ret) {
+        if (ret || read_len < page_len) {
             break;
         }
     }
@@ -246,6 +247,7 @@ static bool readbase(void)
             g_base_addr.end = g_base_addr.start + img_size;
             /* LOG_DEBUG("found base at: %16jx %16jx %16jx", */
             /*           g_base_addr.start, g_base_addr.end + g_base_addr.start, g_base_addr.end); */
+            g_base_addr.end += 0x800000; //TODO: find out why and how much
             fclose(cookie);
             if (system("rm -f " DELICIOUS_COOKIE)) {
                 LOG_WARNING("readbase: can't rm cookie " DELICIOUS_COOKIE);
@@ -281,10 +283,12 @@ static bool readbase(void)
 
         g_base_addr.start = (ptr_t)modInfo.lpBaseOfDll;
         g_base_addr.end = (ptr_t)modInfo.lpBaseOfDll + modInfo.SizeOfImage;
+        g_base_addr.end += 0x800000; //TODO: find out why and how much
         return TRUE;
     }
 
 #endif
+
     LOG_ERROR("Can't find base");
     return FALSE;
 }
