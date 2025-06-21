@@ -147,9 +147,6 @@ bool update_unit_callback(void *node_value, void *data)
             uwa->unit.pMissileData = u.pMissileData;
 
             /* LOG_DEBUG("Successful missile refresh at %08x", uwa->unit_addr); /\* DEBUG *\/ */
-            /* log_MissileData(&pdata);    /\* DEBUG *\/ */
-            /* log_Path(u.pPath);    /\* DEBUG *\/ */
-            /* log_UnitAny(&u);    /\* DEBUG *\/ */
         } else {
             uwa->unit.pMonsterData = NULL;
         }
@@ -165,6 +162,24 @@ bool update_unit_callback(void *node_value, void *data)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+static bool is_main_char(Inventory *inv, PlayerData *pdata)
+{
+    (void)pdata;
+    LOG_DEBUG("main: classic=%d xpac=%d ptr=%16jx [%s]",
+              inv->wIsMainClassic, inv->wIsMainXpac, inv->pIsMain,
+              pdata->szName); /* DEBUG */
+
+    if (!inv->pIsMain) {
+        return FALSE;
+    }
+
+    if (inv->wIsMainXpac) {
+        return inv->wIsMainClassic == 0x7;  // xpac
+    }
+
+    return inv->wIsMainClassic == 0x3;  // classic
+}
 
 bool deep_validate_Player(Player *maybe_player)
 {
@@ -192,6 +207,11 @@ bool deep_validate_Player(Player *maybe_player)
     }
     log_Inventory(&inventory);
 
+    if (!is_main_char(&inventory, &player_data)) {
+        LOG_WARNING("Not the main character");
+        return FALSE;
+    }
+
     if (!maybe_player->pPath
         || !memread((ptr_t)maybe_player->pPath, sizeof(Path),
                     find_Path_callback, &path)) {
@@ -200,15 +220,6 @@ bool deep_validate_Player(Player *maybe_player)
     }
     log_UnitAny(maybe_player);                          /* DEBUG */
     log_Path(&path);
-
-    LOG_DEBUG("main: classic=%d xpac=%d ptr=%16jx [%s]",
-              inventory.wIsMainClassic, inventory.wIsMainXpac, inventory.pIsMain,
-              player_data.szName); /* DEBUG */
-    if (!inventory.pIsMain || inventory.wIsMainClassic != 0x7) {
-    /* if (!inventory.wIsMainXpac || inventory.wIsMainClassic == 1) { */
-        LOG_WARNING("Not the main character");
-        return FALSE;
-    }
 
     if (!path.pRoom1
         || !memread((ptr_t)path.pRoom1, sizeof(Room1),
@@ -374,6 +385,9 @@ static UnitAny *parse_unit(ptr_t u_addr, UnitAny **u_last, UnitAny **u_first)
         DUPE(u.pMissileData, &pdata, sizeof(MissileData));
         /* log_MissileData(&pdata);    /\* DEBUG *\/ */
         /* log_UnitAny(&u);    /\* DEBUG *\/ */
+
+    } else {
+        u.pMonsterData = NULL;
     }
 
     //TODO: parse inventory

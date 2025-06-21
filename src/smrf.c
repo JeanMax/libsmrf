@@ -93,6 +93,32 @@ static void *search_player_callback(byte *buf, size_t buf_len, ptr_t address, vo
     return NULL; // keep reading
 }
 
+static bool find_another_player_ptr(GameState *game)
+{
+    void *player_addr = memreadallbase(search_player_callback, NULL);
+    if (!player_addr) {
+        LOG_ERROR("Couldn't find another Player ptr, damn.");
+        game->_ut_addr = 0;
+        return FALSE;
+    }
+
+    LOG_INFO("Wop wooop woop, another Player ptr found!");
+    parse_unit_list((ptr_t)player_addr);
+    Player p;
+    if (memread((ptr_t)player_addr, sizeof(Player),
+                find_Player_callback, &p)) {
+        UnitWithAddr *uwa = hget(g_unit_table, p.dwUnitId);
+        if (uwa) {  // alternative player adress
+            pthread_mutex_lock(&game->mutex);
+            game->player = &uwa->unit;
+            pthread_mutex_unlock(&game->mutex);
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 static bool update_player(GameState *game, bool need_full_search)
@@ -133,32 +159,15 @@ static bool update_player(GameState *game, bool need_full_search)
 
     UPDATE_STATUS(game, "Weird game, trying hack...");
     LOG_ERROR("Can't find player...");
-
-    void *player_addr = memreadallbase(search_player_callback, NULL);
-    if (!player_addr) {
-        LOG_ERROR("Couldn't find another Player ptr, damn.");
+    if (!find_another_player_ptr(game)) {
+        LOG_ERROR("Hack failed, damn.");
         game->_ut_addr = 0;
         return FALSE;
-    }
 
-    LOG_INFO("Wop wooop woop, another Player ptr found!");
-    parse_unit_list((ptr_t)player_addr);
-    Player p;
-    if (memread((ptr_t)player_addr, sizeof(Player),
-                find_Player_callback, &p)) {
-        UnitWithAddr *uwa = hget(g_unit_table, p.dwUnitId);
-        if (uwa) {  // alternative player adress
-            LOG_INFO("Yay.");
-            pthread_mutex_lock(&game->mutex);
-            game->player = &uwa->unit;
-            pthread_mutex_unlock(&game->mutex);
-            return TRUE;
-        }
     }
+    LOG_INFO("Yay.");
 
-    LOG_ERROR("Hack failed, damn.");
-    game->_ut_addr = 0;
-    return FALSE;
+    return TRUE;
 }
 
 static bool update_game_window(GameState *game, bool *need_full_search)
@@ -214,10 +223,14 @@ bool update_game_state(GameState *game)
 
     UnitWithAddr *uwa = hget(g_unit_table, uid);
     if (!uwa) {
-        LOG_INFO("Player lost, assuming Out of Game");
-        UPDATE_STATUS(game, "Out of game...");
-        reset_game_state(game);
-        return FALSE;
+        LOG_WARNING("Player lost, searching another ptr...");
+        if (!find_another_player_ptr(game)) {
+            LOG_INFO("Player lost, assuming Out of Game");
+            UPDATE_STATUS(game, "Out of game...");
+            reset_game_state(game);
+            return FALSE;
+        }
+        uwa = hget(g_unit_table, uid);
     }
 
     if (!memread((ptr_t)uwa->unit.pPath->pRoom1, sizeof(Room1),

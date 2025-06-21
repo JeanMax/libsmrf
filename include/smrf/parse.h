@@ -14,7 +14,7 @@ Level *parse_level_list(ptr_t level_addr);
 // parse_unit.c
 extern Htable *g_unit_table;  //TODO: berk
 
-#define MAX_UNIT_ADDR 8
+#define MAX_UNIT_ADDR 32
 
 typedef  struct UnitWithAddr  UnitWithAddr;
 struct UnitWithAddr {
